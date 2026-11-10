@@ -1,0 +1,400 @@
+/* ───────────────────────────────────────────────────────────────────────
+   Wraith responsive layer — loaded LAST. Fluid from watches (~240px) to
+   foldables, phones, tablets, laptops, desktops and TVs (4K).
+   Breakpoints: 360 · 480 · 640 · 767 · 900 · 1100 · 1400 · 1920 · 2560
+   ─────────────────────────────────────────────────────────────────────── */
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas, iframe { max-width: 100%; }
+img, video { height: auto; }
+table { max-width: 100%; }
+pre, code { overflow-wrap: anywhere; }
+.wraith-dashboard { overflow-wrap: anywhere; }
+.wraith-dashboard > *, .profile-shell > *, .profile-body-main > * { min-width: 0; }
+
+/* notches / cutouts */
+.wraith-app-header { padding-left: max(12px, var(--sai-left)); padding-right: max(12px, var(--sai-right)); }
+
+/* ── Header search (all widths) ─────────────────────────────────────── */
+.wx-cs-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wx-cs-trigger { min-width: 0; }
+
+/* ── Profile pages: stack correctly (cards were shrinking to content) ── */
+.profile-body-layout { min-width: 0; }
+@media (max-width: 1050px) {
+  .profile-body-layout { align-items: stretch !important; }
+  .profile-body-main, .profile-body-aside { width: 100% !important; max-width: 100%; flex: 0 0 auto !important; }
+}
+.profile-shell { width: min(1240px, calc(100% - 48px)); }
+@media (max-width: 640px) { .profile-shell { width: calc(100% - 24px) !important; } }
+@media (max-width: 360px) { .profile-shell { width: calc(100% - 16px) !important; } }
+@media (max-width: 767px) {
+  .profile-page { padding-bottom: calc(86px + var(--sai-bottom)); }
+  .profile-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .profile-main-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 420px) { .profile-stat-grid { grid-template-columns: minmax(0, 1fr) !important; } }
+
+/* ── Traders page (had no styles at all) ────────────────────────────── */
+.traders-shell { width: min(1240px, calc(100% - 48px)); gap: 18px; }
+.traders-heading h1 { margin: 6px 0 4px; font-size: clamp(22px, 4vw, 32px); font-weight: 800; letter-spacing: -0.01em; }
+.traders-heading p { margin: 0; color: var(--text-muted); font-size: 14px; }
+.traders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.trader-card {
+  min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px;
+  border: 1px solid var(--border); border-radius: 16px; background: var(--surface);
+  box-shadow: inset 0 1px rgba(255,255,255,.025); transition: border-color .15s, transform .15s;
+}
+.trader-card:hover { border-color: var(--border-strong, rgba(255,255,255,.14)); }
+.trader-card > p { margin: 0; color: var(--text-muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trader-card-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.trader-rank { color: var(--text-dim, var(--text-muted)); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.trader-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: 0 0 44px; background: var(--surface-2); }
+.trader-avatar-fallback { display: grid; place-items: center; font-weight: 800; color: var(--accent); border: 1px solid rgba(var(--accent-rgb), .35); }
+.trader-card-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trader-card-name strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trader-card-name small { color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trader-card-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.trader-card-stats > div { min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; }
+.trader-card-stats span { color: var(--text-muted); font-size: 9px; letter-spacing: .08em; font-weight: 700; }
+.trader-card-stats strong { font-size: 13px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.trader-card-stats .is-positive { color: var(--profit, #35d07f); }
+.trader-card-stats .is-negative { color: var(--loss, #ff5b5b); }
+.trader-card-open { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.trader-card-open > span:first-child { font-size: 9px; letter-spacing: .08em; font-weight: 700; }
+.trader-card-open > span:not(:first-child) { padding: 3px 8px; border-radius: 999px; background: rgba(var(--accent-rgb), .12); color: var(--accent); font-weight: 700; }
+.trader-card-open.is-empty { gap: 6px; }
+.trader-card-skeleton { min-height: 190px; animation: wx-shimmer 1.4s ease-in-out infinite; }
+@media (max-width: 640px) { .traders-shell { width: calc(100% - 24px); } }
+@media (max-width: 767px) { .traders-shell { padding-bottom: calc(90px + var(--sai-bottom)); } }
+
+/* ── Market: side rail never squeezes the board on small/mid screens ── */
+@media (max-width: 1099px) {
+  .wx-market-layout .mc-rail { display: none !important; }
+  .wx-market-layout { margin: 8px; gap: 0; }
+  .wx-market-layout .wx-market-main { width: 100%; }
+}
+@media (max-width: 767px) { .wx-market-layout { margin: 0; } }
+
+/* ── Search dropdown becomes a full-width sheet on phones ───────────── */
+.wx-cs-mob { display: none; }
+.wx-cs-rq-head { padding: 9px 14px 5px; color: var(--accent-text); font-size: 8px; letter-spacing: .14em; font-family: var(--font-mono), monospace; }
+.wx-cs-rq-row { display: flex; align-items: center; }
+.wx-cs-rq-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: transparent; border: 0; color: var(--text); text-align: left; cursor: pointer; }
+.wx-cs-rq-ico { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-muted); flex: 0 0 auto; }
+.wx-cs-rq-txt { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-cs-rq-x { background: transparent; border: 0; color: var(--text-dim); padding: 10px 14px; cursor: pointer; }
+@media (max-width: 767px) {
+  /* phones: no search bar in the header; the bottom search button opens a full-screen search */
+  .wx-cs-trigger { display: none !important; }
+  .wx-cs-kbd { display: none !important; }
+  .wx-cs-drop {
+    position: fixed !important; inset: 0 !important; left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important;
+    width: auto !important; max-width: none !important; max-height: none !important; height: 100dvh !important;
+    border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: var(--bg, #0c0c0d) !important;
+    display: flex !important; flex-direction: column; overflow-y: auto !important; z-index: 100000 !important;
+    padding-bottom: var(--sai-bottom);
+  }
+  .wx-cs-tabs { padding-top: max(12px, var(--sai-top)) !important; }
+  .wx-cs-inputrow {
+    order: 99; position: sticky; bottom: 0; margin: auto 12px 12px !important; margin-top: auto !important;
+    border: 1px solid var(--border-strong, var(--border)) !important; border-radius: 999px; background: var(--surface-2) !important; padding: 8px 10px 8px 16px !important;
+  }
+  .wx-cs-inputrow input { font-size: 16px !important; }
+  .wx-cs-drop { box-sizing: border-box; overflow-x: hidden !important; }
+  .wx-cs-tabs { flex-wrap: wrap; }
+  .wx-cs-inputrow { box-sizing: border-box; min-width: 0; align-self: stretch; }
+  .wx-cs-inputrow input { min-width: 0; }
+  .wx-cs-mob { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border: 0; cursor: pointer; }
+  .wx-cs-paste { height: 34px; padding: 0 14px; border-radius: 999px; background: var(--surface); color: var(--text); font-weight: 700; font-size: 13px; border: 1px solid var(--border); }
+  .wx-cs-close { width: 36px; height: 36px; border-radius: 50%; background: transparent; color: var(--text); border: 1px solid var(--border); font-size: 15px; }
+}
+
+/* ── Phones & small ─────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .wraith-app-header { gap: 6px; }
+  .wx-subnav-inner { padding: 0 8px; }
+  .wx-subnav button { padding-left: 10px; padding-right: 10px; }
+  .wx-board-bar { gap: 8px; }
+}
+@media (max-width: 380px) {
+  .wx-tabbar { left: 8px; right: 8px; gap: 8px; }
+  .wx-tabbar-pill { height: 52px; }
+  .wx-tabbar-search { flex-basis: 52px; width: 52px; height: 52px; }
+  .wx-tabbar-pill a { height: 42px; }
+}
+/* tiny screens: watches / Z Flip cover (≤ 300px) */
+@media (max-width: 300px) {
+  .wx-cs-label { display: none; }
+  .wraith-header-brand span:last-child { display: none; }
+  .wx-tabbar-pill a { margin: 0; }
+  .wx-tabbar-pill { padding: 0 2px; }
+  .wx-tab-logo { width: 22px; height: 22px; }
+  .wx-tabbar-pill svg { width: 18px; height: 18px; }
+  .wx-subnav button { font-size: 11px; padding: 0 8px; }
+}
+
+/* ── Touch devices: comfortable targets, no hover-only affordances ──── */
+@media (hover: none) and (pointer: coarse) {
+  .wx-btn, .wx-seg button, .wx-subnav button, .wx-side-tabs button { min-height: 40px; }
+  a, button { -webkit-tap-highlight-color: transparent; }
+}
+
+/* ── Landscape phones / short screens ───────────────────────────────── */
+@media (max-height: 480px) and (orientation: landscape) {
+  .wraith-app-header { height: 44px; }
+  .wx-tabbar { bottom: 6px; }
+  .wx-tabbar-pill, .wx-tabbar-search { height: 44px; }
+  .wx-tabbar-search { flex-basis: 44px; width: 44px; }
+  .wx-tabbar-pill a { height: 36px; }
+  .wx-page:not(.wraith-token-page) { padding-bottom: 58px; }
+  .wx-chart-card { height: 80vh; min-height: 240px; }
+}
+
+/* ── Tablets portrait (768–1023) ────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .wx-board-body { padding: 14px; }
+}
+
+/* ── Large desktops / TVs ───────────────────────────────────────────── */
+@media (min-width: 1920px) {
+  .profile-shell, .traders-shell { width: min(1560px, calc(100% - 96px)); }
+  .traders-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+}
+@media (min-width: 2560px) {
+  html { font-size: 112.5%; }
+  .wx-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .profile-shell, .traders-shell { width: min(1900px, calc(100% - 160px)); }
+}
+
+/* ── Callout reactions: like / repost / comment micro-animations ─────── */
+.callout-actions { gap: 4px; }
+.callout-heart-btn, .callout-action-btn {
+  gap: 6px; padding: 7px 10px; margin: -3px 0; border-radius: 999px; font-size: 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent;
+  transition: color .15s, background .15s, transform .12s;
+}
+.callout-heart-btn:hover:not(:disabled) { background: rgba(244, 63, 94, .1); }
+.callout-action-btn:hover:not(:disabled) { background: rgba(var(--accent-rgb), .1); }
+.callout-heart-btn:active, .callout-action-btn:active { transform: scale(.92); }
+.callout-heart-btn:disabled, .callout-action-btn:disabled { opacity: .5; }
+
+.callout-fx-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.callout-fx-wrap.pop svg { animation: co-heart-pop .55s cubic-bezier(.2, 1.6, .4, 1); }
+.callout-fx-wrap.spin svg { animation: co-spin .6s cubic-bezier(.3, 1.3, .5, 1); }
+.callout-heart-btn.hearted svg { filter: drop-shadow(0 0 6px rgba(244, 63, 94, .55)); }
+.callout-count { display: inline-block; animation: co-count .28s ease-out; }
+
+.callout-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.callout-burst i {
+  position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; border-radius: 50%;
+  background: #f43f5e; opacity: 0;
+  animation: co-burst .6s ease-out forwards;
+  transform: rotate(var(--a)) translateY(0);
+}
+.callout-burst i:nth-child(even) { background: #ff9ab0; width: 3px; height: 3px; }
+
+@keyframes co-heart-pop { 0% { transform: scale(1); } 30% { transform: scale(1.5) rotate(-8deg); } 60% { transform: scale(.88) rotate(4deg); } 100% { transform: scale(1); } }
+@keyframes co-spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+@keyframes co-count { 0% { opacity: 0; transform: translateY(6px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes co-burst {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-17px) scale(.3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .callout-fx-wrap svg, .callout-count, .callout-burst i { animation: none !important; }
+}
+
+/* ── Market cards: identical structure on every card ─────────────────── */
+.wx-grid { align-items: stretch; }
+.wx-tcard { height: 100%; gap: 14px; padding: 18px; justify-content: space-between; }
+.wx-tcard-top { min-height: 52px; }
+.wx-tcard-meta { display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 1px solid var(--border); margin-top: auto; flex-wrap: nowrap; }
+.wx-tcard-meta > span:not(.wx-qb) { white-space: nowrap; }
+.wx-tcard-chips { display: none; }
+.wx-tcard .wx-qb { opacity: 1; margin-left: auto; width: 88px; height: 26px; flex: 0 0 88px; overflow: hidden; }
+.wx-curve-mini, .wx-pressure { display: flex; align-items: center; gap: 8px; min-height: 18px; }
+.wx-pressure-bar { flex: 1; height: 6px; display: flex; gap: 2px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.07); }
+.wx-pressure-bar i { display: block; height: 100%; transition: width .5s ease; }
+.wx-pressure-bar i.buy { background: var(--win, #22c55e); border-radius: 999px 0 0 999px; }
+.wx-pressure-bar i.sell { background: var(--loss, #ef4444); border-radius: 0 999px 999px 0; }
+.wx-pressure span { font-size: 11px; font-weight: 700; min-width: 58px; text-align: right; font-variant-numeric: tabular-nums; }
+.wx-pressure span.buy { color: var(--win, #22c55e); }
+.wx-pressure span.sell { color: var(--loss, #ef4444); }
+.wx-curve-mini span { min-width: 58px; text-align: right; }
+@media (max-width: 480px) { .wx-tcard-meta { gap: 10px; font-size: 12px; } }
+
+/* ── Chart measure tool ──────────────────────────────────────────────── */
+.wx-measure { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 4; }
+.wx-measure-svg { position: absolute; inset: 0; overflow: visible; }
+.wx-measure-box { position: absolute; border: 1px solid; box-sizing: border-box; }
+.wx-measure-box.up { background: rgba(79, 124, 255, 0.22); border-color: rgba(79, 124, 255, 0.55); }
+.wx-measure-box.down { background: rgba(255, 91, 91, 0.2); border-color: rgba(255, 91, 91, 0.55); }
+.wx-measure-box.locked { border-style: solid; }
+.wx-measure-box:not(.locked) { border-style: dashed; }
+.wx-measure-label {
+  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; white-space: nowrap;
+  padding: 7px 12px; border-radius: 6px; color: #fff; font-size: 12px; line-height: 1.25;
+  font-variant-numeric: tabular-nums; box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+}
+.wx-measure-label.up { background: #3b6df0; }
+.wx-measure-label.down { background: #e24d4d; }
+.wx-measure-label b { font-weight: 700; }
+.wx-measure-label span { opacity: .85; font-size: 11px; }
+.wx-icon-btn.on { color: var(--accent-text, #ff9a63); background: rgba(var(--accent-rgb), .14); border-color: rgba(var(--accent-rgb), .45); }
+
+/* ── EVM token page ──────────────────────────────────────────────────── */
+.evm-trades { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.evm-trades > header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.evm-trades > header a { display: inline-flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: 12px; text-decoration: none; }
+.evm-trades-list { max-height: 360px; overflow-y: auto; }
+.evm-trade { display: grid; grid-template-columns: 56px 56px 1fr auto; gap: 10px; align-items: center; padding: 9px 16px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text); text-decoration: none; font-size: 13px; font-variant-numeric: tabular-nums; }
+.evm-trade:hover { background: rgba(255,255,255,.03); }
+.evm-trade .age { color: var(--text-dim); }
+.evm-trade .side.buy { color: var(--win, #22c55e); font-weight: 700; }
+.evm-trade .side.sell { color: var(--loss, #ef4444); font-weight: 700; }
+.evm-trade .who { color: var(--text-muted); font-size: 12px; }
+.evm-trades-empty { padding: 22px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.evm-dock { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.evm-dock-head { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.evm-dock p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.evm-dock dl { margin: 6px 0 0; display: grid; gap: 8px; }
+.evm-dock dl > div { display: flex; justify-content: space-between; font-size: 12px; }
+.evm-dock dt { color: var(--text-dim); }
+.evm-dock dd { margin: 0; font-variant-numeric: tabular-nums; }
+.evm-dock .wx-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Deposit network picker (select styled like the old badge) */
+select.ewt-network-badge{appearance:none;-webkit-appearance:none;cursor:pointer;color:inherit;font:inherit;font-weight:700;text-align:center;text-align-last:center;width:100%;max-width:260px;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select.ewt-network-badge option{background:#14141a;color:#fff}
+.ewt-deposit-hint b{color:var(--accent,#ff7b3d)}
+
+/* EVM buy panel */
+.evm-buy{display:flex;flex-direction:column;gap:8px}
+.evm-buy-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#8b8b96)}
+.evm-buy-src,.evm-buy-amt{display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 10px;background:rgba(255,255,255,.03);height:40px}
+.evm-buy-src select{flex:1;min-width:0;background:transparent;border:0;color:inherit;font:inherit;font-size:13px;outline:0;height:100%}
+.evm-buy-src select option{background:#14141a}
+.evm-buy-amt span{opacity:.6}.evm-buy-amt input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:inherit;font:inherit;font-size:16px;font-weight:700}
+.evm-buy-quick{display:flex;gap:6px}.evm-buy-quick button{flex:1;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:inherit;font-size:12px;cursor:pointer}
+.evm-buy-quick button:disabled{opacity:.35;cursor:not-allowed}
+.evm-buy-sum{font-size:12px;color:var(--muted,#9a9aa6);min-height:18px}.evm-buy-sum b{color:#fff}
+.evm-buy-err{font-size:12px;color:#ff5d5d;margin:0}.evm-buy-ok{font-size:12px;color:#3ddc84;margin:0}
+.evm-note{font-size:13px;opacity:.75;margin:0}
+.wx-chain-logo{display:inline-block;vertical-align:middle;object-fit:cover}
+
+/* Scanner chain chips */
+.sg-chains{margin-bottom:6px}
+.sg-chains button{display:inline-flex;align-items:center;gap:6px}
+
+/* scanner list view */
+.sg-trow { grid-template-columns: minmax(150px, 2.2fr) 0.6fr 1fr 0.8fr 1fr 1fr 0.7fr; }
+.sg-score { font-weight: 800; color: var(--text-muted); }
+.sg-score.hot { color: var(--accent-text, #ff7b3d); }
+@media (max-width: 720px) {
+  .sg-trow { grid-template-columns: minmax(120px, 2fr) 0.6fr 1fr 0.8fr; }
+  .sg-trow .c-vol, .sg-trow .c-liq, .sg-trow .c-age { display: none; }
+}
+
+/* deposit network dropdown */
+.ewt-dd{position:relative;width:100%;max-width:300px}
+.ewt-dd-btn,.ewt-dd-list button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-align:left}
+.ewt-dd-btn:hover{border-color:var(--accent,#ff7b3d)}
+.ewt-dd-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ewt-dd-tok{display:inline-flex;align-items:center;gap:5px;color:var(--text-muted);font-size:12px;font-weight:600}
+.ewt-dd-list{position:absolute;z-index:30;top:calc(100% + 6px);left:0;right:0;margin:0;padding:6px;list-style:none;border:1px solid var(--border);border-radius:14px;background:#141416;box-shadow:0 16px 40px rgba(0,0,0,.55);max-height:300px;overflow:auto}
+.ewt-dd-list button{border:0;background:transparent;border-radius:10px;padding:9px 10px;font-weight:600}
+.ewt-dd-list button:hover,.ewt-dd-list button.on{background:rgba(255,123,61,.12)}
+.ewt-tokname{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.embedded-wallet-network{display:inline-flex;align-items:center;gap:8px}
+.embedded-wallet-amount.ew-cash{display:inline-flex;align-items:center;gap:6px}
+.embedded-wallet-amount.ew-cash small{color:var(--text-muted);font-weight:600}
+
+/* deposit screen: centered like fomo */
+.ewt-screen .ewt-title{text-align:center}
+.ewt-screen .ewt-dd{align-self:center}
+.ewt-screen .ewt-deposit-hint{text-align:center}
+.ewt-screen .ewt-qr-wrap{padding:22px}
+.ewt-tokname{color:var(--accent-text,#ff7b3d)}
+/* transfers history */
+.tx-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tx-row{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--border)}
+.tx-row:last-child{border-bottom:0}
+.tx-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;flex:none;background:var(--surface-2,#1b1b1f);color:var(--text-muted)}
+.tx-ico.in{color:#22c55e;background:rgba(34,197,94,.12)}
+.tx-ico.out{color:#ff7b3d;background:rgba(255,123,61,.12)}
+.tx-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tx-mid strong{font-size:14px}
+.tx-mid small,.tx-end small{display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);font-size:11px}
+.tx-end{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.tx-end b{font-size:14px;font-variant-numeric:tabular-nums}
+.tx-end b.in{color:#22c55e}
+.tx-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 12px;color:var(--text-muted);text-align:center;font-size:13px}
+.tx-empty strong{color:var(--text);font-size:15px}
+
+/* deposit QR: compact white tile, centered (no wide empty box) */
+.ewt-screen .ewt-qr-wrap{width:fit-content;margin:4px auto;padding:12px;border:0;border-radius:18px;background:#fff;box-shadow:0 0 0 1px var(--border),0 12px 32px rgba(0,0,0,.45)}
+.ewt-screen .ewt-qr-wrap svg{display:block;border-radius:8px}
+.ewt-screen .ewt-address-box{max-width:340px;width:100%;margin:0 auto}
+
+/* bottom live tape */
+.wx-statusbar{flex:0 0 auto;display:flex;align-items:center;gap:14px;height:38px;padding:0 12px;border-top:1px solid var(--border);background:linear-gradient(180deg,#0a0a0c,#070708);font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;position:relative;z-index:5}
+.wx-tp-live{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:10px;font-weight:800;letter-spacing:.14em;color:#22c55e}
+.wx-tp-live i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:wx-tp-pulse 1.6s ease-in-out infinite}
+.wx-tp-live.bad{color:#f5b942}
+@keyframes wx-tp-pulse{50%{opacity:.35}}
+.wx-tp-record{flex:none;padding:3px 10px;border:1px solid rgba(255,123,61,.35);border-radius:999px;background:rgba(255,123,61,.08);color:var(--text);white-space:nowrap}
+.wx-tp-record b{color:var(--accent-text,#ff7b3d)}
+.wx-tp-record small{color:var(--text-muted);font-size:11px}
+.wx-tp-viewport{flex:1;min-width:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.wx-tp-track{display:flex;width:max-content;animation:wx-tp-scroll linear infinite}
+.wx-tp-viewport:hover .wx-tp-track{animation-play-state:paused}
+.wx-tp-run{display:flex;align-items:center;gap:6px;padding-right:6px}
+@keyframes wx-tp-scroll{to{transform:translateX(-50%)}}
+.wx-tp-item{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;white-space:nowrap;cursor:pointer}
+.wx-tp-item:hover{border-color:var(--accent,#ff7b3d);background:rgba(255,123,61,.08)}
+.wx-tp-item b{font-weight:700}
+.wx-tp-item em{font-style:normal;font-weight:800;color:var(--text)}
+.wx-tp-item em.up{color:#22c55e}
+.wx-tp-item small{color:var(--text-muted);font-size:11px}
+.wx-tp-badge{padding:1px 6px;border-radius:5px;font-size:9px;font-weight:800;letter-spacing:.08em}
+.wx-tp-badge.hot{background:rgba(34,197,94,.16);color:#22c55e}
+.wx-tp-badge.watch{background:rgba(245,185,66,.16);color:#f5b942}
+.wx-tp-badge.win{background:rgba(255,123,61,.18);color:#ff7b3d}
+.wx-tp-empty{color:var(--text-muted)}
+.wx-tp-tg{display:inline-flex;align-items:center;gap:7px;flex:none;padding:4px 11px 4px 6px;border:1px solid rgba(39,167,231,.4);border-radius:999px;background:rgba(39,167,231,.1);color:#cfeaf9;font-weight:700;text-decoration:none}
+.wx-tp-tg:hover{background:rgba(39,167,231,.2)}
+@media (max-width:720px){.wx-statusbar{height:34px;gap:8px;padding:0 8px}.wx-tp-record,.wx-tp-tg span{display:none}.wx-tp-tg{padding:3px}}
+@media (prefers-reduced-motion:reduce){.wx-tp-track{animation:none}.wx-tp-viewport{overflow-x:auto}}
+
+/* chart: jump-to-latest */
+.wx-chart-latest{position:absolute;right:72px;bottom:38px;z-index:4;padding:6px 12px;border:1px solid rgba(255,123,61,.5);border-radius:999px;background:rgba(10,8,6,.88);color:#ff9a5c;font:700 12px/1 var(--font-sans,system-ui);cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.wx-chart-latest:hover{background:rgba(255,123,61,.18);color:#fff}
+
+/* Measure tool: TradingView look. White text (the .up/.down helper classes were colouring it green), hairline crosshair, small arrowheads */
+.wx-measure-label, .wx-measure-label b, .wx-measure-label span, .wx-measure-label.up, .wx-measure-label.down { color: #fff !important; }
+.wx-measure-label b { font-size: 13px; }
+.wx-measure-label span { opacity: 1; font-size: 12px; }
+.wx-measure-svg line { stroke-width: 1px !important; vector-effect: non-scaling-stroke; shape-rendering: crispEdges; }
+.wx-measure-box { border-width: 0 !important; }
+
+/* Drawing tools */
+.wx-draw-del { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 7; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,91,91,.6); background: rgba(40,14,14,.92); color: #ff8a8a; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+@media (hover: none), (pointer: coarse) {
+  .wx-chart-toolbar .wx-icon-btn { min-width: 36px; min-height: 36px; }
+  .wx-draw-del { padding: 10px 18px; font-size: 13px; }
+}
+
+/* ── phone search results: clean rows (symbol, name, mcap), no tiny chips ── */
+@media (max-width: 767px) {
+  .wx-cs-drop .wx-tr-addr, .wx-cs-drop .wx-tr-open { display: none !important; }
+  .wx-cs-drop .wx-tr-sym { font-size: 15px !important; color: var(--text, #f3ece6) !important; letter-spacing: .01em !important; }
+  .wx-cs-drop .wx-tr-name { font-size: 12px !important; color: var(--text-muted, #8c8077) !important; margin-top: 3px !important; }
+  .wx-cs-drop .wx-tr-mc { background: transparent !important; border: 0 !important; color: var(--text, #f3ece6) !important; font-size: 13px !important; font-weight: 700; min-width: 0 !important; padding: 0 !important; margin-top: 2px; }
+  .wx-cs-drop [data-nav-item] { padding-top: 10px !important; padding-bottom: 10px !important; }
+  .wx-cs-drop input[type="search"]::-webkit-search-cancel-button { display: none; }
+  .wx-cs-inputrow input { -webkit-appearance: none; appearance: none; }
+}
+/* the phone app must never pinch-zoom the page */
+html, body { touch-action: pan-x pan-y; }

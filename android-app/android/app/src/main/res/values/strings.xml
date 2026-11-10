@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Wraith</string>
+    <string name="title_activity_main">Wraith</string>
+    <string name="package_name">farm.wraith.app</string>
+    <string name="custom_url_scheme">farm.wraith.app</string>
+</resources>

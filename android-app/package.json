@@ -1,0 +1,17 @@
+{
+  "name": "wraith-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Native Android shell for Wraith (Capacitor). Separate from the Next.js app.",
+  "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^9.1.2",
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/cli": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/keyboard": "^7.0.6",
+    "@capacitor/push-notifications": "^7.0.7",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6"
+  }
+}

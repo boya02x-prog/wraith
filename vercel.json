@@ -1,0 +1,4 @@
+{
+  "regions": ["hkg1"],
+  "crons": [{ "path": "/api/cron/train-signal", "schedule": "0 3 * * *" }]
+}

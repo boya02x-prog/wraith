@@ -1,0 +1,45 @@
+{
+  "appId": "farm.wraith.app",
+  "appName": "Wraith",
+  "webDir": "www",
+  "backgroundColor": "#0c0c0d",
+  "appendUserAgent": "WraithApp",
+  "server": {
+    "url": "https://www.wraith.farm/app",
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": [
+      "www.wraith.farm",
+      "wraith.farm",
+      "*.wraith.farm",
+      "*.privy.io",
+      "auth.privy.io",
+      "*.walletconnect.com",
+      "*.walletconnect.org"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0c0c0d",
+    "webContentsDebuggingEnabled": false,
+    "adjustMarginsForEdgeToEdge": "disable"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "backgroundColor": "#0c0c0d",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_INSIDE",
+      "launchAutoHide": true
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "overlaysWebView": true,
+      "backgroundColor": "#00000000"
+    }
+  }
+}

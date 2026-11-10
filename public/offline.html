@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c0c0d">
+<title>Wraith · Offline</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:#0c0c0d;color:#f2f2f5;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  body{display:grid;place-items:center;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  main{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
+  .ghost{width:84px;height:84px;border-radius:22px;background:#141414;border:1px solid rgba(255,255,255,.07);display:grid;place-items:center;margin-bottom:6px}
+  .ghost img{width:54px;height:auto;opacity:.92;animation:float 3.2s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .eyebrow{font:600 11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#f26a35}
+  h1{font-size:24px;font-weight:700;letter-spacing:-.02em}
+  p{font-size:14px;line-height:1.5;color:#9a9aa6}
+  button{margin-top:10px;width:100%;padding:14px;border:0;border-radius:14px;background:#f26a35;color:#fff;font:700 15px inherit;cursor:pointer}
+  button:active{opacity:.85}
+  .status{font-size:12px;color:#6b6b76;margin-top:2px}
+  .status i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff6c62;margin-right:7px;vertical-align:middle}
+  .status.ok i{background:#39d98a}
+</style>
+</head>
+<body>
+<main>
+  <div class="ghost"><img src="/icon-192.png" alt=""></div>
+  <span class="eyebrow">OFFLINE</span>
+  <h1>No connection</h1>
+  <p>Wraith needs the internet for live prices and your trades. Reconnect and it will pick up right where you left off.</p>
+  <button id="retry" type="button">Try again</button>
+  <div class="status" id="st"><i></i><span>Waiting for connection…</span></div>
+</main>
+<script>
+  var st=document.getElementById('st');
+  function go(){ location.replace('/app'); }
+  document.getElementById('retry').addEventListener('click',function(){
+    if(navigator.onLine){ go(); } else { st.querySelector('span').textContent='Still offline'; }
+  });
+  window.addEventListener('online',function(){ st.className='status ok'; st.querySelector('span').textContent='Back online'; setTimeout(go,400); });
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+module.exports=[
+{type:"SIGHTING",n:1,title:"Paper trading",sub:"Practice on live tokens with fake money. Same charts, zero risk.",chips:["LIVE PRICES","NO RISK"]},
+{type:"SIGHTING",n:2,title:"One cash balance, seven chains",sub:"Buy on Solana, Base, Ethereum, BNB Chain, Monad, Arc and Robinhood Chain with the stablecoins you already hold.",chips:["7 CHAINS","STABLECOINS"]},
+{type:"SIGHTING",n:3,title:"Signals that hunt for you",sub:"The scanner scores new tokens around the clock and pings you the moment one lights up.",chips:["SCORE","24/7"]},
+{type:"SIGHTING",n:4,title:"Telegram alerts",sub:"Link your chat, pick your chains and minimum score, sleep through the noise.",chips:["QUIET MODE","PER-CHAIN"]},
+{type:"SIGHTING",n:5,title:"Follow the best traders",sub:"See who is calling winners, follow them, bookmark their moves.",chips:["FOLLOW","CALLOUTS"]},
+{type:"SIGHTING",n:6,title:"Wraith for Android",sub:"Install the app, get push alerts the second a signal fires.",chips:["ANDROID","PUSH"]},
+{type:"RANKUP",n:7,title:"Shade, Specter, Wraith",sub:"Hold OMEN to climb the tiers. Each rank sees more.",chips:["SHADE","SPECTER","WRAITH"],tier:"specter"},
+{type:"TRANSMISSION",n:8,title:"Patch notes",sub:"Faster alerts, new banners, safer links. Details inside.",chips:["UPDATE"]},
+{type:"TRANSMISSION",n:9,title:"We moved to wraith.farm",sub:"New home, same ghost. Update your bookmarks.",chips:["NEW DOMAIN"]},
+{type:"GATHERING",n:10,title:"Raid night",sub:"Join the Telegram. Raids start when the signal does.",chips:["TELEGRAM","TONIGHT"]},
+{type:"GATHERING",n:11,title:"Community AMA",sub:"Ask the builder anything. Bring your hardest questions.",chips:["LIVE","Q&A"]},
+{type:"GATHERING",n:12,title:"Call of the week",sub:"Post your best call. The top one gets the spotlight.",chips:["CALLOUTS","SPOTLIGHT"]},
+{type:"ASCENDED",n:13,title:"1,000 ghosts strong",sub:"Thank you for watching with us. The scanner never sleeps.",chips:["MILESTONE"]},
+{type:"ASCENDED",n:14,title:"First 100 signals called",sub:"Every call is public and tracked. Check the record.",chips:["TRACKED","PUBLIC"]},
+{type:"WARNING",n:15,title:"Admins never DM first",sub:"If someone claims to be Wraith support and messages you, it is a scam. Block and report.",chips:["STAY SAFE"]},
+{type:"WARNING",n:16,title:"Never share your seed phrase",sub:"Not with support, not with a friend, not with a ghost.",chips:["PRIVATE KEYS"]},
+];
