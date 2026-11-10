@@ -59,3 +59,6 @@ android-app/android/app/google-services.json
 scripts/.pilot/
 scripts/.pilot-run.log
 scripts/.pilot-run*.log
+
+.vercel
+.env*
