@@ -10,7 +10,7 @@ import { refreshCalls, type SignalCall } from "@/lib/signalCalls";
 import type { Signal } from "@/app/api/signals/route";
 import { broadcast, claim, milestoneFor, signalMessage, tg, winMessage, winTeaser } from "@/lib/telegramBot";
 import { fcmConfigured } from "@/lib/fcm";
-import { tokenKeyboard } from "@/lib/telegramUi";
+import { APP_URL, tokenKeyboard } from "@/lib/telegramUi";
 import { runPushAlerts, pushBroadcast } from "@/lib/push";
 import { signQuery } from "@/lib/signedUrl";
 import { sweepGroupMembers } from "@/lib/telegramGate";
@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       telegramBot: me.ok ? `ok (@${me.result?.username})` : `FAILED: ${me.description ?? "no answer"} (TELEGRAM_BOT_TOKEN on this server is wrong or missing)`,
       telegramWebhook: hook.ok ? { url: hook.result?.url, waiting: hook.result?.pending_update_count, lastError: hook.result?.last_error_message ?? null } : "could not read",
+      linksPointTo: APP_URL,
+      appUrlSetting: /localhost|127\.0\.0\.1|^http:/i.test(process.env.NEXT_PUBLIC_APP_URL ?? "") ? "WRONG: NEXT_PUBLIC_APP_URL on this server is a localhost / http address (ignored, the live site is used). Change it to https://www.wraith.farm" : "ok",
       telegramLinkedAccounts: linked,
       telegramGroup: process.env.TELEGRAM_GROUP_CHAT_ID ? "set" : "not set",
       phonePush: fcmConfigured() ? "ok (Firebase key loaded)" : "NOT WORKING: FIREBASE_SERVICE_ACCOUNT is missing or not valid JSON",

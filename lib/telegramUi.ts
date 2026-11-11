@@ -1,7 +1,17 @@
 // Shared Telegram look & feel for the Wraith bot: one header style, chain-aware links, inline buttons.
 import { CHAINS } from "@/lib/chains";
 
-export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://www.wraith.farm").replace(/\/$/, "");
+// The public address used in every Telegram button and link. Telegram refuses a message whose button points at localhost or a
+// non-https address, so a NEXT_PUBLIC_APP_URL copied from a development .env (http://localhost:3000) silently killed EVERY alert
+// and the /start reply. On the live server such a value is ignored and the real site is used instead.
+const LIVE_SITE = "https://www.wraith.farm";
+function publicAppUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "").trim().replace(/\/$/, "");
+  const usable = /^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(:\d+)?$/i.test(raw) && !/localhost|127\.0\.0\.1/i.test(raw);
+  if (usable) return raw;
+  return process.env.NODE_ENV === "production" || !raw ? LIVE_SITE : raw;
+}
+export const APP_URL = publicAppUrl();
 export const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? "wraithscan_bot";
 const RULE = "━━━━━━━━━━━━━━━━";
 

@@ -28,6 +28,8 @@ import ChartToolsMenu, { type ToolId } from "@/components/ChartToolsMenu";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/market";
 import { peekCandles } from "@/lib/candleCache";
 import { usePresence } from "@/lib/usePresence";
+import WalletAvatar from "@/components/WalletAvatar";
+import { walletName } from "@/lib/walletIdentity";
 
 export interface ChartCandle {
   t: number; // bucket start, ms
@@ -51,6 +53,8 @@ type Metric = "mcap" | "price";
 type Style = "candles" | "line";
 
 const ACCENT = "#ff7b3d";
+type PinItem = { kind: "dumper" | "proven" | "intel"; id: string; ts: number; name: string; href: string; line: string; wallet?: string; avatar?: string; text?: string; sol?: number; mcap?: number };
+
 const UP = "#26a69a";
 const DOWN = "#ef5350";
 const POLL_MS = 10_000;
@@ -166,6 +170,10 @@ export default function TokenChart({
   const [showTrades, setShowTrades] = useState(true);
   const [dots, setDots] = useState<{ key: string; x: number; y: number; side: "buy" | "sell"; n: number; avatar: string; name: string; userId: string }[]>([]);
   const [wTraders, setWTraders] = useState<{ userId: string; displayName: string; avatar: string; lastSide: "buy" | "sell"; lastAt: number; count: number }[]>([]);
+  // who else is on this chart: wallets Wraith knows (repeat dumpers, proven) at the candle they first bought, and intel posted by people on Wraith
+  const [pinItems, setPinItems] = useState<PinItem[]>([]);
+  const [pins, setPins] = useState<{ key: string; x: number; y: number; kind: PinItem["kind"]; items: PinItem[]; value: number; cardLeft: number; up: boolean }[]>([]);
+  const [pinOpen, setPinOpen] = useState<string | null>(null);
   const [spotPos, setSpotPos] = useState<{ x: number; y: number } | null>(null);
   const [spotRect, setSpotRect] = useState<DOMRect | null>(null);
   const measureRef = useRef<Measure | null>(null);
@@ -683,6 +691,90 @@ export default function TokenChart({
     setDots(out.slice(0, 60));
   }, [wTraders, candles, tfSec, mult, spotTick, showTrades, style]);
 
+  // ── known wallets + platform intel for this token ──
+  useEffect(() => {
+    setPinItems([]); setPinOpen(null);
+    if (!mint || !showTrades) return;
+    let alive = true;
+    const run = async () => {
+      const [wi, co] = await Promise.all([
+        chain ? Promise.resolve(null) : fetch(`/api/wallet-intel?mint=${encodeURIComponent(mint)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(`/api/callouts?mint=${encodeURIComponent(mint)}&limit=40`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+      if (!alive) return;
+      const out: PinItem[] = [];
+      for (const m of ((wi as { marks?: { wallet: string; kind: "dumper" | "proven"; ts: number; sol: number; n: number; wins: number; dumps: number }[] } | null)?.marks ?? [])) {
+        out.push({
+          kind: m.kind, id: `w:${m.wallet}`, ts: m.ts, wallet: m.wallet, name: walletName(m.wallet), href: `/app/w/${m.wallet}`,
+          line: m.kind === "dumper" ? `Repeat dumper · ${m.dumps} of ${m.n} past calls ended in a big loss` : `Proven wallet · early in ${m.wins} past winner${m.wins === 1 ? "" : "s"}`,
+          sol: m.sol,
+        });
+      }
+      type Callout = { id: string; userId: string; displayName: string; username: string | null; avatarDataUrl: string; text: string; createdAt: string | number; mcapAtPost: number | null };
+      for (const c of ((co as { callouts?: Callout[] } | null)?.callouts ?? [])) {
+        const ts = typeof c.createdAt === "number" ? c.createdAt : Date.parse(String(c.createdAt));
+        if (!(ts > 0)) continue;
+        out.push({ kind: "intel", id: `i:${c.id}`, ts, name: c.displayName, avatar: c.avatarDataUrl, href: `/app/u/${encodeURIComponent(c.username || c.userId)}`, line: "Intel from a Wraith trader", text: String(c.text ?? "").slice(0, 220), mcap: c.mcapAtPost ?? 0 });
+      }
+      setPinItems(out);
+    };
+    void run();
+    const t = visibleInterval(run, 90_000);
+    return () => { alive = false; clearInterval(t); };
+  }, [mint, chain, showTrades]);
+
+  // ── place them on the candle they happened in ──
+  useEffect(() => {
+    const chart = chartRef.current;
+    const main = mainRef.current;
+    if (!chart || !main || !showTrades || !pinItems.length || !candles.length) { setPins([]); return; }
+    const step = tfSec * 1000;
+    const byBucket = new Map<number, ChartCandle>();
+    for (const c of candles) byBucket.set(c.t, c);
+    const groups = new Map<string, { bucket: number; kind: PinItem["kind"]; items: PinItem[]; c: ChartCandle }>();
+    for (const it of pinItems) {
+      // the candle it happened in; thin tokens skip candles when nobody trades, so fall back to the closest one before it
+      // (within 3 candles), or the first candle on the chart when it happened just before the chart's data starts
+      let c = byBucket.get(Math.floor(it.ts / step) * step);
+      if (!c) {
+        let lo = 0, hi = candles.length - 1, at = -1;
+        while (lo <= hi) { const mid = (lo + hi) >> 1; if (candles[mid].t <= it.ts) { at = mid; lo = mid + 1; } else hi = mid - 1; }
+        if (at >= 0 && it.ts - candles[at].t <= 3 * step) c = candles[at];
+        else if (at < 0 && candles[0].t - it.ts <= 12 * step) c = candles[0];
+      }
+      if (!c) continue;
+      const bucket = c.t;
+      const k = `${bucket}:${it.kind}`;
+      const g = groups.get(k);
+      if (g) g.items.push(it); else groups.set(k, { bucket, kind: it.kind, items: [it], c });
+    }
+    const W = hostRef.current?.clientWidth ?? 0, H = hostRef.current?.clientHeight ?? 0;
+    const out: typeof pins = [];
+    for (const [key, g] of groups) {
+      const x = chart.timeScale().timeToCoordinate(chartTime(g.bucket));
+      const first = g.items[0];
+      const at = g.kind === "intel" && effectiveMetric === "mcap" && (first.mcap ?? 0) > 0 ? (first.mcap as number) : ((g.c.h + g.c.l) / 2) * mult;
+      const y0 = main.priceToCoordinate(at);
+      if (x == null || y0 == null || x < 0 || (W && x > W)) continue;
+      // on a shared candle: intel sits above, proven below, dumpers on the price
+      const shift = g.kind === "intel" ? -26 : g.kind === "proven" && groups.has(`${g.bucket}:dumper`) ? 26 : 0;
+      const y = Math.max(16, y0 + shift);
+      // keep the whole card inside the chart: slide it sideways when the pin is near an edge
+      const CARD = Math.min(248, Math.max(180, W - 16));
+      const cardLeft = (W > 0 ? Math.min(Math.max(x - CARD / 2, 8), Math.max(8, W - CARD - 8)) : x - CARD / 2) - (x - 14);
+      out.push({ key, x, y, kind: g.kind, items: g.items, value: g.c.c * mult, cardLeft, up: H > 0 && y > H / 2 });
+    }
+    setPins(out.slice(0, 80));
+  }, [pinItems, candles, tfSec, mult, spotTick, showTrades, style, effectiveMetric]);
+
+  // a tap anywhere else closes the open card
+  useEffect(() => {
+    if (!pinOpen) return;
+    const away = (e: PointerEvent) => { if (!(e.target as HTMLElement | null)?.closest?.(".wx-pin")) setPinOpen(null); };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [pinOpen]);
+
   // ── push candles into series ──────────────────────────────────────────
   useEffect(() => {
     const main = mainRef.current;
@@ -1023,7 +1115,7 @@ export default function TokenChart({
           }}
         />
         {trades && (
-          <button type="button" className={`wx-icon-btn${showTrades ? " on" : ""}`} onClick={() => setShowTrades((v) => !v)} aria-pressed={showTrades} aria-label="Show Wraith trader buys and sells" title="Buys / sells by Wraith traders" style={{ width: "auto", padding: "0 9px", fontSize: 10, fontWeight: 700 }}>
+          <button type="button" className={`wx-icon-btn${showTrades ? " on" : ""}`} onClick={() => setShowTrades((v) => !v)} aria-pressed={showTrades} aria-label="Show who bought here: Wraith traders, known wallets and intel. Wraith trader buys and sells" title="Buys / sells by Wraith traders" style={{ width: "auto", padding: "0 9px", fontSize: 10, fontWeight: 700 }}>
             B/S
           </button>
         )}
@@ -1091,6 +1183,47 @@ export default function TokenChart({
                 {d.n > 1 && <i style={{ position: "absolute", right: -2, bottom: -2, minWidth: 12, height: 12, padding: "0 3px", borderRadius: 6, background: d.side === "buy" ? UP : DOWN, color: "#fff", fontSize: 8, fontStyle: "normal", lineHeight: "12px", textAlign: "center" }}>{d.n}</i>}
               </a>
             ))}
+          </div>
+        )}
+
+        {status === "ready" && showTrades && pins.length > 0 && (
+          <div className="wx-pins">
+            {pins.map((p) => {
+              const first = p.items[0];
+              const open = pinOpen === p.key;
+              return (
+                <div key={p.key} className={`wx-pin ${p.kind}${open ? " open" : ""}`} style={{ left: p.x, top: p.y }}
+                  onMouseEnter={() => setPinOpen(p.key)} onMouseLeave={() => setPinOpen((k) => (k === p.key ? null : k))}>
+                  <button type="button" className="wx-pin-dot" aria-expanded={open}
+                    aria-label={p.kind === "intel" ? `Intel from ${first.name}` : `${p.items.length} ${p.kind === "dumper" ? "repeat-dumper" : "proven"} wallet${p.items.length > 1 ? "s" : ""} bought here`}
+                    onClick={(e) => { e.stopPropagation(); setPinOpen(p.key); }}>
+                    {p.kind === "intel" && first.avatar
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={first.avatar} alt="" />
+                      : first.wallet ? <WalletAvatar address={first.wallet} size={22} /> : <span>{first.name.slice(0, 1).toUpperCase()}</span>}
+                    {p.items.length > 1 && <i>{p.items.length}</i>}
+                  </button>
+                  {open && (
+                    <div className={`wx-pin-card${p.up ? " up" : ""}`} style={{ left: p.cardLeft }} role="dialog">
+                      <b className="wx-pin-head">
+                        {p.kind === "dumper" ? `${p.items.length} repeat dumper${p.items.length > 1 ? "s" : ""} bought here` : p.kind === "proven" ? `${p.items.length} proven wallet${p.items.length > 1 ? "s" : ""} bought here` : "Intel on Wraith"}
+                        <em>{effectiveMetric === "mcap" ? `${fmtUsd(p.value)} mcap` : fmtPrice(p.value)}</em>
+                      </b>
+                      {p.items.slice(0, 5).map((it) => (
+                        <a key={it.id} href={it.href} className="wx-pin-row">
+                          <span className="wx-pin-who">
+                            <strong>{it.name}</strong>
+                            <small>{new Date(it.ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}{it.sol && it.sol > 0 ? ` · bought ${it.sol >= 10 ? it.sol.toFixed(1) : it.sol.toFixed(2)} SOL` : ""}</small>
+                          </span>
+                          {it.text ? <span className="wx-pin-text">{it.text}</span> : <span className="wx-pin-line">{it.line}</span>}
+                        </a>
+                      ))}
+                      {p.items.length > 5 && <small className="wx-pin-more">+{p.items.length - 5} more</small>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

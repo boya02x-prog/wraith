@@ -621,3 +621,32 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 @media (prefers-reduced-motion: reduce) {
   body.wx-enter .wx-page, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: none !important; }
 }
+
+/* ───────────────────────────────────────────────────────────────────────
+   Chart pins: who bought where. Red ring = repeat dumper, green = proven wallet, orange = intel posted on Wraith.
+   Hover (mouse) or tap (phone) opens a small card with the wallet, when it bought, how much, and the price there.
+   ─────────────────────────────────────────────────────────────────────── */
+.wx-pins { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 3; }
+.wx-pin { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; }
+.wx-pin.open { z-index: 5; }
+.wx-pin-dot { position: relative; width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border-radius: 50% !important; border: 2px solid var(--pin, #f59e0b); background: #14141a; color: #fff; font-size: 11px; font-weight: 800; cursor: pointer; box-shadow: 0 0 0 2px rgba(0, 0, 0, .55); transition: transform .12s ease, box-shadow .12s ease; -webkit-tap-highlight-color: transparent; }
+.wx-pin-dot > img, .wx-pin-dot .wa { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; overflow: hidden; }
+.wx-pin-dot .wa svg { width: 100%; height: 100%; }
+.wx-pin.dumper { --pin: #ef4444; }
+.wx-pin.proven { --pin: #22c55e; }
+.wx-pin.intel { --pin: var(--accent, #ff7b3d); }
+.wx-pin:hover .wx-pin-dot, .wx-pin.open .wx-pin-dot { transform: scale(1.18); box-shadow: 0 0 0 2px rgba(0, 0, 0, .55), 0 0 14px var(--pin); }
+.wx-pin-dot i { position: absolute; right: -5px; bottom: -5px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--pin); color: #0c0c0c; font-size: 9px; font-style: normal; font-weight: 800; line-height: 15px; text-align: center; }
+.wx-pin-card { position: absolute; top: calc(100% + 8px); left: 0; width: 248px; max-width: calc(100vw - 32px); padding: 10px; display: grid; gap: 6px; border-radius: 12px; border: 1px solid var(--pin); background: rgba(16, 16, 18, .97); box-shadow: 0 14px 40px rgba(0, 0, 0, .6); text-align: left; animation: wx-pin-in .12s ease-out; }
+.wx-pin-card.up { top: auto; bottom: calc(100% + 8px); }
+@keyframes wx-pin-in { from { opacity: 0; } }
+.wx-pin-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 800; color: var(--pin); }
+.wx-pin-head em { flex: none; font-style: normal; font-family: var(--font-mono), monospace; font-size: 11px; color: #cfcfcf; }
+.wx-pin-row { display: grid; gap: 2px; padding: 7px 8px; border-radius: 8px; background: rgba(255, 255, 255, .04); color: inherit; text-decoration: none; }
+.wx-pin-row:hover { background: rgba(255, 255, 255, .08); }
+.wx-pin-who { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.wx-pin-who strong { font-size: 12.5px; color: #f1f1f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wx-pin-who small { flex: none; font-size: 10.5px; color: #8d8d8d; }
+.wx-pin-line { font-size: 11.5px; color: #a8a8a8; line-height: 1.4; }
+.wx-pin-text { font-size: 12.5px; color: #e4e4e4; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.wx-pin-more { font-size: 11px; color: #8d8d8d; }

@@ -21,6 +21,8 @@ export interface WalletIntel {
   proven: number;
   dumpers: number;
   familiar: { wallet: string; n: number; wins: number; dumps: number }[];
+  /** every proven or repeat-dumper wallet's FIRST buy in this token, for the chart: when it bought and how much SOL it put in */
+  marks: { wallet: string; kind: "dumper" | "proven"; ts: number; sol: number; n: number; wins: number; dumps: number }[];
   links: { address: string; symbol: string; outcome: Outcome; shared: number; peak: number }[];
   signals: { tone: Tone; text: string }[];
   at: number;
@@ -87,6 +89,9 @@ async function build(mint: string): Promise<WalletIntel> {
   // 2. familiar wallets (Mongo only)
   let proven = 0, dumpers = 0;
   let familiar: WalletIntel["familiar"] = [];
+  let marks: WalletIntel["marks"] = [];
+  const firstBuy = new Map<string, { ts: number; sol: number }>();
+  for (const sw of sorted) if (sw.side === "buy" && sw.wallet && !firstBuy.has(sw.wallet)) firstBuy.set(sw.wallet, { ts: sw.ts, sol: sw.sol });
   let links: WalletIntel["links"] = [];
   const pool = buyers.slice(0, 150);
   if (pool.length) {
@@ -108,6 +113,15 @@ async function build(mint: string): Promise<WalletIntel> {
         .sort((a, b) => ((b.wins ?? 0) - (b.dumps ?? 0)) - ((a.wins ?? 0) - (a.dumps ?? 0)) || (b.n ?? 0) - (a.n ?? 0))
         .slice(0, 5)
         .map((s) => ({ wallet: String(s._id), n: s.n ?? 0, wins: s.wins ?? 0, dumps: s.dumps ?? 0 }));
+      marks = stats
+        .filter((st) => isDumper(st) || isSmart(st))
+        .map((st) => {
+          const b = firstBuy.get(String(st._id));
+          return { wallet: String(st._id), kind: isDumper(st) ? ("dumper" as const) : ("proven" as const), ts: b?.ts ?? 0, sol: b?.sol ?? 0, n: st.n ?? 0, wins: st.wins ?? 0, dumps: st.dumps ?? 0 };
+        })
+        .filter((m) => m.ts > 0)
+        .sort((a, b) => a.ts - b.ts)
+        .slice(0, 40);
       const mine = new Set(pool);
       for (const c of hits) {
         const shared = (c.buyers ?? []).filter((w) => mine.has(w)).length;
@@ -142,7 +156,7 @@ async function build(mint: string): Promise<WalletIntel> {
   if (flow && flow.bundled >= 4) sig.push({ tone: "warn", text: `${flow.bundled} wallets bought within seconds of the first trade.` });
   if (!buyers.length) sig.push({ tone: "info", text: "Not enough trades yet to compare buyer wallets." });
 
-  return { mint, dev, buyers: buyers.length, bundled: flow?.bundled ?? 0, proven, dumpers, familiar, links, signals: sig.slice(0, 7), at: now };
+  return { mint, dev, buyers: buyers.length, bundled: flow?.bundled ?? 0, proven, dumpers, familiar, marks, links, signals: sig.slice(0, 7), at: now };
 }
 
 export async function walletIntel(mint: string): Promise<WalletIntel> {
