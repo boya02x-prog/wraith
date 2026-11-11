@@ -1032,3 +1032,11 @@ a, button, [role="button"], [role="link"], [role="tab"], .wx-tcard, .sg-card, .w
   .wx-draw-del { min-width: 36px; min-height: 36px; }
   .wx-chart-card canvas { touch-action: pan-y pinch-zoom; }
 }
+
+/* Bottom tab bar: one highlight pill that slides to the active icon (components/MobileTabBar.tsx measures where it goes). */
+.wx-tabbar-pill { position: relative; }
+.wx-tabbar-pill a { position: relative; z-index: 1; }
+.wx-tabbar-pill.has-ind a.on { background: transparent !important; box-shadow: none !important; }
+.wx-tab-ind { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 999px; background: rgba(255, 255, 255, .14); pointer-events: none; will-change: transform; }
+.wx-tab-ind.slide { transition: transform .28s cubic-bezier(.3, 1.25, .45, 1), width .28s ease; }
+@media (prefers-reduced-motion: reduce) { .wx-tab-ind.slide { transition: none; } }

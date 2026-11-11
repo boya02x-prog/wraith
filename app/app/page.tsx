@@ -82,6 +82,8 @@ export default function Home() {
     } catch {
       /* ignore */
     }
+    // tell the bottom tab bar, so its highlight follows the top row
+    window.dispatchEvent(new CustomEvent("wraith:view-changed", { detail: next }));
   }, []);
 
   const handleSelectMeme = useCallback(

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * App-style floating bottom navigation for phones (≤767px, CSS-controlled).
@@ -94,19 +94,53 @@ function homeView(): "market" | "scanner" | "wins" | "intel" {
 
 export default function MobileTabBar() {
   const path = usePathname() || "";
-  if (path.startsWith("/app/token")) return null;
+  // Which section of the home screen is open. The bar is mounted once for the whole app, so it has to LISTEN for changes:
+  // it used to read the saved value only when it happened to re-render, which left the highlight on the wrong icon after you
+  // switched with the top row (Market / Scanner / Wins / Intel).
+  const [view, setView] = useState<"market" | "scanner" | "wins" | "intel">("market");
+  useEffect(() => {
+    setView(homeView());
+    const onView = (e: Event) => {
+      const v = (e as CustomEvent).detail;
+      setView(v === "scanner" || v === "wins" || v === "intel" ? v : v === "callouts" ? "intel" : "market");
+    };
+    window.addEventListener("wraith:view", onView);
+    window.addEventListener("wraith:view-changed", onView);
+    return () => { window.removeEventListener("wraith:view", onView); window.removeEventListener("wraith:view-changed", onView); };
+  }, []);
+  useEffect(() => { if (path === "/app") setView(homeView()); }, [path]);
 
+  const hidden = path.startsWith("/app/token");
   const onHome = path === "/app";
   const activeKey = onHome
-    ? (typeof window !== "undefined" ? (homeView() === "scanner" ? "scanner" : homeView() === "intel" ? "intel" : "market") : "market")
+    ? (view === "scanner" ? "scanner" : view === "intel" ? "intel" : "market")
     : path.startsWith("/app/traders")
       ? "traders"
       : path.startsWith("/app/profile")
         ? "profile"
         : "";
 
+  // the highlight is one pill that slides to the active icon instead of jumping
+  const pillRef = useRef<HTMLElement | null>(null);
+  const [ind, setInd] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [animate, setAnimate] = useState(false);
+  const measure = useCallback(() => {
+    const el = pillRef.current?.querySelector<HTMLElement>("a.on");
+    if (!el || !el.offsetWidth) { setInd(null); return; }
+    setInd({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight });
+  }, []);
+  useLayoutEffect(() => { measure(); }, [measure, activeKey, hidden]);
+  useEffect(() => {
+    const t = window.setTimeout(() => setAnimate(true), 60); // no slide-in from the corner on first paint
+    window.addEventListener("resize", measure);
+    return () => { window.clearTimeout(t); window.removeEventListener("resize", measure); };
+  }, [measure]);
+
+  if (hidden) return null;
+
   const pick = (it: Item) => {
     if (!it.view) return;
+    setView(it.view); // move the highlight at once, before the screen has switched
     try {
       localStorage.setItem("wraith_home_view", it.view);
     } catch {
@@ -117,7 +151,8 @@ export default function MobileTabBar() {
 
   return (
     <div className="wx-tabbar" role="presentation">
-      <nav className="wx-tabbar-pill" aria-label="Main">
+      <nav className={`wx-tabbar-pill${ind ? " has-ind" : ""}`} aria-label="Main" ref={pillRef}>
+        {ind && <i className={`wx-tab-ind${animate ? " slide" : ""}`} aria-hidden="true" style={{ width: ind.w, height: ind.h, transform: `translate(${ind.x}px, ${ind.y}px)` }} />}
         {ITEMS.map((it) => (
           <Link
             key={it.key}
