@@ -24,6 +24,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "down", label: "Down" },
 ];
 
+const TIERS: { key: string; label: string; min: number; max: number }[] = [
+  { key: "10x", label: "10x and more", min: 10, max: Infinity },
+  { key: "5x", label: "5x to 10x", min: 5, max: 10 },
+  { key: "3x", label: "3x to 5x", min: 3, max: 5 },
+  { key: "2x", label: "2x to 3x", min: 2, max: 3 },
+];
+
 const mult = (c: LoggedCall) => (c.spottedMcap > 0 ? c.lastMcap / c.spottedMcap : 1);
 const peakMult = (c: LoggedCall) => (c.spottedMcap > 0 ? Math.max(c.peakMcap, c.lastMcap) / c.spottedMcap : 1);
 
@@ -38,6 +45,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
   const [calls, setCalls] = useState<LoggedCall[]>(() => swrRead<LoggedCall[]>("wins:calls") ?? []);
   const [filter, setFilter] = useState<Filter>("all");
   const [checking, setChecking] = useState(false);
+  const [showAllWins, setShowAllWins] = useState(false);
 
   const refresh = useCallback(async () => {
     // 1) Shared server record: identical for every user, refreshed server-side.
@@ -104,6 +112,15 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
     return [...list].sort((a, b) => peakMult(b) - peakMult(a));
   }, [calls, filter]);
 
+  // Winners: every call that reached at least 2x after Wraith flagged it, best first, grouped by how far it ran.
+  const winners = useMemo(() => {
+    const list = calls.filter((c) => peakMult(c) >= 2).sort((a, b) => peakMult(b) - peakMult(a));
+    return TIERS.map((t) => ({ ...t, rows: list.filter((c) => peakMult(c) >= t.min && peakMult(c) < t.max) })).filter((t) => t.rows.length);
+  }, [calls]);
+  const winnerCount = winners.reduce((n, t) => n + t.rows.length, 0);
+  let rank = 0;
+  let left = showAllWins ? Infinity : 10;
+
   const open = (c: LoggedCall) =>
     onSelectMeme({
       keyword: c.symbol,
@@ -143,6 +160,53 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
         <div><small>Best call</small><b className="up">{stats.best ? `${peakMult(stats.best).toFixed(2)}x` : "—"}<i> {stats.best?.symbol ?? ""}</i></b></div>
         <div><small>Avg multiple</small><b className={stats.avg >= 1 ? "up" : "down"}>{stats.n ? `${stats.avg.toFixed(2)}x` : "—"}</b></div>
       </div>
+
+      {winnerCount > 0 && (
+        <div className="wb-wins">
+          <div className="wb-wins-head">
+            <h3><Trophy size={15} /> Winners <em>{winnerCount} call{winnerCount === 1 ? "" : "s"} reached 2x or more</em></h3>
+            <span>Ranked by the highest point after the call. &quot;Now&quot; is where it stands today.</span>
+          </div>
+          {winners.map((t) => {
+            if (left <= 0) return null;
+            const rows = t.rows.slice(0, left);
+            left -= rows.length;
+            return (
+              <div key={t.key} className="wb-tier">
+                <div className={`wb-tier-label t${t.key}`}><b>{t.label}</b><i>{t.rows.length}</i></div>
+                {rows.map((c) => {
+                  const pk = peakMult(c), m = mult(c);
+                  rank += 1;
+                  return (
+                    <div key={c.address} className="wb-win" role="link" tabIndex={0} onClick={() => open(c)} onKeyDown={(e) => { if (e.key === "Enter") open(c); }}>
+                      <span className="wb-win-rank">{rank}</span>
+                      <TokenIcon contractAddress={c.address} imageUrl={c.imageUrl} symbol={c.symbol} size={34} />
+                      <div className="wb-win-id">
+                        <strong>{c.symbol}</strong>
+                        <span><ChainLogo chain={c.chain ?? "solana"} size={12} /> called {ago(c.spottedAt)}</span>
+                      </div>
+                      <div className="wb-win-path">
+                        <small>Called at → Peak</small>
+                        <b>{fmtUsd(c.spottedMcap)} → {fmtUsd(Math.max(c.peakMcap, c.lastMcap))}</b>
+                      </div>
+                      <div className="wb-win-now">
+                        <small>Now</small>
+                        <b className={m >= 1 ? "up" : "down"}>{m.toFixed(2)}x</b>
+                      </div>
+                      <span className="wb-win-mult">{pk >= 10 ? pk.toFixed(1) : pk.toFixed(2)}x</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {winnerCount > 10 && (
+            <button type="button" className="wb-wins-more" onClick={() => setShowAllWins((v) => !v)}>{showAllWins ? "Show top 10 only" : `Show all ${winnerCount} winners`}</button>
+          )}
+        </div>
+      )}
+
+      <div className="wb-all-head"><h3>All calls</h3><span>Winners and losers together, with where each one is now.</span></div>
 
       {shown.length === 0 ? (
         <div className="wx-empty">

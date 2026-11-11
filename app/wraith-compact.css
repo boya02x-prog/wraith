@@ -655,3 +655,44 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wraith-dashboard .wx-pins .wx-pin .wx-pin-dot { border-radius: 50% !important; overflow: visible; width: 30px; height: 30px; padding: 0 !important; min-height: 0 !important; }
 .wx-pin-dot > img, .wx-pin-dot > .wa, .wx-pin-dot > span { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
 .wx-pin-dot .wa > *:not(svg) { display: none; } /* no type badge inside the tiny chart pin: the ring colour already says dumper / proven */
+
+/* ───────────────────────────────────────────────────────────────────────
+   Wins: the Winners list (calls that reached 2x or more), grouped by how far they ran, above the full call grid.
+   ─────────────────────────────────────────────────────────────────────── */
+.wb-wins { margin: 4px 0 22px; padding: 14px; border-radius: 16px; border: 1px solid rgba(34, 197, 94, .28); background: linear-gradient(180deg, rgba(34, 197, 94, .07), rgba(34, 197, 94, 0) 140px), var(--surface, #111112); }
+.wb-wins-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.wb-wins-head h3, .wb-all-head h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; }
+.wb-wins-head h3 svg { color: #4ade80; }
+.wb-wins-head h3 em { font-style: normal; font-weight: 600; font-size: 12.5px; color: #4ade80; }
+.wb-wins-head > span, .wb-all-head > span { font-size: 12px; color: var(--text-muted, #8d8d8d); }
+.wb-all-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+.wb-tier { display: grid; gap: 6px; margin-top: 10px; }
+.wb-tier-label { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono), monospace; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8d8d8d; }
+.wb-tier-label b { color: #4ade80; }
+.wb-tier-label.t10x b { color: #fbbf24; }
+.wb-tier-label i { font-style: normal; padding: 1px 7px; border-radius: 999px; background: rgba(255, 255, 255, .07); color: #cfcfcf; }
+.wb-tier-label::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, .07); }
+.wb-win { display: grid; grid-template-columns: 26px 34px minmax(0, 1.2fr) minmax(0, 1.4fr) 70px 84px; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .06); background: rgba(255, 255, 255, .025); cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+.wb-win:focus-visible { outline: 2px solid #4ade80; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .wb-win:hover { border-color: rgba(34, 197, 94, .5); background: rgba(34, 197, 94, .06); transform: translateX(2px); } }
+.wb-win-rank { font-family: var(--font-mono), monospace; font-size: 12px; font-weight: 700; color: #7d7d7d; text-align: center; }
+.wb-win-id { min-width: 0; display: grid; gap: 1px; }
+.wb-win-id strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-win-id span { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: #8d8d8d; white-space: nowrap; }
+.wb-win-path, .wb-win-now { min-width: 0; display: grid; gap: 1px; }
+.wb-win small { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #7d7d7d; font-family: var(--font-mono), monospace; }
+.wb-win-path b, .wb-win-now b { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-win-now b.up { color: #4ade80; }
+.wb-win-now b.down { color: #f87171; }
+.wb-win-mult { justify-self: end; padding: 6px 10px; border-radius: 10px; background: rgba(34, 197, 94, .16); border: 1px solid rgba(34, 197, 94, .45); color: #4ade80; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wb-wins-more { margin-top: 12px; width: 100%; height: 40px; border-radius: 10px !important; border: 1px solid rgba(255, 255, 255, .12); background: transparent; color: #d6d6d6; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.wb-wins-more:hover { border-color: rgba(34, 197, 94, .5); color: #4ade80; }
+@media (max-width: 767px) {
+  .wb-wins { padding: 12px 10px; }
+  .wb-win { grid-template-columns: 20px 34px minmax(0, 1fr) auto; gap: 10px; padding: 9px 10px; }
+  .wb-win-path { grid-column: 3 / 4; grid-row: 2; }
+  .wb-win-now { grid-column: 4 / 5; grid-row: 2; justify-items: end; }
+  .wb-win-mult { grid-column: 4 / 5; grid-row: 1; font-size: 14px; padding: 5px 9px; }
+  .wb-win-rank { grid-row: 1 / 3; }
+  .wb-win > :nth-child(2) { grid-row: 1 / 3; }
+}
