@@ -1049,3 +1049,6 @@ a.hold-row:hover{background:rgba(255,255,255,.05)}
 .wx-shell { background: none !important; }
 .wx-shell > .wraith-app-header { position: fixed; top: 0; left: 0; right: 0; }
 .wx-header-spacer { flex: none; visibility: hidden; pointer-events: none; background: none !important; border-color: transparent !important; backdrop-filter: none !important; }
+
+/* Traders: on a phone the grid and the list are both one card per row, so the grid/list switch changes nothing. Hide it there. */
+@media (max-width: 767px) { .tc-layout { display: none !important; } }
