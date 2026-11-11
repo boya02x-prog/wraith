@@ -650,3 +650,8 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wx-pin-line { font-size: 11.5px; color: #a8a8a8; line-height: 1.4; }
 .wx-pin-text { font-size: 12.5px; color: #e4e4e4; line-height: 1.45; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .wx-pin-more { font-size: 11px; color: #8d8d8d; }
+
+/* pins are always circles: the app-wide button rule (rounded squares) must not win here */
+.wraith-dashboard .wx-pins .wx-pin .wx-pin-dot { border-radius: 50% !important; overflow: visible; width: 30px; height: 30px; padding: 0 !important; min-height: 0 !important; }
+.wx-pin-dot > img, .wx-pin-dot > .wa, .wx-pin-dot > span { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
+.wx-pin-dot .wa > *:not(svg) { display: none; } /* no type badge inside the tiny chart pin: the ring colour already says dumper / proven */

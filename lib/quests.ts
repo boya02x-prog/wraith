@@ -353,7 +353,7 @@ export async function rankOf(points: number): Promise<number> {
 export async function leaderboard(limit = 25): Promise<{ userId: string; points: number; name: string; username: string | null; avatar: string }[]> {
   const d = await db();
   const rows = await d.collection<QuestProfile>("quest_profiles").find({ points: { $gt: 0 } }, { projection: { points: 1 } }).sort({ points: -1 }).limit(limit).toArray();
-  const profiles = await d.collection("profiles").find({ userId: { $in: rows.map((r) => r._id) } }, { projection: { userId: 1, displayName: 1, username: 1, avatarUrl: 1 } }).toArray();
+  const profiles = await d.collection("profiles").find({ userId: { $in: rows.map((r) => r._id) } }, { projection: { userId: 1, displayName: 1, username: 1, avatarUrl: 1, avatarDataUrl: 1 } }).toArray();
   const byId = new Map(profiles.map((p) => [String(p.userId), p]));
   return rows.map((r) => {
     const p = byId.get(r._id);
@@ -362,7 +362,10 @@ export async function leaderboard(limit = 25): Promise<{ userId: string; points:
       points: r.points,
       name: (typeof p?.displayName === "string" && p.displayName) || (typeof p?.username === "string" && p.username) || "Wraith trader",
       username: typeof p?.username === "string" ? p.username : null,
-      avatar: typeof p?.avatarUrl === "string" && p.avatarUrl.startsWith("https://") ? p.avatarUrl : "",
+      // the photo the person uploaded on Wraith wins; the sign-in (Google) photo is only the fallback
+      avatar: typeof p?.avatarDataUrl === "string" && p.avatarDataUrl.startsWith("data:image/") && p.avatarDataUrl.length < 400_000
+        ? p.avatarDataUrl
+        : typeof p?.avatarUrl === "string" && p.avatarUrl.startsWith("https://") ? p.avatarUrl : "",
     };
   });
 }

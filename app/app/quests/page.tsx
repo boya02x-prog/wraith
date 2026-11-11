@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Bug, Check, Copy, Gift, Send, Trophy, Users, ShieldCheck } from "lucide-react";
 import Header from "@/components/HeaderSlot";
+import { defaultAvatar } from "@/lib/defaultArt";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import "./quests.css";
 
@@ -298,7 +299,7 @@ export default function QuestsPage() {
               {data.leaderboard.length ? data.leaderboard.map((r, i) => (
                 <div className={`q-lb${i < 3 ? " is-top" : ""}${me && r.points === me.points && me.rank === i + 1 ? " is-me" : ""}`} key={r.userId}>
                   <span className="q-rank">{i + 1}</span>
-                  {r.avatar ? <img className="q-av" src={r.avatar} alt="" /> : <span className="q-av" />}
+                  <img className="q-av" src={r.avatar || defaultAvatar(r.userId)} alt="" />
                   <span className="q-name">{r.username ? <Link href={`/app/u/${r.username}`}>{r.name}</Link> : r.name}</span>
                   <b className="q-pts">{n(r.points)}</b>
                 </div>
