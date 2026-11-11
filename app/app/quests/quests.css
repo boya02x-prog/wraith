@@ -63,3 +63,31 @@
   .q-task { flex-wrap: wrap; }
   .q-actions { width: 100%; justify-content: flex-start; padding-left: 38px; }
 }
+
+/* Owner strip (only rendered for the admin account) */
+.q-owner { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px 10px 14px; border-radius: 14px; border: 1px dashed rgba(var(--accent-rgb), .5); background: rgba(var(--accent-rgb), .06); }
+.q-owner > span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent-text); }
+.q-owner em { font-style: normal; font-weight: 500; font-size: 12px; color: #8d8d8d; }
+.q-owner > div { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Buttons: same hover language as the rest of the app, mouse only */
+.q-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s, border-color .15s, color .15s, transform .15s, box-shadow .15s; }
+@media (hover: hover) and (pointer: fine) {
+  .q-btn:not(:disabled):hover { transform: translateY(-1px); }
+  .q-btn.is-solid:not(:disabled):hover { background: var(--accent); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35); filter: brightness(1.08); }
+  .q-btn.is-ghost:not(:disabled):hover { background: rgba(255,255,255,.06); border-color: rgba(var(--accent-rgb), .6); color: var(--accent-text); }
+  .q-card { transition: border-color .15s; }
+  .q-card:hover { border-color: rgba(255,255,255,.14); }
+}
+.q-btn:not(:disabled):active { transform: scale(.97); }
+.q-input:focus, .q-textarea:focus { outline: none; border-color: rgba(var(--accent-rgb), .6); }
+.q-row { min-width: 0; }
+.q-task-body, .q-li > span:first-child { overflow-wrap: anywhere; }
+@media (max-width: 860px) {
+  .q-shell { padding: 14px 12px calc(120px + var(--sai-bottom, 0px)); }
+  .q-hero { padding: 18px 16px; }
+  .q-stat strong { font-size: 19px; }
+  .q-claim .q-btn { width: 100%; }
+  .q-owner > div { width: 100%; }
+  .q-owner .q-btn { flex: 1; }
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Bug, Check, Copy, Gift, Send, Trophy, Users } from "lucide-react";
+import { Bug, Check, Copy, Gift, Send, Trophy, Users, ShieldCheck } from "lucide-react";
 import Header from "@/components/Header";
 import "./quests.css";
 
@@ -100,7 +100,13 @@ export default function QuestsPage() {
     return (
       <main className="wraith-dashboard profile-page">
         <Header />
-        <div className="q-shell"><div className="q-hero"><span className="q-eyebrow">QUESTS · OMEN AIRDROP</span><h1>LOADING…</h1></div></div>
+        <div className="q-shell" aria-busy="true" aria-label="Loading quests">
+          <div className="wsk-b" style={{ height: 250, borderRadius: 18 }} />
+          <div className="q-grid">
+            <div style={{ display: "grid", gap: 16 }}><div className="wsk-b" style={{ height: 300, borderRadius: 16 }} /><div className="wsk-b" style={{ height: 150, borderRadius: 16 }} /></div>
+            <div style={{ display: "grid", gap: 16 }}><div className="wsk-b" style={{ height: 230, borderRadius: 16 }} /><div className="wsk-b" style={{ height: 120, borderRadius: 16 }} /></div>
+          </div>
+        </div>
       </main>
     );
   }
@@ -135,6 +141,16 @@ export default function QuestsPage() {
             </div>
           )}
         </section>
+
+        {data.isAdmin && (
+          <div className="q-owner">
+            <span><ShieldCheck size={15} /> Owner tools <em>only you see this</em></span>
+            <div>
+              <Link className="q-btn is-ghost" href="/app/quests/admin">Review bug reports</Link>
+              <Link className="q-btn is-solid" href="/app/admin">Open admin</Link>
+            </div>
+          </div>
+        )}
 
         {data.error && <div className="q-card"><div className="q-msg is-err">{data.error}</div></div>}
 
@@ -217,7 +233,7 @@ export default function QuestsPage() {
                   ))}
                 </div>
               )}
-              {data.isAdmin && <div style={{ marginTop: 10 }}><Link className="q-btn is-ghost" href="/app/quests/admin">Review reports</Link> <Link className="q-btn is-ghost" href="/app/admin">Launch control</Link></div>}
+
             </section>
           </div>
 

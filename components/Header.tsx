@@ -32,6 +32,7 @@ import { Lock as LockIcon,
   UserRound,
   X,
 } from "lucide-react";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLinkWithPasskey, useMfaEnrollment, usePrivy, useUser as usePrivyUser } from "@privy-io/react-auth";
 import StyledSelect from "./StyledSelect";
 import EmbeddedWalletBalanceChip from "./EmbeddedWalletBalanceChip";
@@ -1867,30 +1868,13 @@ function PresetsPanel() {
       <button
         ref={btnRef}
         onClick={handleOpen}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          background: "transparent",
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: open ? "#2a2a2a" : "#181818",
-          borderRadius: 4,
-          padding: "0 9px",
-          height: 30,
-          cursor: "pointer",
-          transition: "border-color .15s",
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => {
-          if (!open) e.currentTarget.style.borderColor = "#2a2a2a";
-        }}
-        onMouseLeave={(e) => {
-          if (!open) e.currentTarget.style.borderColor = "#181818";
-        }}
+        type="button"
+        className={`wx-preset-btn${open ? " is-open" : ""}`}
+        title="Quick-buy presets"
+        aria-label="Quick-buy presets"
       >
-        <SlidersIcon color={open ? "#aaa" : "#555"} />
-        <span style={{ color: "#888", fontSize: 10, ...MONO }}>
+        <SlidersIcon color="currentColor" />
+        <span style={{ fontSize: 10, ...MONO }}>
           {activePreset.name.replace(/^Preset /, "P")}
         </span>
       </button>
@@ -3026,6 +3010,7 @@ export default function Header({ onSelectMeme }: HeaderProps) {
     setProfileDisplayName(null);
   }, [sessionStatus]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const isAdmin = useIsAdmin();
   const [termsRequired, setTermsRequired] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
@@ -3484,6 +3469,14 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                 href="/app/quests"
                 onClick={() => setUserMenuOpen(false)}
               />
+              {isAdmin && (
+                <ProfileMenuItem
+                  icon={Shield}
+                  label="Admin"
+                  href="/app/admin"
+                  onClick={() => setUserMenuOpen(false)}
+                />
+              )}
               <ProfileMenuItem
                 icon={LayoutDashboard}
                 label="Manage account"

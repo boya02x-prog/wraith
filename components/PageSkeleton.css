@@ -1,0 +1,48 @@
+/* Page-shaped loading placeholders (components/PageSkeleton.tsx). The shimmer block itself is .wsk-b in wraith-polish.css. */
+.sk-page { min-height: 100dvh; background: var(--bg, #0c0c0d); }
+.sk-bar { display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.sk-bar > * { flex: none; }
+.sk-grow { flex: 1 1 auto !important; }
+.sk-pad { display: grid; gap: 14px; padding: 16px 14px; max-width: 1280px; margin: 0 auto; }
+.sk-lines { display: grid; gap: 8px; flex: 1; min-width: 0; align-content: center; }
+.sk-lines.mid { justify-items: center; }
+.sk-lines.sk-right { flex: none; justify-items: end; }
+.sk-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sk-chips { display: flex; gap: 8px; overflow: hidden; }
+.sk-chips > * { flex: none; }
+.sk-cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.sk-card { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.02); }
+.sk-card > .wsk-b { flex: none; }
+.sk-card.flat { padding: 8px 4px; border: 0; background: none; }
+
+.sk-token { display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; min-height: calc(100dvh - 61px); }
+.sk-side, .sk-dockcol { display: grid; gap: 10px; align-content: start; padding: 14px; }
+.sk-side { border-right: 1px solid rgba(255,255,255,.06); }
+.sk-dockcol { border-left: 1px solid rgba(255,255,255,.06); }
+.sk-center { display: grid; gap: 14px; align-content: start; padding: 16px 14px; min-width: 0; }
+.sk-id { display: flex; align-items: center; gap: 14px; }
+.sk-id > .wsk-b { flex: none; }
+.sk-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,.06); }
+.sk-mbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; padding: 10px 12px calc(10px + var(--sai-bottom, 0px)); background: var(--bg, #0c0c0d); border-top: 1px solid rgba(255,255,255,.06); }
+.sk-mbar > .wsk-b:first-child { flex: none; }
+
+.sk-quests { max-width: 1080px; margin: 0 auto; padding: 18px 16px; display: grid; gap: 16px; }
+.sk-quests.narrow { max-width: 860px; }
+.sk-hero { display: grid; gap: 12px; padding: 22px; border-radius: 18px; border: 1px solid rgba(255,255,255,.07); }
+.sk-stat4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 6px; }
+.sk-qgrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.sk-col { display: grid; gap: 16px; }
+.sk-tgrid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.sk-profile { max-width: 1080px; }
+.sk-mob { display: none; }
+
+@media (max-width: 1023px) {
+  .sk-token { grid-template-columns: minmax(0, 1fr); padding-bottom: 90px; }
+  .sk-desk { display: none !important; }
+  .sk-mob { display: flex; }
+}
+@media (max-width: 860px) {
+  .sk-qgrid { grid-template-columns: 1fr; }
+  .sk-stat4 { grid-template-columns: repeat(2, 1fr); }
+  .sk-bar > .wsk-b:nth-of-type(3) { width: 150px !important; }
+}

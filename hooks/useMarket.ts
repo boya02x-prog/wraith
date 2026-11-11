@@ -95,7 +95,7 @@ export function useMarket(category: MarketCategory, intervalMs = 60_000): UseMar
         setUpdatedAt(Date.now());
       } catch { /* keep last */ }
     };
-    const t = setInterval(tick, 4000);
+    const t = setInterval(tick, 6000);
     return () => { alive = false; clearInterval(t); };
   }, [mintsKey]);
 

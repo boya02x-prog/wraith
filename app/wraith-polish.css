@@ -1011,3 +1011,32 @@ a.hold-row:hover{background:rgba(255,255,255,.05)}
 .hc-foot { display: flex; gap: 16px; margin-top: 10px; color: var(--text-muted); font-size: 12px; }
 .hc-empty { padding: 40px 10px; text-align: center; color: var(--text-muted); font-size: 13px; }
 /* Intel now shows on phones too */
+
+/* ───────────────────────────────────────────────────────────────────────
+   Header controls: one hover language for every button in the top bar.
+   Real hover only (mouse / trackpad); on touch a tap just gives a quick press.
+   ─────────────────────────────────────────────────────────────────────── */
+.wx-preset-btn {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0; height: 36px; padding: 0 11px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--text-muted);
+  transition: color .15s, border-color .15s, background .15s, transform .15s, box-shadow .15s;
+}
+.wx-preset-btn.is-open { color: var(--accent-text); border-color: rgba(var(--accent-rgb), .6); background: rgba(var(--accent-rgb), .12); }
+.embedded-wallet-header-chip, .embedded-wallet-header-deposit, .embedded-wallet-header-withdraw, .wx-bell, .wraith-header-avatar {
+  transition: color .15s, border-color .15s, background .15s, transform .15s, box-shadow .15s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .wx-preset-btn:hover { color: var(--accent-text); border-color: rgba(var(--accent-rgb), .6); background: rgba(var(--accent-rgb), .12); transform: translateY(-1px); }
+  .embedded-wallet-header-chip:hover { border-color: rgba(var(--accent-rgb), .4); }
+  .embedded-wallet-header-deposit:hover {
+    background: var(--accent); border-color: var(--accent); color: #0c0c0c;
+    transform: translateY(-1px); box-shadow: 0 6px 18px rgba(var(--accent-rgb), .35);
+  }
+  .embedded-wallet-header-withdraw:hover {
+    background: rgba(255, 255, 255, .09); border-color: rgba(var(--accent-rgb), .6); color: var(--accent-text); transform: translateY(-1px);
+  }
+  .wx-bell:hover { background: rgba(var(--accent-rgb), .12); color: var(--accent-text); border-color: rgba(var(--accent-rgb), .6); transform: translateY(-1px); }
+  .wraith-header-avatar:hover { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .7); transform: scale(1.04); }
+}
+.wx-preset-btn:active, .embedded-wallet-header-deposit:active, .embedded-wallet-header-withdraw:active, .wx-bell:active { transform: scale(.96); }
+.wx-preset-btn:focus-visible, .wx-bell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

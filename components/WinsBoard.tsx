@@ -81,7 +81,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
 
   useEffect(() => {
     void refresh();
-    const t = setInterval(() => { if (!document.hidden) void refresh(); }, 8_000);
+    const t = setInterval(() => { if (!document.hidden) void refresh(); }, 15_000);
     return () => clearInterval(t);
   }, [refresh]);
 

@@ -15,7 +15,7 @@ export default function QuestAdminPage() {
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/quests/bugs?status=${status}`, { cache: "no-store" });
-    if (r.status === 403) { setError("Admins only. Add your user id to QUESTS_ADMIN_USER_IDS or your email to QUESTS_ADMIN_EMAILS."); setBugs([]); return; }
+    if (r.status === 403) { setError("This page is for the owner only. Sign in with the owner account to review reports."); setBugs([]); return; }
     const j = (await r.json()) as { bugs: Bug[] };
     setBugs(j.bugs);
   }, [status]);
@@ -32,11 +32,11 @@ export default function QuestAdminPage() {
       <div className="q-shell">
         <section className="q-card">
           <h2>Bug reports</h2>
-          <div className="q-row" style={{ margin: "8px 0 12px" }}>
+          <div className="q-row" style={{ margin: "8px 0 12px", flexWrap: "wrap" }}>
             {["pending", "approved", "rejected", "all"].map((s) => (
               <button key={s} className={`q-btn${s === status ? " is-solid" : " is-ghost"}`} onClick={() => setStatus(s)}>{s}</button>
             ))}
-            <Link className="q-btn is-ghost" href="/app/quests">Back to quests</Link>
+            <Link className="q-btn is-ghost" href="/app/admin">Back to admin</Link>
           </div>
           {error && <div className="q-msg is-err">{error}</div>}
           {bugs === null ? <div className="q-note">Loading…</div> : !bugs.length ? <div className="q-note">Nothing here.</div> : bugs.map((b) => (
@@ -45,8 +45,8 @@ export default function QuestAdminPage() {
               <div className="q-note">{b.email ?? b.userId} · {new Date(b.at).toLocaleString()} {b.page && `· from ${b.page}`}</div>
               <p style={{ whiteSpace: "pre-wrap", fontSize: 13.5, margin: "10px 0" }}>{b.details}</p>
               {b.status === "pending" ? (
-                <div className="q-row">
-                  <input className="q-input" style={{ maxWidth: 140 }} type="number" min={0} max={5000} placeholder="250" value={pts[b.id] ?? ""} onChange={(e) => setPts({ ...pts, [b.id]: e.target.value })} />
+                <div className="q-row" style={{ flexWrap: "wrap" }}>
+                  <input className="q-input" aria-label="Points to pay" style={{ maxWidth: 140 }} type="number" min={0} max={5000} placeholder="250" value={pts[b.id] ?? ""} onChange={(e) => setPts({ ...pts, [b.id]: e.target.value })} />
                   <button className="q-btn is-solid" onClick={() => decide(b.id, "approved")}>Approve + pay</button>
                   <button className="q-btn is-ghost" onClick={() => decide(b.id, "rejected")}>Reject</button>
                 </div>

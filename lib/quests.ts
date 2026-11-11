@@ -372,9 +372,11 @@ export async function recentActivity(userId: string, limit = 20) {
   return d.collection("quest_ledger").find({ userId, pts: { $gt: 0 } }, { projection: { _id: 0, kind: 1, pts: 1, meta: 1, at: 1 } }).sort({ at: -1 }).limit(limit).toArray();
 }
 
+// The owner check behind /app/admin, the bug review page and every admin API. It fails closed: with neither variable set, nobody
+// is an admin. QUESTS_ADMIN_EMAILS = the owner's sign-in email(s); QUESTS_ADMIN_USER_IDS = account ids. Both comma separated.
+// The email comes from the account record the server made from Privy's verified sign-in, never from anything the browser sends.
 export function isQuestAdmin(userId: string, email: string | null | undefined): boolean {
   const ids = (process.env.QUESTS_ADMIN_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  // No env set yet: the founder's account is the admin.
-  const emails = (process.env.QUESTS_ADMIN_EMAILS || "yuriesb01@gmail.com").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const emails = (process.env.QUESTS_ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   return ids.includes(userId) || (!!email && emails.includes(email.toLowerCase()));
 }

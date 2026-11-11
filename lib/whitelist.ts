@@ -7,10 +7,10 @@ export const WHITELISTED_WALLETS: string[] = [
   // "HvNroefT67VL3j6AjRerRE9oYMRG1yR5DitbTonDGpo4",
 ];
 
-export const WHITELISTED_EMAILS: string[] = [
-  "yuriesb01@gmail.com",
-  "jonathan.4thwatchlogro@gmail.com",
-];
+// Emails with full access. Kept in environment variables, not in the code, so no address is ever published with the source:
+// WRAITH_WHITELIST_EMAILS (comma separated) plus the owner in QUESTS_ADMIN_EMAILS.
+export const WHITELISTED_EMAILS: string[] = `${process.env.WRAITH_WHITELIST_EMAILS ?? ""},${process.env.QUESTS_ADMIN_EMAILS ?? ""}`
+  .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 
 // ─── PER-WALLET TIER OVERRIDES ───────────────────────────────────────────────
 // Uncomment ONE line to force your wallet into that tier for testing.

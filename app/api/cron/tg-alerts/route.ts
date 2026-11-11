@@ -65,7 +65,15 @@ export async function GET(req: NextRequest) {
   const db = await getDb();
   const state = db.collection<{ _id: string; at: Date }>("tg_state");
   // First ever run: mark everything that already exists as "seen" so nobody gets a flood of old alerts.
-  const first = !(await state.findOne({ _id: "cron" }));
+  const prev = await state.findOne({ _id: "cron" });
+  const first = !prev;
+  // CPU saver. The pinger calls this every minute, and each full run (scan the market, score it, refresh every call) is the most
+  // expensive thing the server does. A run that starts sooner than CRON_MIN_GAP_SEC (default 110s, so about every second ping)
+  // after the last one answers at once and does nothing. Set CRON_MIN_GAP_SEC=0 to scan on every ping again; add &force=1 to test.
+  const gapSec = Number(process.env.CRON_MIN_GAP_SEC ?? 110);
+  if (prev && gapSec > 0 && req.nextUrl.searchParams.get("force") !== "1" && Date.now() - new Date(prev.at).getTime() < gapSec * 1000) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "ran recently" });
+  }
   await state.updateOne({ _id: "cron" }, { $set: { at: new Date() } }, { upsert: true });
 
   let signals: Signal[] = [];

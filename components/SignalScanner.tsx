@@ -218,7 +218,7 @@ function useLiveSignals(base: Signal[]): Signal[] {
         if (alive && d.prices && Object.keys(d.prices).length) setLive(d.prices);
       } catch { /* keep the last values */ }
     };
-    const t = setInterval(tick, 4000);
+    const t = setInterval(tick, 6000);
     return () => { alive = false; clearInterval(t); };
   }, [mintsKey]);
   return useMemo(
