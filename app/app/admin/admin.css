@@ -95,3 +95,11 @@
   .ad-item .q-badge { max-width: 100%; text-align: left; }
   .ad-launch-btn { width: 100%; justify-content: center; }
 }
+
+.ad-details summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; margin-left: -10px; border-radius: 8px; outline: none; }
+.ad-details summary::-webkit-details-marker { display: none; }
+.ad-details summary::before { content: "▸"; transition: transform .15s; }
+.ad-details[open] summary::before { transform: rotate(90deg); }
+.ad-details summary:hover { background: rgba(var(--accent-rgb), .1); }
+.ad-details summary:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .6); }
+.ad-sw-text em { display: block; }

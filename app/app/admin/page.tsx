@@ -21,7 +21,7 @@ type Sw = { key: BoolKey; title: string; on: string; off: string };
 const TOOL_SWITCHES: Sw[] = [
   { key: "featuresFree", title: "Free beta: every tool for everyone", on: "ON: every signed-in user gets signals, sniper, auto take-profit / stop-loss, hot wallet, AI score and Telegram alerts. The fee stays 1.5%.", off: "OFF: tools are locked behind OMEN tiers. If tiers are also off, nobody has the paid tools." },
   { key: "tiersLive", title: "OMEN tiers", on: "ON: how much OMEN a wallet holds decides its tier, fee discount and free-gas boost.", off: "OFF: holding OMEN does nothing yet. Turn this on at launch, after the token address is set." },
-  { key: "vipRoomOpen", title: "Holders-only Telegram room", on: "ON: real holders are let into the private room, and anyone who sells is removed every hour.", off: "OFF: join requests get an \"opens at launch\" reply." },
+  { key: "vipRoomOpen", title: "Private Telegram group for OMEN holders", on: "ON: the bot guards the door of your private holders group. Someone asks to join, and the bot lets them in only if their Wraith account holds enough OMEN (SPECTER tier or higher). Once an hour it removes anyone who sold. Until OMEN is launched nobody holds any, so nobody gets in. Leave this OFF before launch.", off: "OFF: the private group is closed. Anyone who asks to join gets a reply that it opens at launch. This is the right setting before launch." },
 ];
 const AIRDROP_SWITCHES: Sw[] = [
   { key: "questsOpen", title: "Quests give points", on: "ON: tasks, trades, invites and X posts earn points.", off: "OFF: quests are paused. Nobody earns anything new; old points stay." },
@@ -254,7 +254,12 @@ export default function AdminPage() {
         <div className="q-sub">Who gets the paid tools right now.</div>
         {TOOL_SWITCHES.map((sw) => (
           <Toggle key={sw.key} sw={sw} on={form[sw.key]} onFlip={() => set(sw.key, !form[sw.key])}
-            note={<>{scheduledNote(sw.key)}{sw.key === "tiersLive" && form.tiersLive && !mintOk ? <em className="ad-err">Needs the token address from step 1, otherwise nobody gets a tier.</em> : null}</>} />
+            note={<>
+              {scheduledNote(sw.key)}
+              {sw.key === "tiersLive" && form.tiersLive && !mintOk ? <em className="ad-err">Needs the token address from step 1, otherwise nobody gets a tier.</em> : null}
+              {sw.key === "vipRoomOpen" && form.vipRoomOpen && !preview.tiersLive ? <em className="ad-warn">OMEN tiers are off, so nobody can pass the check yet. Turn this off until launch (the Launch button turns it on for you).</em> : null}
+              {sw.key === "vipRoomOpen" ? <em>This is not the public Wraith channel or the alert bot. Those work for everyone and are not affected by this switch.</em> : null}
+            </>} />
         ))}
         <details className="ad-details">
           <summary>See what each feature is doing right now</summary>

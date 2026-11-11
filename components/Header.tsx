@@ -3040,7 +3040,9 @@ export default function Header({ onSelectMeme }: HeaderProps) {
     null,
   );
 
-  const canUseTelegram = TELEGRAM_TIERS.includes(tier?.key ?? "");
+  // same rule as every other tool: open to everyone while the free beta is on, otherwise by OMEN tier. It used to look at the tier
+  // only, so during the beta the row stayed locked ("SPECTER TIER REQUIRED") and an already linked account could not even disconnect.
+  const canUseTelegram = canUse("telegram_alerts") || TELEGRAM_TIERS.includes(tier?.key ?? "");
   const canUsePaper = canUse("paper_trading");
 
   useEffect(() => {
