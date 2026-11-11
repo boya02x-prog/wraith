@@ -2032,7 +2032,8 @@ function PinLockOverlay({ onUnlock, onLogout }: { onUnlock: () => void; onLogout
         .wpl-key.ghost:hover{color:#fff;background:transparent;border-color:transparent}
         .wpl-foot{margin-top:30px;font-size:12px;color:#6f655d}
         .wpl-foot button,.wpl-out{background:none;border:0;padding:0;color:#ff9a5c;font-weight:700;cursor:pointer;font-size:12px}
-        .wpl-out{position:absolute;top:20px;right:22px;display:inline-flex;align-items:center;gap:7px;color:#9a8e85;font-weight:600;font-size:13px}
+        .wpl-out{position:absolute;top:calc(max(var(--sai-top, 0px), env(safe-area-inset-top, 0px)) + 18px);right:16px;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.04);color:#c9bfb7;font-weight:600;font-size:13px}
+        @media (max-width:767px){.wpl-out{top:calc(max(var(--sai-top, 0px), env(safe-area-inset-top, 0px), 28px) + 18px)}}
         .wpl-out:hover{color:#fff}
         @media (max-width:480px){.wpl-pad{grid-template-columns:repeat(3,64px);gap:12px}.wpl-key{height:64px}.wpl-orbs{gap:13px}}
         @media (hover:none){.wpl-mist,.wpl-logo,.wpl-logo::before,.wpl-logo::after{animation:none}.wpl-key{transition:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;outline:none}.wpl-key:hover,.wpl-key:focus,.wpl-key:active{background:rgba(255,255,255,.025);border-color:#2a1f18;transform:none;box-shadow:none}.wpl-key.ghost:hover,.wpl-key.ghost:focus,.wpl-key.ghost:active{background:transparent;border-color:transparent}.wpl-key.hit{background:rgba(255,123,61,.22)!important;border-color:rgba(255,123,61,.6)!important}.wpl-orb{transition:none}}

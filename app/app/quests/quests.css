@@ -91,3 +91,18 @@
   .q-owner > div { width: 100%; }
   .q-owner .q-btn { flex: 1; }
 }
+
+/* Phones: nothing may be wider than the screen. A grid column defaults to "as wide as its widest child", so one long
+   unbreakable row (the invite link, the stat tiles) used to push the whole page off the right edge. */
+.q-shell { grid-template-columns: minmax(0, 1fr); width: 100%; box-sizing: border-box; }
+.q-shell > *, .q-grid > *, .q-grid > * > * { min-width: 0; }
+.q-hero p { max-width: min(620px, 100%); overflow-wrap: anywhere; }
+.q-stat { min-width: 0; }
+.q-stat strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-row { flex-wrap: wrap; }
+.q-row > .q-input, .q-row > .q-ref { min-width: 0; flex: 1 1 160px; }
+@media (max-width: 860px) {
+  .q-task { row-gap: 8px; }
+  .q-actions { padding-left: 0; }
+  .q-actions .q-btn { flex: 1; min-height: 40px; }
+}

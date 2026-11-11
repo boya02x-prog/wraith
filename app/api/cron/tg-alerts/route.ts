@@ -8,7 +8,8 @@ import { callGet } from "@/lib/internalCall";
 import { getDb } from "@/lib/mongoClient";
 import { refreshCalls, type SignalCall } from "@/lib/signalCalls";
 import type { Signal } from "@/app/api/signals/route";
-import { broadcast, claim, milestoneFor, signalMessage, winMessage, winTeaser } from "@/lib/telegramBot";
+import { broadcast, claim, milestoneFor, signalMessage, tg, winMessage, winTeaser } from "@/lib/telegramBot";
+import { fcmConfigured } from "@/lib/fcm";
 import { tokenKeyboard } from "@/lib/telegramUi";
 import { runPushAlerts, pushBroadcast } from "@/lib/push";
 import { signQuery } from "@/lib/signedUrl";
@@ -29,6 +30,32 @@ export async function GET(req: NextRequest) {
   if (secret) {
     const ok = req.headers.get("authorization") === `Bearer ${secret}` || req.nextUrl.searchParams.get("key") === secret;
     if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (req.nextUrl.searchParams.get("diag") === "1") {
+    // Health check: is everything the alerts need actually wired up on THIS server? Sends nothing, shows no secret values.
+    if (!secret) return NextResponse.json({ error: "Set CRON_SECRET to use the health check" }, { status: 403 });
+    const me = await tg<{ username?: string }>("getMe", {});
+    const hook = await tg<{ url?: string; pending_update_count?: number; last_error_message?: string }>("getWebhookInfo", {});
+    let lastRun: string | null = null, linked = 0, phones = 0;
+    try {
+      const db = await getDb();
+      const st = await db.collection<{ _id: string; at: Date }>("tg_state").findOne({ _id: "cron" });
+      lastRun = st ? new Date(st.at).toISOString() : null;
+      linked = await db.collection("users").countDocuments({ telegramChatId: { $exists: true, $ne: null } });
+      phones = await db.collection("push_subs").countDocuments({ fcm: { $exists: true, $ne: null } });
+    } catch { /* database down: the fields stay empty */ }
+    return NextResponse.json({
+      telegramBot: me.ok ? `ok (@${me.result?.username})` : `FAILED: ${me.description ?? "no answer"} (TELEGRAM_BOT_TOKEN on this server is wrong or missing)`,
+      telegramWebhook: hook.ok ? { url: hook.result?.url, waiting: hook.result?.pending_update_count, lastError: hook.result?.last_error_message ?? null } : "could not read",
+      telegramLinkedAccounts: linked,
+      telegramGroup: process.env.TELEGRAM_GROUP_CHAT_ID ? "set" : "not set",
+      phonePush: fcmConfigured() ? "ok (Firebase key loaded)" : "NOT WORKING: FIREBASE_SERVICE_ACCOUNT is missing or not valid JSON",
+      phonesLinked: phones,
+      webPush: process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? "set" : "not set",
+      privateMode: process.env.WRAITH_PRIVATE === "1" ? "on" : "off",
+      lastAlertRun: lastRun,
+      minutesSinceLastRun: lastRun ? Math.round((Date.now() - Date.parse(lastRun)) / 60000) : null,
+    });
   }
   if (req.nextUrl.searchParams.get("grouptest") === "1") {
     // manual test posts go to the public group, so they always need the secret, even if the normal run is left open
