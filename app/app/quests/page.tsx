@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Bug, Check, Copy, Gift, Send, Trophy, Users, ShieldCheck } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
+import { swrRead, swrWrite } from "@/lib/swrCache";
 import "./quests.css";
 
 type Task = { id: string; title: string; points: number; verify: "auto"; doneAt: number | null };
@@ -49,12 +50,19 @@ export default function QuestsPage() {
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/quests", { cache: "no-store", credentials: "same-origin" });
-      setData((await r.json()) as Data);
+      const j = (await r.json()) as Data;
+      setData(j);
+      if (r.ok) swrWrite("quests", j);
     } catch {
       setData((d) => d ?? null);
     }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  // show what you saw last time straight away, then refresh behind it: coming back to this screen never shows a blank page
+  useEffect(() => {
+    const seen = swrRead<Data>("quests");
+    if (seen) setData((d) => d ?? seen);
+    void load();
+  }, [load]);
 
   const say = (key: string, m: Msg) => setMsg((s) => ({ ...s, [key]: m }));
 

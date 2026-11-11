@@ -1040,3 +1040,12 @@ a.hold-row:hover{background:rgba(255,255,255,.05)}
 }
 .wx-preset-btn:active, .embedded-wallet-header-deposit:active, .embedded-wallet-header-withdraw:active, .wx-bell:active { transform: scale(.96); }
 .wx-preset-btn:focus-visible, .wx-bell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ───────────────────────────────────────────────────────────────────────
+   App shell: the top bar is mounted once (components/AppShell.tsx) and pinned to the top of the window.
+   Each screen keeps an invisible block of the same size where the bar used to sit (.wx-header-spacer), so every
+   layout is exactly what it was while the bar itself never reloads between screens.
+   ─────────────────────────────────────────────────────────────────────── */
+.wx-shell { background: none !important; }
+.wx-shell > .wraith-app-header { position: fixed; top: 0; left: 0; right: 0; }
+.wx-header-spacer { flex: none; visibility: hidden; pointer-events: none; background: none !important; border-color: transparent !important; backdrop-filter: none !important; }

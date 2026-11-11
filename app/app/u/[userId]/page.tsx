@@ -5,12 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import TraderFollowButton from "@/components/TraderFollowButton";
 import FollowListModal from "@/components/FollowListModal";
 import PnlChart from "@/components/PnlChart";
 import TraderStats from "@/components/TraderStats";
 import { useCash } from "@/lib/cash";
+import { swrRead, swrWrite } from "@/lib/swrCache";
 import TierGlyph from "@/components/TierGlyph";
 import { GLYPH_PALETTE } from "@/lib/tierGlyph";
 import { TIERS, type TierKey } from "@/lib/tiers";
@@ -94,14 +95,18 @@ export default function PublicTraderPage() {
   useEffect(() => {
     if (!userId) return;
     let active = true;
+    // a profile you opened before shows at once from memory while the fresh copy loads behind it
+    const seen = swrRead<TraderDetails>(`trader:${userId}`);
+    if (seen) { setData(seen); setLoading(false); }
     fetch(`/api/traders/${encodeURIComponent(userId)}`)
       .then(async (r) => {
         const payload = await r.json();
         if (!r.ok) throw new Error(payload.error ?? "Profile unavailable.");
         if (active) setData(payload);
+        swrWrite(`trader:${userId}`, payload);
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Profile unavailable.");
+        if (active && !seen) setError(cause instanceof Error ? cause.message : "Profile unavailable.");
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

@@ -32,7 +32,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import PhotoViewer from "@/components/PhotoViewer";
 import ProfileFeed from "@/components/ProfileFeed";
 import TraderStats from "@/components/TraderStats";

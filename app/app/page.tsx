@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { cacheTokenNav } from "@/lib/tokenNav";
 import { ToastProvider } from "@/components/Toast";
 
-const Header = dynamic(() => import("@/components/Header"), { ssr: false });
+import Header from "@/components/HeaderSlot";
 const TokenBoard = dynamic(() => import("@/components/TokenBoard"), { ssr: false });
 const WinsBoard = dynamic(() => import("@/components/WinsBoard"), { ssr: false });
 const SignalScanner = dynamic(() => import("@/components/SignalScanner"), { ssr: false });

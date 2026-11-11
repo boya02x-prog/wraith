@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Copy, ExternalLink } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import WalletAvatar from "@/components/WalletAvatar";
 import { TokenIcon } from "@/components/TokenIcon";
 import { asKind, KIND_INFO, walletName } from "@/lib/walletIdentity";

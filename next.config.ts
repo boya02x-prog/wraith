@@ -27,7 +27,9 @@ const nextConfig: NextConfig = {
     root: path.resolve(process.cwd()),
   },
   // Turbopack's on-disk dev cache gets corrupted on Windows (every route 404s until .next is deleted); keep it in memory only.
-  experimental: { turbopackFileSystemCacheForDev: false },
+  // staleTimes: a screen you already opened is kept in the browser for a while, so going back to it (or opening it again) is
+  // instant instead of asking the server for the same empty shell each time. The screens load their own live data in the browser.
+  experimental: { turbopackFileSystemCacheForDev: false, staleTimes: { dynamic: 300, static: 600 } },
   // native canvas for the Telegram banner route; its fonts live in assets/fonts and must ship with the function
   serverExternalPackages: ["@napi-rs/canvas"],
   outputFileTracingIncludes: { "/api/banner": ["./assets/fonts/**/*", "./lib/shareCard.ts"] },

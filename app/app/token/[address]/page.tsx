@@ -16,7 +16,7 @@ import { chainOf, EVM_ADDR_RE } from "@/lib/chains";
 import { TokenIcon } from "@/components/TokenIcon";
 import SheetBoundary from "@/components/SheetBoundary";
 
-const Header = dynamic(() => import("@/components/Header"), { ssr: false });
+import Header from "@/components/HeaderSlot";
 const TokenPanel = dynamic(() => import("@/components/TokenPanel"), { ssr: false });
 const TokenMarketList = dynamic(() => import("@/components/TokenMarketList"), { ssr: false });
 const EvmTokenView = dynamic(() => import("@/components/EvmTokenView"), { ssr: false });

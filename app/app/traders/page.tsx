@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { LayoutGrid, List, Users } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import TraderFollowButton from "@/components/TraderFollowButton";
 import PhotoViewer from "@/components/PhotoViewer";
 import Radar from "@/components/Radar";

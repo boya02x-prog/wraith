@@ -613,9 +613,10 @@ button.wp-back { background: transparent; border: 0; padding: 4px 0; cursor: poi
 @media (prefers-reduced-motion: reduce) { .wx-notif, .wx-sheet, .wx-spot-sheet, .wx-notif-back, .wx-sheet-back, .wx-spot-sheet-back { animation-duration: .01ms !important; } }
 
 /* ── screens ease in: route changes and switching Market / Scanner / Wins / Intel (whole screen, once: never per card, so live refreshes never flicker) ── */
-@keyframes wx-page-in { from { opacity: 0; } to { opacity: 1; } }
+/* starts part-visible, so a screen change is a quick ease and never a flash of black */
+@keyframes wx-page-in { from { opacity: .45; } to { opacity: 1; } }
 @keyframes wx-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-body.wx-enter .wx-page { animation: wx-page-in .24s ease-out both; }
+body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s ease-out both; }
 .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: wx-page-in .22s ease-out both; }
 @media (prefers-reduced-motion: reduce) {
   body.wx-enter .wx-page, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: none !important; }

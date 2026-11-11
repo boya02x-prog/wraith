@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Gift, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import DateTimeField from "@/components/DateTimeField";
 import { refreshLaunchSettings } from "@/hooks/useLaunchSettings";
 import { LAUNCH_ITEMS, MINT_RE, resolveSettings, type LaunchSettings, type RoadmapItem } from "@/lib/launchSettings";

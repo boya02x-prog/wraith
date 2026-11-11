@@ -8,17 +8,9 @@ const B = ({ w, h, r = 10, className = "" }: { w?: number | string; h: number | 
   <div className={`wsk-b ${className}`} style={{ width: w ?? "100%", height: h, borderRadius: r }} />
 );
 
+// The real top bar stays mounted in the app shell, so a loading screen only keeps its space free.
 function Bar() {
-  return (
-    <div className="sk-bar">
-      <B w={34} h={34} r={10} />
-      <B w={96} h={16} r={6} className="sk-desk" />
-      <span className="sk-grow" />
-      <B w={178} h={38} r={10} />
-      <B w={38} h={38} r={12} />
-      <B w={38} h={38} r={19} />
-    </div>
-  );
+  return <div className="wraith-app-header wx-header-spacer" aria-hidden="true" />;
 }
 
 function Scanner() {

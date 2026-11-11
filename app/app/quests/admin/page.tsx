@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import Header from "@/components/Header";
+import Header from "@/components/HeaderSlot";
 import "../quests.css";
 
 type Bug = { id: string; userId: string; email: string | null; title: string; details: string; page: string; status: string; pts: number; at: string };
