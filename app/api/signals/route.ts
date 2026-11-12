@@ -253,7 +253,7 @@ async function build(origin: string): Promise<Built> {
 
   // Scanner v2: pull dev history, buyer flow and proven-wallet intel for the best Solana candidates,
   // fold it into the score, then decide the final tier. HOT is rare on purpose.
-  await enrichSignals(top, { max: 24, minScore: 45, concurrency: 3, budgetMs: 5_000 }).catch(() => undefined);
+  await enrichSignals(top, { max: 24, minScore: 45, hotMin: HOT_MIN, concurrency: 3, budgetMs: 5_000 }).catch(() => undefined);
   for (const sg of top) {
     sg.score = Math.round(clamp(sg.score, 0, 100));
     const isSol = !sg.token.chain || sg.token.chain === "solana";

@@ -145,7 +145,9 @@ export default function NotificationBell() {
       }));
 
       if (p.signal) jobs.push(getJson<{ calls?: CallItem[] }>("/api/signal-calls").then((d) => {
-        const cutoff = Date.now() - 3 * 3600_000;
+        // the last day of calls, not the last 3 hours: with the 3 hour window every call made while the app was closed for longer
+        // than that never showed up in this list at all
+        const cutoff = Date.now() - 24 * 3600_000;
         for (const c of d?.calls ?? []) {
           if (c.shadow || c.tier !== "HOT" || c.spottedAt < cutoff) continue;
           add({

@@ -10,6 +10,7 @@ import { refreshCalls, type SignalCall } from "@/lib/signalCalls";
 import type { Signal } from "@/app/api/signals/route";
 import { broadcast, claim, milestoneFor, signalMessage, tg, winMessage, winTeaser } from "@/lib/telegramBot";
 import { fcmConfigured } from "@/lib/fcm";
+import { intelBudgetStatus } from "@/lib/signalIntel";
 import { APP_URL, tokenKeyboard } from "@/lib/telegramUi";
 import { runPushAlerts, pushBroadcast } from "@/lib/push";
 import { signQuery } from "@/lib/signedUrl";
@@ -55,6 +56,8 @@ export async function GET(req: NextRequest) {
       phonesLinked: phones,
       webPush: process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? "set" : "not set",
       privateMode: process.env.WRAITH_PRIVATE === "1" ? "on" : "off",
+      // vetting lookups: how many Helius calls today's allowance has released so far, how many were spent, how many were wanted
+      vettingBudget: await intelBudgetStatus(),
       lastAlertRun: lastRun,
       minutesSinceLastRun: lastRun ? Math.round((Date.now() - Date.parse(lastRun)) / 60000) : null,
     });

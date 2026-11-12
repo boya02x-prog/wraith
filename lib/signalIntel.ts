@@ -166,22 +166,96 @@ export interface Enrichable {
   intel?: SignalIntel;
 }
 
+// ── vetting cache ──
+// The result of vetting a token (dev history, who bought, proven wallets). Kept in memory AND in the database, so every server
+// instance (and a developer's machine) reuses the same lookup instead of each paying for its own.
 const intelCache = new Map<string, { ts: number; intel: SignalIntel }>();
-const INTEL_TTL = 300_000; // was 2 minutes: the same top tokens were re-fetched over and over, which burned Helius credits and got rate limited
-
-// A daily ceiling on Helius calls spent on intel, shared by every server instance through one counter in the database. When it is
-// reached the scanner keeps working without buyer data until tomorrow, instead of running the plan dry. Raise it with the
-// HELIUS_INTEL_DAILY_CALLS environment variable if your Helius plan has room (one token costs about 3 calls).
-const INTEL_DAILY_CALLS = Number(process.env.HELIUS_INTEL_DAILY_CALLS) || 3000;
-async function intelBudgetAllows(plannedCalls: number): Promise<boolean> {
+const FRESH_MS = 5 * 60_000; // younger than this: used as is, never looked up again
+const RECHECK_MS = 10 * 60_000; // a token about to become a call (or a few points short) is looked at again this often
+const VALID_MS = 30 * 60_000; // older than this the vetting no longer counts: the token is unvetted until it is looked up again
+const CALLS_PER_LOOKUP = 3; // Helius calls one token costs on average (2 pages of trades, sometimes the pool as well)
+type CacheDoc = { _id: string; intel: SignalIntel; at: Date };
+let cacheIndexed = false;
+async function cacheCol() {
+  const c = (await getDb()).collection<CacheDoc>("intel_cache");
+  if (!cacheIndexed) { cacheIndexed = true; void c.createIndex({ at: 1 }, { expireAfterSeconds: 3600 }).catch(() => undefined); }
+  return c;
+}
+/** Pull what other instances already looked up for these tokens into this instance's memory. One query. */
+async function hydrateIntel(mints: string[]): Promise<void> {
+  const now = Date.now();
+  const need = mints.filter((m) => { const c = intelCache.get(m); return !c || now - c.ts >= FRESH_MS; });
+  if (!need.length) return;
   try {
-    const db = await getDb();
-    const day = new Date().toISOString().slice(0, 10);
-    const r = await db.collection<{ _id: string; calls: number; at: Date }>("tg_state").findOneAndUpdate(
-      { _id: `intel:${day}` }, { $inc: { calls: plannedCalls }, $setOnInsert: { at: new Date() } }, { upsert: true, returnDocument: "after", includeResultMetadata: false },
-    );
-    return (r?.calls ?? 0) <= INTEL_DAILY_CALLS;
-  } catch { return true; } // if the counter itself is unreachable, do not switch intel off
+    const docs = await (await cacheCol()).find({ _id: { $in: need }, at: { $gt: new Date(now - VALID_MS) } }).toArray();
+    for (const d of docs) {
+      const ts = new Date(d.at).getTime();
+      const cur = intelCache.get(d._id);
+      if (!cur || cur.ts < ts) intelCache.set(d._id, { ts, intel: d.intel });
+    }
+  } catch { /* database slow or down: this instance's memory is still used */ }
+}
+function rememberIntel(mint: string, intel: SignalIntel) {
+  intelCache.set(mint, { ts: Date.now(), intel });
+  void cacheCol().then((c) => c.updateOne({ _id: mint }, { $set: { intel, at: new Date() } }, { upsert: true })).catch(() => undefined);
+}
+
+// ── daily allowance, spread over the day ──
+// Helius calls spent on vetting are capped per (UTC) day through one counter in the database, shared by every instance. Raise the
+// cap with HELIUS_INTEL_DAILY_CALLS if the Helius plan has room.
+//
+// The first version let the whole day's allowance be used as fast as it was asked for. With a scan every two minutes that was about
+// three hours; after that no token could be vetted, and because a public call REQUIRES vetting the scanner made no calls at all for
+// the other 21 hours of every day. Now the allowance is released evenly: an eighth is there at midnight, the rest accrues minute by
+// minute, so there is always something to spend. And it is spent in order of importance (see enrichSignals).
+const INTEL_DAILY_CALLS = Number(process.env.HELIUS_INTEL_DAILY_CALLS) || 3000;
+const DAY_MS = 86_400_000;
+/** Pure: how many calls may have been spent by this moment of the UTC day. Exported for tests. */
+export function intelAllowance(now = Date.now(), daily = INTEL_DAILY_CALLS): number {
+  const burst = daily / 8;
+  return Math.floor(burst + (daily - burst) * ((now % DAY_MS) / DAY_MS));
+}
+type BudgetDoc = { _id: string; calls: number; asked?: number; at: Date };
+const budgetId = (now = Date.now()) => `intelspend:${new Date(now).toISOString().slice(0, 10)}`;
+/**
+ * Takes calls out of today's allowance for several classes of lookup at once, most important first. `share` is how much of the
+ * allowance released so far that class may use up (1 = all of it), so the less important classes always leave room for the
+ * important ones. Returns how many calls each class was granted. Two database operations at most.
+ */
+async function takeIntelBudget(classes: { want: number; share: number }[]): Promise<number[]> {
+  const total = classes.reduce((n, c) => n + c.want, 0);
+  if (total <= 0) return classes.map(() => 0);
+  try {
+    const col = (await getDb()).collection<BudgetDoc>("tg_state");
+    const now = Date.now();
+    const id = budgetId(now);
+    const allowed = intelAllowance(now);
+    const r = await col.findOneAndUpdate({ _id: id }, { $inc: { calls: total, asked: total }, $setOnInsert: { at: new Date() } }, { upsert: true, returnDocument: "after", includeResultMetadata: false });
+    let before = (r?.calls ?? total) - total;
+    // A counter that starts late in the day (first run after a deploy or an outage) does not inherit the unused morning: it starts as
+    // if the pace had been kept, with only the normal head start to spend.
+    if ((r?.asked ?? total) === total) {
+      const seed = Math.max(0, allowed - Math.floor(INTEL_DAILY_CALLS / 8));
+      if (seed > 0) { await col.updateOne({ _id: id }, { $inc: { calls: seed } }); before += seed; }
+    }
+    let used = before;
+    const grants = classes.map((c) => {
+      const g = Math.max(0, Math.min(c.want, Math.floor(allowed * c.share) - used));
+      const whole = g - (g % CALLS_PER_LOOKUP); // a lookup is all or nothing
+      used += whole;
+      return whole;
+    });
+    const giveBack = total - grants.reduce((n, g) => n + g, 0);
+    if (giveBack > 0) await col.updateOne({ _id: id }, { $inc: { calls: -giveBack } });
+    return grants;
+  } catch { return classes.map((c) => c.want); } // if the counter itself is unreachable, do not switch vetting off
+}
+/** For the health check: what today's allowance looks like right now. */
+export async function intelBudgetStatus(): Promise<{ daily: number; releasedSoFar: number; spent: number; asked: number } | null> {
+  try {
+    const d = await (await getDb()).collection<BudgetDoc>("tg_state").findOne({ _id: budgetId() });
+    return { daily: INTEL_DAILY_CALLS, releasedSoFar: intelAllowance(), spent: d?.calls ?? 0, asked: d?.asked ?? 0 };
+  } catch { return null; }
 }
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -205,37 +279,86 @@ function apply(s: Enrichable, intel: SignalIntel) {
   s.risks = s.risks.slice(0, 4);
 }
 
+/** Which of these tokens are already public calls (nothing left to decide for them, so no reason to keep re-vetting). */
+async function alreadyCalled(mints: string[]): Promise<Set<string>> {
+  if (!mints.length) return new Set();
+  try {
+    const docs = await (await getDb()).collection<{ address: string }>("signal_calls")
+      .find({ address: { $in: mints }, shadow: { $ne: true } }, { projection: { _id: 0, address: 1 } }).toArray();
+    return new Set(docs.map((d) => d.address));
+  } catch { return new Set(); }
+}
+
+/** Pure: which lookup class a candidate falls in, or null when it needs no lookup now. Exported for tests. Lower = more important. */
+export function lookupClass(o: { base: number; hotMin: number; age: number; adj?: number; blocked?: boolean; called?: boolean }): 0 | 1 | 2 | 3 | 4 | null {
+  const { base, hotMin, age } = o;
+  if (age < FRESH_MS) return null;
+  const vetted = age < VALID_MS;
+  if (!vetted) {
+    if (base >= hotMin - 8) return 0; // could be a call as soon as it is vetted: first in line
+    if (base >= hotMin - 16) return 3; // within reach if proven wallets and the model both push it up
+    return 4; // far from a call: only looked up to learn from how it ends (hidden "shadow" record)
+  }
+  if (o.called || o.blocked || age < RECHECK_MS) return null; // nothing to decide, or looked at recently enough
+  if (base + (o.adj ?? 0) >= hotMin) return 1; // about to be called on vetting that is over 10 minutes old: look again first
+  if (base >= hotMin - 8) return 2; // a few points short: fresh proven-wallet buys can tip it
+  return null;
+}
+// how much of the allowance released so far each class may use up, and how many lookups of that class one scan may start
+const CLASS_SHARE = [1, 1, 0.85, 0.8, 0.55];
+const CLASS_MAX = [12, 6, 6, 6, 5];
+
 /**
- * Adds dev / flow / proven-wallet intel to the best Solana candidates (mutates). Helius is rate limited, so: top N only,
- * a small worker pool, a 2 minute cache, and a time budget (unfinished tokens are picked up by the next poll).
+ * Adds dev / flow / proven-wallet intel to the best Solana candidates (mutates). Lookups cost Helius calls, so:
+ *   - a lookup is shared by every instance and reused for up to 30 minutes,
+ *   - the day's allowance is released evenly and spent on the tokens that can actually become a call first,
+ *   - a small worker pool and a time budget keep one scan fast (unfinished tokens are picked up by the next one).
  */
-export async function enrichSignals(signals: Enrichable[], opts: { max?: number; minScore?: number; concurrency?: number; budgetMs?: number } = {}): Promise<void> {
-  const { max = 12, minScore = 45, concurrency = 3, budgetMs = 5_000 } = opts;
+export async function enrichSignals(signals: Enrichable[], opts: { max?: number; minScore?: number; hotMin?: number; concurrency?: number; budgetMs?: number } = {}): Promise<void> {
+  const { max = 12, minScore = 45, hotMin = 72, concurrency = 3, budgetMs = 5_000 } = opts;
   const cands = signals
     .filter((s) => (!s.token.chain || s.token.chain === "solana") && SOLANA_MINT_RE.test(s.token.address) && s.score >= minScore)
     .sort((a, b) => b.score - a.score)
     .slice(0, max);
-  const todo: Enrichable[] = [];
+  if (!cands.length) return;
+  await hydrateIntel(cands.map((s) => s.token.address));
+
+  const now = Date.now();
+  const cachedOf = (s: Enrichable) => { const c = intelCache.get(s.token.address); return c && now - c.ts < VALID_MS ? c : undefined; };
+  // only tokens near the line can be "already called"; ask the database about those alone
+  const near = cands.filter((s) => { const c = cachedOf(s); return !!c && now - c.ts >= RECHECK_MS && s.score >= hotMin - 8; });
+  const called = await alreadyCalled(near.map((s) => s.token.address));
+
+  const queues: Enrichable[][] = [[], [], [], [], []];
   for (const s of cands) {
-    const c = intelCache.get(s.token.address);
-    if (c && Date.now() - c.ts < INTEL_TTL) apply(s, c.intel);
-    else todo.push(s);
+    const c = cachedOf(s);
+    const k = lookupClass({ base: s.score, hotMin, age: c ? now - c.ts : Infinity, adj: c?.intel.adj, blocked: !!c?.intel.block, called: called.has(s.token.address) });
+    if (k !== null && queues[k].length < CLASS_MAX[k]) queues[k].push(s);
   }
-  if (!todo.length) return;
-  if (!(await intelBudgetAllows(todo.length * 3))) return;
-  let i = 0;
-  const worker = async () => {
-    while (i < todo.length) {
-      const s = todo[i++];
-      try {
-        const intel = await buildIntel(s.token.address);
-        intelCache.set(s.token.address, { ts: Date.now(), intel });
-        apply(s, intel);
-      } catch (e) { console.warn("[signalIntel]", s.token.address.slice(0, 6), e instanceof Error ? e.message : e); }
-    }
-  };
-  await Promise.race([Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker)), sleep(budgetMs)]);
-  if (intelCache.size > 500) for (const [k, v] of intelCache) if (Date.now() - v.ts > 600_000) intelCache.delete(k);
+  const grants = await takeIntelBudget(queues.map((q, k) => ({ want: q.length * CALLS_PER_LOOKUP, share: CLASS_SHARE[k] })));
+  const todo = queues.flatMap((q, k) => q.slice(0, Math.floor(grants[k] / CALLS_PER_LOOKUP)));
+
+  const fetched = new Map<string, SignalIntel>();
+  if (todo.length) {
+    let i = 0;
+    const worker = async () => {
+      while (i < todo.length) {
+        const s = todo[i++];
+        try {
+          const intel = await buildIntel(s.token.address);
+          rememberIntel(s.token.address, intel);
+          fetched.set(s.token.address, intel);
+        } catch (e) { console.warn("[signalIntel]", s.token.address.slice(0, 6), e instanceof Error ? e.message : e); }
+      }
+    };
+    await Promise.race([Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker)), sleep(budgetMs)]);
+  }
+  // apply once per token: the fresh lookup if it came back in time, otherwise the vetting we already had
+  for (const s of cands) {
+    const intel = fetched.get(s.token.address) ?? cachedOf(s)?.intel;
+    if (intel) apply(s, intel);
+  }
+  if (intelCache.size > 500) for (const [k, v] of intelCache) if (Date.now() - v.ts > VALID_MS) intelCache.delete(k);
 }
 
 // ── feature snapshot (stored with every call so we can measure what actually predicts wins) ─────────────────────────
