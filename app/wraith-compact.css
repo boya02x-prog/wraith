@@ -969,3 +969,21 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .ob-cta:active { transform: scale(.98); } .ob-cta:disabled { opacity: .35; box-shadow: none; cursor: default; }
 .ob-out { height: 36px; background: none; border: 0; color: var(--text-dim); font-size: 13px; font-weight: 700; cursor: pointer; }
 @media (min-width: 640px) { .ob { border: 1px solid rgba(255, 255, 255, .08); border-radius: 28px; height: min(720px, 94dvh); background: rgba(14, 14, 16, .7); } }
+
+/* ───────── Share my portfolio (components/PortfolioShare.tsx) ───────── */
+.ps-backdrop { position: fixed; inset: 0; z-index: 10001; display: grid; place-items: center; background: radial-gradient(80% 50% at 50% 0%, rgba(var(--accent-rgb), .22), transparent 70%), rgba(6, 6, 8, .96); animation: wt-in .25s ease; }
+.ps { position: relative; width: min(440px, 100%); max-height: 100dvh; overflow-y: auto; padding: max(54px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom)); display: grid; gap: 16px; scrollbar-width: none; }
+.ps-x { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: rgba(255, 255, 255, .06); color: #fff; border-radius: 50% !important; cursor: pointer; }
+.ps-card { border-radius: 22px; overflow: hidden; border: 2px solid rgba(var(--accent-rgb), .7); box-shadow: 0 0 50px -8px rgba(var(--accent-rgb), .5); }
+.ps-card canvas { display: block; width: 100%; height: auto; }
+.ps-opts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.ps-seg { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04); }
+.ps-seg button, .ps-ref { height: 34px; padding: 0 14px; border: 0; border-radius: 999px !important; background: transparent; color: var(--text-muted); font-weight: 800; font-size: 13.5px; cursor: pointer; }
+.ps-seg button.on { background: rgba(255, 255, 255, .12); color: #fff; }
+.ps-ref { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04); }
+.ps-ref.on { color: var(--accent-text); border-color: rgba(var(--accent-rgb), .5); } .ps-ref:disabled { opacity: .4; }
+.ps-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ps-acts button { display: grid; justify-items: center; gap: 8px; background: none; border: 0; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ps-acts button span { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .07); transition: transform .1s, background .15s; }
+.ps-acts button:active span { transform: scale(.92); background: rgba(var(--accent-rgb), .3); }
+.ps-note { justify-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px; background: rgba(55, 213, 138, .15); color: #37d58a; font-size: 13px; font-weight: 700; }

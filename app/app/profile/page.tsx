@@ -31,6 +31,7 @@ import {
   Pencil,
   Wallet,
   X,
+  Share2,
 } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import PhotoViewer from "@/components/PhotoViewer";
@@ -43,6 +44,7 @@ import FollowListModal from "@/components/FollowListModal";
 import { decryptHotWalletKey } from "@/lib/hotWalletCrypto";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { useCashSources } from "@/lib/useCashSources";
+import PortfolioShare from "@/components/PortfolioShare";
 import {
   DisplayCurrency,
   formatCurrency,
@@ -186,6 +188,7 @@ export default function ProfilePage() {
   const [timeframe, setTimeframe] = useState<Timeframe>("7d");
   const [tradeMode, setTradeMode] = useState<"ALL" | Trade["mode"]>("ALL");
   const cashHook = useCashSources();
+  const [shareOpen, setShareOpen] = useState(false);
   const [posTab, setPosTab] = useState<"open" | "closed">("open");
   const fmtHoldUsd = (v: number) => (v < 0.01 ? "<$0.01" : v.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }));
   const [holdings, setHoldings] = useState<{ address: string; symbol: string; name: string; amount: number; priceUsd: number; valueUsd: number; imageUrl?: string; native?: boolean }[]>([]);
@@ -1241,6 +1244,17 @@ export default function ProfilePage() {
   return (
     <main className="wraith-dashboard profile-page">
       <Header />
+      {shareOpen && (
+        <PortfolioShare
+          name={displayName}
+          username={profile.username ?? null}
+          avatar={avatar || defaultAvatar(userId || displayName)}
+          value={portfolioValue}
+          trades={solUsd !== null && fxRate !== null ? completedTrades.map((t) => ({ ts: t.ts, usd: t.amountSol * ((t.pnlPct ?? 0) / 100) * solUsd * fxRate })) : []}
+          fmt={(n) => formatCurrency(n, profile.displayCurrency)}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
       {PRIVY_WALLETS_ENABLED && <XLinkBridge apiRef={xLinkApi} onLinked={() => void syncXFromPrivy()} onError={onXLinkError} />}
       <div className="profile-shell">
@@ -1346,6 +1360,9 @@ export default function ProfilePage() {
               }}
             >
               <Pencil size={15} /> Edit profile
+            </button>
+            <button className="profile-edit-button" type="button" onClick={() => setShareOpen(true)} disabled={!profileReady}>
+              <Share2 size={15} /> Share
             </button>
           </div>
         </section>
