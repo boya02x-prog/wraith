@@ -869,3 +869,15 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wraith-terms-dialog.wt-new .wraith-terms-continue { min-height: 50px; border-radius: 14px !important; font-size: 15px; box-shadow: 0 10px 30px -10px rgba(var(--accent-rgb), .7); }
 .wraith-terms-dialog.wt-new .wraith-terms-continue:disabled { box-shadow: none; }
 @media (max-height: 640px) { .wt-points { display: none; } }
+
+/* ── Feed / intel: card look like Fomo's (loads after globals so these win) ── */
+.callouts-feed { display: grid; gap: 10px; padding: 10px 12px 14px; }
+.callout-card { border: 1px solid rgba(255, 255, 255, .07) !important; border-radius: 16px; background: rgba(255, 255, 255, .025); padding: 13px 14px !important; animation: hl-in .3s ease both; transition: border-color .15s, background .15s; }
+.callout-card:hover { border-color: rgba(var(--accent-rgb), .3) !important; background: rgba(255, 255, 255, .035); }
+.callout-avatar { width: 40px !important; height: 40px !important; box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .35); }
+.callout-name { font-size: 14px; font-weight: 800; }
+.callout-mcap-badge { margin-left: auto; padding: 3px 9px; border-radius: 99px; background: rgba(var(--accent-rgb), .14); color: var(--accent-text); font-size: 10.5px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+.callout-mcap-badge::before { content: "CALLED AT "; opacity: .7; font-weight: 700; }
+.callout-text { font-size: 14px; line-height: 1.5; color: var(--text); }
+.callout-position { border-radius: 12px; border: 1px solid rgba(255, 255, 255, .08); background: rgba(0, 0, 0, .25); }
+.callout-img { border-radius: 12px; }
