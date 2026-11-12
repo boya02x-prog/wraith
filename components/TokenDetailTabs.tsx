@@ -395,12 +395,18 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
               <p className="dt-note" style={{ margin: "4px 16px 14px" }}>No Wraith trader has bought or sold this yet. Be the first and your position shows up here.</p>
             ) : (
               <div className="dt-traders">
-                {traders.map((t) => (
-                  <Link key={t.userId} href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`} className="dt-trader">
-                    {t.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={t.avatar} alt="" /> : <span className="av">{t.displayName[0]?.toUpperCase()}</span>}
-                    <span className="who"><b>{t.displayName}</b><small>{t.username ? `@${t.username} · ` : ""}{ago(t.lastAt)} ago · {t.count} trade{t.count > 1 ? "s" : ""}</small></span>
-                    <span className={`pill ${t.lastSide === "buy" ? "up" : "dn"}`}>{t.lastSide === "buy" ? "Bought" : "Sold"}</span>
-                    {t.holding ? <span className={`pnl ${t.holding.pnlPct >= 0 ? "up" : "dn"}`}>{t.holding.pnlPct >= 0 ? "+" : ""}{t.holding.pnlPct.toFixed(0)}%<small>holding</small></span> : <span className="pnl mute">—<small>out</small></span>}
+                {traders.map((t, i) => (
+                  <Link key={t.userId} href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`} className="tr-row" style={{ animationDelay: `${Math.min(i, 10) * 28}ms` }}>
+                    {t.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="tr-av" src={t.avatar} alt="" /> : <span className="tr-av">{t.displayName[0]?.toUpperCase()}</span>}
+                    <span className="tr-who">
+                      <b>{t.displayName}{t.lastSide === "buy" ? <i className="up">Bought</i> : <i className="dn">Sold</i>}</b>
+                      <small>{t.holding && t.holding.entryMcap > 0 ? `Avg entry: ${usd(t.holding.entryMcap)} MC` : `${t.username ? `@${t.username} · ` : ""}${t.count} trade${t.count > 1 ? "s" : ""}`} · {ago(t.lastAt)} ago</small>
+                    </span>
+                    {t.holding ? (
+                      <span className={`tr-pnl ${t.holding.pnlPct >= 0 ? "up" : "dn"}`}><b>{t.holding.pnlPct >= 0 ? "▲" : "▼"} {Math.abs(t.holding.pnlPct).toFixed(1)}%</b><small>holding</small></span>
+                    ) : (
+                      <span className="tr-pnl mute"><b>Out</b><small>closed</small></span>
+                    )}
                   </Link>
                 ))}
               </div>
@@ -436,6 +442,14 @@ const CSS = `
 .up{color:#37d58a}.dn{color:#e5594a}.mute{color:var(--text-muted)}.mono{font-family:var(--font-mono),monospace}
 .dt-table{overflow-x:auto}
 .dt-row{display:grid;grid-template-columns:54px 82px minmax(120px,1.4fr) 1fr 1fr 96px;gap:10px;align-items:center;padding:9px 16px;font-size:11px;border-top:1px solid rgba(255,255,255,.04);min-width:560px;transition:background .12s;font-variant-numeric:tabular-nums}
+.tr-row{display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid rgba(255,255,255,.045);text-decoration:none;color:inherit;animation:hl-in .32s ease both;transition:background .14s}
+.tr-row:hover{background:rgba(255,255,255,.03)}
+.tr-av{width:46px;height:46px;border-radius:50%;object-fit:cover;background:rgba(255,123,61,.22);display:grid;place-items:center;font-weight:800;color:#fff}
+.tr-who{display:grid;gap:3px;min-width:0}
+.tr-who b{display:flex;align-items:center;gap:7px;font-size:14.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-who b i{font-style:normal;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.07)}
+.tr-who small{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-pnl{display:grid;gap:2px;text-align:right}.tr-pnl b{font-size:15px;font-variant-numeric:tabular-nums}.tr-pnl small{font-size:10.5px;color:var(--text-muted)}
 .hl{display:grid}
 .hl-row{position:relative;display:grid;grid-template-columns:22px 38px 1fr auto;gap:11px;align-items:center;padding:11px 16px;border-top:1px solid rgba(255,255,255,.045);text-decoration:none;color:inherit;overflow:hidden;animation:hl-in .32s ease both;transition:background .14s}
 @keyframes hl-in{from{opacity:0;transform:translateY(6px)}}
