@@ -20,6 +20,7 @@ import {
   type MarketToken,
 } from "@/lib/market";
 import { toMeme } from "@/lib/tokenMeme";
+import { useTick } from "@/lib/useTick";
 import { prefetchChart } from "@/lib/prefetchChart";
 import { TokenIcon } from "@/components/TokenIcon";
 import { UpdatedAgo } from "@/components/UpdatedAgo";
@@ -94,9 +95,11 @@ function safeName(name: string, symbol: string): string {
 }
 
 function CardBase({ token, onOpen, quickSol }: { token: MarketToken; onOpen: () => void; quickSol: number }) {
+  const tick = useTick(token.mcap);
   return (
     <div
-      className="wx-tcard"
+      className={`wx-tcard${tick ? ` ${tick.cls}` : ""}`}
+      style={tick ? { animationDelay: `${tick.delay}ms` } : undefined}
       role="link"
       tabIndex={0}
       onClick={onOpen}
@@ -147,11 +150,13 @@ function CardBase({ token, onOpen, quickSol }: { token: MarketToken; onOpen: () 
 }
 
 function RowBase({ token, onOpen, quickSol, hover }: { token: MarketToken; onOpen: () => void; quickSol: number; hover: HoverFns }) {
+  const tick = useTick(token.mcap);
   return (
     <div
       role="button"
       tabIndex={0}
-      className="wx-trow"
+      className={`wx-trow${tick ? ` ${tick.cls}` : ""}`}
+      style={tick ? { animationDelay: `${tick.delay}ms` } : undefined}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}
       onMouseEnter={() => prefetchChart(token.address, token.onCurve)} onTouchStart={() => prefetchChart(token.address, token.onCurve, true)}

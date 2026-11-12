@@ -7,7 +7,7 @@
 
 import { createPortal } from "react-dom";
 import { visibleInterval } from "@/lib/visibleInterval";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AreaSeries,
   CandlestickSeries,
@@ -29,6 +29,7 @@ import { fmtPct, fmtPrice, fmtUsd } from "@/lib/market";
 import { peekCandles } from "@/lib/candleCache";
 import { usePresence } from "@/lib/usePresence";
 import WalletAvatar from "@/components/WalletAvatar";
+import { fillGaps } from "@/lib/candleFill";
 import { walletName } from "@/lib/walletIdentity";
 
 export interface ChartCandle {
@@ -94,6 +95,15 @@ function writePref(key: string, value: string) {
   } catch {
     /* storage unavailable */
   }
+}
+
+/** Trade size for the tape: $1.2K, $139, $23, $4.0, $0.13 */
+function tapeUsd(n: number): string {
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+  if (n >= 10) return `$${Math.round(n)}`;
+  if (n >= 1) return `$${n.toFixed(1)}`;
+  return `$${n.toFixed(2)}`;
 }
 
 // lightweight-charts renders UTC; shift into the viewer's local time.
@@ -174,6 +184,14 @@ export default function TokenChart({
   const [pinItems, setPinItems] = useState<PinItem[]>([]);
   const [pins, setPins] = useState<{ key: string; x: number; y: number; kind: PinItem["kind"]; items: PinItem[]; value: number; cardLeft: number; up: boolean }[]>([]);
   const [pinOpen, setPinOpen] = useState<string | null>(null);
+  // live tape: the last few real buys and sells, drawn down the left edge of the chart as they happen
+  const [tapeNow, setTapeNow] = useState(() => Date.now());
+  useEffect(() => { const t = window.setInterval(() => setTapeNow(Date.now()), 20_000); return () => window.clearInterval(t); }, []);
+  const tape = useMemo(() => {
+    if (!trades?.length) return [];
+    const cut = Math.max(tapeNow, trades[0].ts) - 10 * 60_000; // only what happened in the last 10 minutes counts as "live"
+    return trades.filter((t) => t.ts >= cut && t.usd > 0).slice(0, 8).reverse();
+  }, [trades, tapeNow]);
   const [spotPos, setSpotPos] = useState<{ x: number; y: number } | null>(null);
   const [spotRect, setSpotRect] = useState<DOMRect | null>(null);
   const measureRef = useRef<Measure | null>(null);
@@ -877,6 +895,19 @@ export default function TokenChart({
     if (livePrice > last.c * 20 || livePrice < last.c / 20) return;
 
     if (last.t < bucket) {
+      // quiet buckets between the last bar and now become flat candles, so the new bar does not jump across a hole
+      const skipped = Math.round((bucket - last.t) / step) - 1;
+      if (skipped > 0 && skipped <= 300) {
+        for (let k = 1; k <= skipped; k++) {
+          const f: ChartCandle = { t: last.t + k * step, o: last.c, h: last.c, l: last.c, c: last.c, v: 0 };
+          list.push(f);
+          try {
+            if (style === "candles") (main as ISeriesApi<"Candlestick">).update({ time: chartTime(f.t), open: f.o * mult, high: f.h * mult, low: f.l * mult, close: f.c * mult });
+            else (main as ISeriesApi<"Area">).update({ time: chartTime(f.t), value: f.c * mult });
+          } catch { /* the next full redraw puts it right */ }
+        }
+        last = list[list.length - 1];
+      }
       const next: ChartCandle = { t: bucket, o: last.c, h: Math.max(last.c, livePrice), l: Math.min(last.c, livePrice), c: livePrice, v: 0 };
       list.push(next);
       last = next;
@@ -929,7 +960,8 @@ export default function TokenChart({
         setStale(Boolean(data.stale));
         if (rows.length) {
           rowCache.set(`${mint}:${chain ?? ""}:${tf}`, rows);
-          setCandles(rows);
+          // no holes: flat candles where nobody traded, each bar opening at the last close, running up to now (lib/candleFill.ts)
+          setCandles(fillGaps(rows, (TIMEFRAMES.find((x) => x.key === tf)?.sec ?? 900) * 1000) as ChartCandle[]);
           setStatus("ready");
         } else if (initial || candlesRef.current.length === 0) {
           setCandles([]);
@@ -960,7 +992,7 @@ export default function TokenChart({
     let cached: Partial<ChartCandle>[] = mem ?? peekCandles(mint, tf);
     if (!cached.length) cached = deriveLocal(mint, chain, tf, TIMEFRAMES.find((x) => x.key === tf)?.sec ?? 900);
     if (cached.length) {
-      const withVol: ChartCandle[] = (cached as Partial<ChartCandle>[]).map((c) => ({ v: 0, ...c } as ChartCandle));
+      const withVol: ChartCandle[] = fillGaps((cached as Partial<ChartCandle>[]).map((c) => ({ v: 0, ...c } as ChartCandle)), (TIMEFRAMES.find((x) => x.key === tf)?.sec ?? 900) * 1000) as ChartCandle[];
       candlesRef.current = withVol.map((c) => ({ ...c }));
       setCandles(withVol);
       setStatus("ready");
@@ -1182,6 +1214,16 @@ export default function TokenChart({
                 )}
                 {d.n > 1 && <i style={{ position: "absolute", right: -2, bottom: -2, minWidth: 12, height: 12, padding: "0 3px", borderRadius: 6, background: d.side === "buy" ? UP : DOWN, color: "#fff", fontSize: 8, fontStyle: "normal", lineHeight: "12px", textAlign: "center" }}>{d.n}</i>}
               </a>
+            ))}
+          </div>
+        )}
+
+        {status === "ready" && showTrades && tape.length > 0 && (
+          <div className="wx-tape" aria-hidden="true">
+            {tape.map((t, i) => (
+              <span key={t.id} className={`wx-tape-row ${t.side}${t.usd >= 250 ? " big" : ""}`} style={{ opacity: 0.28 + 0.72 * ((i + 1) / tape.length) }}>
+                <i>{t.side === "buy" ? "▲" : "▼"}</i>{tapeUsd(t.usd)}
+              </span>
             ))}
           </div>
         )}

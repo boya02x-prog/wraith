@@ -76,7 +76,7 @@ const EMPTY_TTL_MS = 20_000;
 const emptyUntil = new Map<string, number>();
 
 // ── circuit breaker (per provider) ──────────────────────────────────────
-const downUntil: Record<string, number> = { gecko: 0, birdeye: 0, paprika: 0 };
+const downUntil: Record<string, number> = { gecko: 0, birdeye: 0, paprika: 0, jupiter: 0 };
 const isDown = (k: string) => Date.now() < (downUntil[k] ?? 0);
 const markDown = (k: string, ms = 60_000) => {
   downUntil[k] = Date.now() + ms;
@@ -188,6 +188,36 @@ async function fromBirdeye(mint: string, tf: Tf): Promise<Candle[] | null> {
   }
 }
 
+// ── Jupiter chart data ──────────────────────────────────────────────────
+// The candles jup.ag draws on its own token pages: one series per token (all its pools together), every timeframe, USD volume,
+// bonding-curve tokens included, no key. Checked against GeckoTerminal on a live token: the same buckets, the same volume, closes
+// within about 1.4% (Gecko reports the price including the pool fee).
+//
+// Why it is here: the three indexers this route relied on all refuse most requests now (GeckoTerminal rate-limits the server,
+// DexPaprika's free tier and the Birdeye key are both out of monthly quota). With none of them answering, a token with hundreds
+// of thousands of trades came back as two candles and a flat line. This is not a documented public API, so it stays one source
+// among several and fails soft: if it changes or starts refusing, the others still answer.
+const JUP_INTERVAL: Record<number, string> = { 60: "1_MINUTE", 300: "5_MINUTE", 900: "15_MINUTE", 3600: "1_HOUR", 14400: "4_HOUR", 86400: "1_DAY" };
+async function fromJupiter(mint: string, tf: Tf): Promise<Candle[] | null> {
+  const interval = JUP_INTERVAL[tf.sec];
+  if (!interval || isDown("jupiter")) return null;
+  try {
+    const payload = obj(await getJson(`https://datapi.jup.ag/v2/charts/${mint}?interval=${interval}&to=${Date.now()}&candles=${tf.limit}&type=price&quote=usd`, undefined, 5000));
+    const candles: Candle[] = [];
+    for (const r of arr(payload.candles).map(obj)) {
+      const t = num(r.time) * 1000;
+      if (t > 0) candles.push({ t, o: num(r.open), h: num(r.high), l: num(r.low), c: num(r.close), v: num(r.volume) });
+    }
+    return candles.length ? candles : null;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[token-chart] jupiter failed:", msg);
+    if (msg.startsWith("429")) markDown("jupiter", 60_000);
+    else if (msg.startsWith("401") || msg.startsWith("403")) markDown("jupiter", 10 * 60_000);
+    return null;
+  }
+}
+
 // Helius parsed swaps -> candles. Independent of every candle indexer, so a rate-limited Gecko/Birdeye never blanks the chart.
 async function fromHelius(mint: string, tf: Tf): Promise<Candle[] | null> {
   const swaps = await fetchTokenSwaps(mint, 3);
@@ -281,6 +311,7 @@ async function load(mint: string, tf: Tf, onCurve = false): Promise<{ candles: C
   // Race Gecko and Birdeye simultaneously — take the first provider that returns
   // MIN_GOOD candles.  This avoids waiting for Gecko to time-out (8 s on 429)
   // before we even look at the Birdeye result that was ready 6 s earlier.
+  const jupJob = fromJupiter(mint, tf);
   const geckoJob = fromGecko(mint, tf);
   const birdeyeJob = fromBirdeye(mint, tf);
   // When Gecko is already known to be limited, start the fallback source immediately.
@@ -289,11 +320,22 @@ async function load(mint: string, tf: Tf, onCurve = false): Promise<{ candles: C
   const ownJob = candlesFromOwnTrades(mint, tf.sec, tf.limit);
   const helJob = ownJob.then((own) => (own && own.length >= OWN_WIN_MIN ? null : fromHelius(mint, tf)));
 
+  // resolves as soon as every indexer has answered (well or badly), or after 1.5s, whichever comes first
+  const indexersFirst = Promise.race([
+    Promise.allSettled([jupJob, geckoJob, birdeyeJob]),
+    new Promise((res) => setTimeout(res, 1500)),
+  ]);
+
   type Tagged = { rows: Candle[]; source: string };
   const toTagged = (rows: Candle[] | null, src: string): Tagged | null =>
     rows && rows.length >= MIN_GOOD ? { rows, source: src } : null;
 
   const winner = await Promise.any([
+    jupJob.then((r) => {
+      const t = toTagged(r, "jupiter");
+      if (!t) throw new Error("jupiter: insufficient");
+      return t;
+    }),
     geckoJob.then((r) => {
       const t = toTagged(r, "geckoterminal");
       if (!t) throw new Error("gecko: insufficient");
@@ -307,13 +349,14 @@ async function load(mint: string, tf: Tf, onCurve = false): Promise<{ candles: C
     (async () => {
       const r = await ownJob;
       if (!r || r.length < OWN_WIN_MIN) throw new Error("own: insufficient"); // shorter than this: only used as a last resort (sparse)
-      // Our worker only knows trades since it started watching, so give the indexers a short head start for longer history.
-      await new Promise((res) => setTimeout(res, isDown("gecko") ? 0 : 250));
+      // Our worker only knows trades since it started watching, so the indexers (longer history) get to answer first.
+      await indexersFirst;
       return { rows: r, source: "wraith-trades" } as Tagged;
     })(),
     (async () => {
-      // Give the indexers a head start (they carry longer history); Helius answers fast when they do not.
-      await new Promise((r) => setTimeout(r, isDown("gecko") ? 0 : 350));
+      // The indexers carry the full history; candles rebuilt from the last few hundred trades are a few minutes of it. This used
+      // to wait a fixed 350ms, and whenever the trades were already cached it won the race against a perfectly good indexer.
+      await indexersFirst;
       const r = await helJob;
       // 1-2 candles built from the last few trades is a stub, not a chart: only accept it as a last resort below
       if (!r || r.length < MIN_GOOD) throw new Error("helius: insufficient");
@@ -357,8 +400,8 @@ async function load(mint: string, tf: Tf, onCurve = false): Promise<{ candles: C
   }
 
   // Sparse-but-real beats nothing (brand-new token with 1-2 trades).
-  const [gecko, birdeye, hel, own] = await Promise.all([geckoJob, birdeyeJob, helJob, ownJob]);
-  const sparse = [gecko, birdeye, own, hel].find((x) => x && x.length);
+  const [jup, gecko, birdeye, hel, own] = await Promise.all([jupJob, geckoJob, birdeyeJob, helJob, ownJob]);
+  const sparse = [jup, gecko, birdeye, own, hel].find((x) => x && x.length);
   if (sparse) {
     const candles = clean(sparse, tf.sec);
     if (candles.length) return { candles, source: "sparse" };
@@ -378,11 +421,18 @@ async function readSaved(key: string): Promise<{ candles: Candle[]; source: stri
     if (!doc || !Array.isArray(doc.candles) || !doc.candles.length) return null;
     const ts = typeof doc.ts === "number" ? doc.ts : 0;
     if (Date.now() - ts > SAVED_MAX_AGE_MS) return null;
-    return { candles: doc.candles as Candle[], source: String(doc.source ?? "saved"), ts };
+    // A "sparse" save is one or two candles from a moment when every provider failed: opening the chart from it showed a flat
+    // line. Skip it and load fresh instead.
+    if (doc.source === "sparse") return null;
+    const real = (doc.candles as Candle[]).filter(isReal);
+    if (!real.length) return null;
+    return { candles: real, source: String(doc.source ?? "saved"), ts };
   } catch {
     return null;
   }
 }
+/** A candle a provider reported, as opposed to the flat zero-volume filler clean() puts in empty slots. */
+const isReal = (c: Candle) => !(c.v === 0 && c.o === c.h && c.h === c.l && c.l === c.c);
 function persist(key: string, fresh: Candle[], source: string) {
   void (async () => {
     try {
@@ -390,8 +440,9 @@ function persist(key: string, fresh: Candle[], source: string) {
       const col = db.collection("chart_candles");
       const prev = await col.findOne({ _id: key as never });
       const byT = new Map<number, Candle>();
-      if (prev && Array.isArray(prev.candles)) for (const c of prev.candles as Candle[]) byT.set(c.t, c);
-      for (const c of fresh) byT.set(c.t, c);
+      // only real candles are kept: filler is rebuilt on the way out, and saving it made old gaps look like real flat hours
+      if (prev && Array.isArray(prev.candles)) for (const c of prev.candles as Candle[]) if (isReal(c)) byT.set(c.t, c);
+      for (const c of fresh) if (isReal(c)) byT.set(c.t, c);
       const merged = [...byT.values()].sort((a, b) => a.t - b.t).slice(-SAVED_KEEP);
       await col.updateOne({ _id: key as never }, { $set: { candles: merged, source, ts: Date.now(), at: new Date() } }, { upsert: true });
     } catch { /* optional */ }
@@ -417,7 +468,12 @@ export async function GET(req: NextRequest) {
   let fromSaved = false;
   if (!hit) {
     const saved = await readSaved(key);
-    if (saved) { hit = saved; fromSaved = true; }
+    if (saved) {
+      const candles = clean(saved.candles, tf.sec); // saved history holds real candles only: chain and fill them like a fresh result
+      // usable only if real candles are still inside the window: old saved candles followed by hours of filler opened the chart
+      // as one flat line until the refresh landed
+      if (candles.filter(isReal).length >= MIN_GOOD) { hit = { ...saved, candles }; fromSaved = true; }
+    }
   }
   if (hit && Date.now() - hit.ts < CACHE_MS) {
     return edge(NextResponse.json({ candles: hit.candles, source: hit.source, intervalSec: tf.sec, updatedAt: hit.ts }), 5, 30);
