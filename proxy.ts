@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
+import { isOwnSessionFormat, readSession } from "@/lib/appSession";
 
 const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms"]);
 const PUBLIC_API_PATHS = new Set(["/api/native-prices", "/api/landing", "/api/banner", "/api/settings"]);
@@ -13,6 +14,18 @@ const PUBLIC_API_PREFIXES = [
   "/api/callouts",
 ];
 const PRIVY_SESSION_COOKIE = "wraith_privy_session";
+
+/**
+ * Who the sign-in cookie belongs to (their Privy user id), or null. The cookie is Wraith's own signed 30-day session
+ * (lib/appSession.ts); one written before that existed holds a raw Privy token and is honoured until it runs out.
+ */
+async function sessionUser(token: string | undefined): Promise<string | null> {
+  if (!token) return null;
+  const own = await readSession(token);
+  if (own) return own.userId;
+  if (isOwnSessionFormat(token)) return null; // ours, but edited or expired
+  return (await verifyPrivyAccessToken(token))?.userId ?? null;
+}
 
 async function route(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -28,10 +41,7 @@ async function route(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionToken = request.cookies.get(PRIVY_SESSION_COOKIE)?.value;
-  const hasSession = sessionToken
-    ? Boolean(await verifyPrivyAccessToken(sessionToken))
-    : false;
+  const hasSession = Boolean(await sessionUser(request.cookies.get(PRIVY_SESSION_COOKIE)?.value));
   if (PUBLIC_PATHS.has(pathname)) {
     if (pathname === "/login" && hasSession) {
       return NextResponse.redirect(new URL("/app", request.url));
@@ -69,13 +79,13 @@ async function privateGate(request: NextRequest): Promise<NextResponse | null> {
   const { pathname, search } = request.nextUrl;
   if (pathname === "/robots.txt") return new NextResponse(["User-agent: *", "Disallow: /", ""].join("\n"), { headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": NO_INDEX } });
   if (PRIVATE_OPEN_PATHS.has(pathname) || PRIVATE_OPEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
-  const token = request.cookies.get(PRIVY_SESSION_COOKIE)?.value;
-  const claims = token ? await verifyPrivyAccessToken(token) : null;
+  const userId = await sessionUser(request.cookies.get(PRIVY_SESSION_COOKIE)?.value);
+  const claims = userId ? { userId } : null;
   if (claims && allowedIds().has(claims.userId)) return null; // you, or someone you listed
   const headers = { "x-robots-tag": NO_INDEX, "cache-control": "no-store" };
   const isApi = pathname.startsWith("/api/");
   if (!claims) {
-    // Not signed in, or the sign-in cookie (it lasts one hour) has run out. Answer exactly as the normal app does, so the APK and the
+    // Not signed in, or the sign-in cookie has run out. Answer exactly as the normal app does, so the APK and the
     // browser can sign back in silently through the sign-in page; a stranger just lands on a sign-in page they cannot get past.
     if (isApi) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
     if (pathname === "/app" || pathname.startsWith("/app/")) {

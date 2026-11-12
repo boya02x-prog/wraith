@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrivySession, PRIVY_SESSION_COOKIE } from "@/lib/privyAuth";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
+import { SESSION_DAYS, signSession } from "@/lib/appSession";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +23,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // The fresh Privy token above proved who this is. From here the browser carries Wraith's own signed session (30 days, renewed on
+  // every visit) instead of the raw one-hour Privy token, so opening the app later does not bounce through the sign-in page.
+  // See lib/appSession.ts for what that session can and cannot do.
+  const bearer = getBearerToken(request);
+  const claims = await verifyPrivyAccessToken(bearer);
+  const own = claims ? await signSession(claims.userId) : null;
   const response = NextResponse.json({ ok: true, user: session.user });
-  response.cookies.set(PRIVY_SESSION_COOKIE, getBearerToken(request), {
+  response.cookies.set(PRIVY_SESSION_COOKIE, own ?? bearer, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60,
+    maxAge: own ? SESSION_DAYS * 86_400 : 60 * 60,
   });
   return response;
 }

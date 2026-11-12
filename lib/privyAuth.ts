@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongoClient";
 import { getPrivyClient, verifyPrivyAccessToken } from "@/lib/privyServer";
+import { isOwnSessionFormat, readSession } from "@/lib/appSession";
 
 export const PRIVY_SESSION_COOKIE = "wraith_privy_session";
 
@@ -19,12 +20,21 @@ export async function getPrivySession(
 ): Promise<AuthenticatedSession | null> {
   const authorization = request?.headers.get("authorization");
   const bearerToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const token =
-    bearerToken ?? (await cookies()).get(PRIVY_SESSION_COOKIE)?.value ?? null;
-  if (!token) return null;
-  const claims = await verifyPrivyAccessToken(token);
+  // A request proves who it is in one of two ways: a live Privy access token in the Authorization header (sign-in, and the few calls
+  // that send one), or Wraith's own signed session cookie (lib/appSession.ts). Cookies written before that existed hold the raw
+  // Privy token and are still honoured until they run out (one hour).
+  let privyUserId: string | null = null;
+  if (bearerToken) {
+    privyUserId = (await verifyPrivyAccessToken(bearerToken))?.userId ?? null;
+  } else {
+    const cookie = (await cookies()).get(PRIVY_SESSION_COOKIE)?.value ?? null;
+    if (!cookie) return null;
+    privyUserId = (await readSession(cookie))?.userId
+      ?? (isOwnSessionFormat(cookie) ? null : (await verifyPrivyAccessToken(cookie))?.userId ?? null);
+  }
   const privyClient = getPrivyClient();
-  if (!claims || !privyClient) return null;
+  if (!privyUserId || !privyClient) return null;
+  const claims = { userId: privyUserId };
 
   const db = await getDb();
   const users = db.collection("users");
