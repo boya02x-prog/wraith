@@ -3,7 +3,7 @@
 import { KIND_INFO, walletHue, type WalletKind } from "@/lib/walletIdentity";
 
 /** A little ghost, coloured from the wallet address, with its type as a badge. Same wallet = same ghost everywhere. */
-export default function WalletAvatar({ address, kind = "regular", size = 40 }: { address: string; kind?: WalletKind; size?: number }) {
+export default function WalletAvatar({ address, kind = "regular", size = 40, bare = false }: { address: string; kind?: WalletKind; size?: number; bare?: boolean }) {
   const h = walletHue(address);
   const info = KIND_INFO[kind];
   const id = `g${address.slice(0, 6)}${size}`;
@@ -21,7 +21,7 @@ export default function WalletAvatar({ address, kind = "regular", size = 40 }: {
         <ellipse cx="26" cy="29" rx="3.2" ry="3.8" fill="#0c0c0d" opacity=".85" />
         <ellipse cx="38" cy="29" rx="3.2" ry="3.8" fill="#0c0c0d" opacity=".85" />
       </svg>
-      <i className="wa-kind" style={{ background: info.color }} title={info.label}>{info.emoji}</i>
+      {!bare && <i className="wa-kind" style={{ background: info.color }} title={info.label}>{info.emoji}</i>}
     </span>
   );
 }

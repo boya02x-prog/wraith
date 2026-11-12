@@ -256,13 +256,13 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
               <div style={{ textAlign: "right" }}><span>TOP HOLDER</span><b>{holders[0].share.toFixed(1)}%</b><em>{short(holders[0].wallet)}</em></div>
             </div>
             <div className="hl">
-              {holders.map((h, i) => {
+              {holders.filter((h) => h.quantity > 0 && h.share >= 0.005).map((h, i) => {
                 const u = wmap[h.wallet];
                 const val = currentMcap && currentMcap > 0 ? (h.share / 100) * currentMcap : null;
                 return (
                   <a key={h.wallet} className={`hl-row${u ? " wr" : ""}`} href={`https://solscan.io/account/${h.wallet}`} target="_blank" rel="noopener noreferrer" style={{ animationDelay: `${Math.min(i, 12) * 22}ms` }}>
                     <span className="hl-rank">{i + 1}</span>
-                    {u?.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="hl-pic" src={u.avatar} alt="" /> : <WalletAvatar address={h.wallet} size={38} />}
+                    {u?.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="hl-pic" src={u.avatar} alt="" /> : <WalletAvatar address={h.wallet} size={38} kind="holder" bare />}
                     <span className="hl-who">
                       <b>{u ? u.displayName : walletName(h.wallet)}{u && u.tier !== "GHOST" && <em>{u.tier}</em>}</b>
                       <small className="mono">{short(h.wallet)} · {qty(h.quantity)}</small>

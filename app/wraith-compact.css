@@ -912,3 +912,8 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .dt .dt-strip b { font-size: 22px; }
 .wx-yzoom { display: inline-flex; gap: 4px; }
 .wx-yzoom .wx-icon-btn { width: 30px; font-size: 16px; font-weight: 800; line-height: 1; }
+
+/* price-axis drag strip (right edge of the chart): the only part that captures a vertical finger drag */
+.wx-axis-grip { position: absolute; z-index: 4; top: 0; right: 0; bottom: 28px; width: 70px; touch-action: none; cursor: ns-resize; }
+.hl-bar { display: none !important; }
+.hl-row { padding-top: 12px; padding-bottom: 12px; }

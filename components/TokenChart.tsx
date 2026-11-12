@@ -162,18 +162,37 @@ export default function TokenChart({
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  // Zoom the price axis around the middle of what is on screen (factor < 1 = taller candles). Turns auto-fit off until Reset.
-  const zoomY = useCallback((factor: number) => {
+  // Drag on the price axis (right edge) to stretch or squeeze the candles up and down, like TradingView. Only this strip
+  // captures the finger, so the rest of the chart still lets the page scroll. Double tap = fit again.
+  const axisDrag = useRef<{ y: number; from: number; to: number } | null>(null);
+  const lastAxisTap = useRef(0);
+  const axisDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     try {
       const ps = chartRef.current?.priceScale("right");
       const r = ps?.getVisibleRange();
       if (!ps || !r) return;
-      const mid = (r.from + r.to) / 2;
-      const half = ((r.to - r.from) / 2) * factor;
+      const now = Date.now();
+      if (now - lastAxisTap.current < 320) { ps.applyOptions({ autoScale: true }); lastAxisTap.current = 0; return; }
+      lastAxisTap.current = now;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      axisDrag.current = { y: e.clientY, from: r.from, to: r.to };
+    } catch { /* chart not ready */ }
+  }, []);
+  const axisMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const d = axisDrag.current;
+    if (!d) return;
+    try {
+      const ps = chartRef.current?.priceScale("right");
+      if (!ps) return;
+      // finger down = taller candles (zoom in), finger up = shorter; smooth exponential feel
+      const f = Math.exp(-(e.clientY - d.y) / 160);
+      const mid = (d.from + d.to) / 2;
+      const half = ((d.to - d.from) / 2) * f;
       ps.applyOptions({ autoScale: false });
       ps.setVisibleRange({ from: mid - half, to: mid + half });
     } catch { /* chart not ready */ }
   }, []);
+  const axisUp = useCallback(() => { axisDrag.current = null; }, []);
   const mainRef = useRef<ISeriesApi<"Candlestick"> | ISeriesApi<"Area"> | null>(null);
   const volRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const candlesRef = useRef<ChartCandle[]>([]);
@@ -1325,10 +1344,6 @@ export default function TokenChart({
             B/S
           </button>
         )}
-        <span className="wx-yzoom" role="group" aria-label="Zoom the price axis">
-          <button type="button" className="wx-icon-btn" onClick={() => zoomY(0.6)} aria-label="Taller candles (zoom price in)" title="Taller candles">+</button>
-          <button type="button" className="wx-icon-btn" onClick={() => zoomY(1.6)} aria-label="Shorter candles (zoom price out)" title="Shorter candles">−</button>
-        </span>
         <button type="button" className="wx-icon-btn" onClick={() => { try { chartRef.current?.priceScale("right").applyOptions({ autoScale: true }); chartRef.current?.timeScale().scrollToRealTime(); } catch { /* ignore */ } void load(true); }} aria-label="Reset chart" title="Reset view / refresh">
           <RefreshCw size={13} />
         </button>
@@ -1362,6 +1377,7 @@ export default function TokenChart({
       {/* chart surface */}
       <div style={{ position: "relative", flex: 1, minHeight: 260 }}>
         <ChartToolRail active={activeTool} drawCount={drawings.length} selCount={selected.length} onPick={pickTool} onDelete={deleteDrawings} />
+        <div className="wx-axis-grip" onPointerDown={axisDown} onPointerMove={axisMove} onPointerUp={axisUp} onPointerCancel={axisUp} aria-hidden="true" title="Drag up or down to stretch the candles" />
         <div ref={hostRef} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
 
         {(tool || selectMode || measureMode || (measure && !measure.locked)) && (
