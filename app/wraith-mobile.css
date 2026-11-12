@@ -1027,7 +1027,7 @@ a, button, [role="button"], [role="link"], [role="tab"], .wx-tcard, .sg-card, .w
   .wx-chart-toolbar .wx-icon-btn svg { width: 18px; height: 18px; }
   .wx-chart-toolbar .wx-icon-btn.on { border-color: var(--orange) !important; background: rgba(255,123,61,.16) !important; color: var(--orange); }
   /* give the chart a little more room now the toolbar can take two rows */
-  .wraith-dashboard .wx-chart-card { height: calc(100dvh - 250px); min-height: 380px; }
+  .wraith-dashboard .wx-chart-card { height: clamp(300px, 52dvh, 430px); min-height: 300px; }
   /* drawing handles/labels are small by default; let them be touched */
   .wx-draw-del { min-width: 36px; min-height: 36px; }
   .wx-chart-card canvas { touch-action: pan-y pinch-zoom; }

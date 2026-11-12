@@ -3072,6 +3072,15 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   const [termsChecked, setTermsChecked] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
   const [termsError, setTermsError] = useState("");
+  const [termsCode, setTermsCode] = useState("");
+  // an invite link already left its code in a cookie: show it, so a new account can see that the invite was noticed
+  useEffect(() => {
+    if (!termsRequired) return;
+    try {
+      const m = document.cookie.match(/(?:^|; )wr_ref=([A-Za-z0-9]{5,12})/);
+      if (m) setTermsCode((c) => c || m[1].toUpperCase());
+    } catch { /* cookies blocked */ }
+  }, [termsRequired]);
   const [profileDialog, setProfileDialog] = useState<ProfileDialog | null>(
     null,
   );
@@ -3187,6 +3196,14 @@ export default function Header({ onSelectMeme }: HeaderProps) {
     setTermsSaving(true);
     setTermsError("");
     try {
+      // an invite code typed here is checked FIRST, so a typo is caught before you are let in (leave it empty to skip)
+      if (termsCode.trim().length >= 5) {
+        const r = await fetch("/api/quests/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: termsCode }) });
+        const j = (await r.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+        // a code that was already credited from an invite link answers "already added": that is fine, carry on
+        if (j && j.ok === false && !/already added/i.test(j.message ?? "")) throw new Error(j.message ?? "That invite code did not work.");
+      }
+      try { localStorage.setItem("wraith_ref_prompt_v1", "1"); } catch { /* storage blocked */ } // the separate invite card never re-asks
       const response = await fetch("/api/user/terms", { method: "POST" });
       if (response.status === 401 || response.status === 403) {
         throw new Error("Session expired — log out and sign in again.");
@@ -3869,17 +3886,34 @@ export default function Header({ onSelectMeme }: HeaderProps) {
       ? createPortal(
           <div className="wraith-terms-backdrop">
             <section
-              className="wraith-terms-dialog"
+              className="wraith-terms-dialog wt-new"
               role="dialog"
               aria-modal="true"
               aria-labelledby="wraith-terms-title"
             >
-              <span className="profile-eyebrow">WRAITH ACCOUNT</span>
-              <h2 id="wraith-terms-title">Welcome to WRAITH</h2>
-              <p>
-                Review and accept the Terms of Service and Privacy Policy to
-                continue using your account.
-              </p>
+              <div className="wt-ghost" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.svg" alt="" />
+              </div>
+              <span className="profile-eyebrow">WELCOME</span>
+              <h2 id="wraith-terms-title">Welcome to Wraith</h2>
+              <ul className="wt-points">
+                <li><b>One Cash balance</b><span>Deposit once, trade on any of 7 chains.</span></li>
+                <li><b>Calls with a track record</b><span>Every call is tracked, wins and losses.</span></li>
+                <li><b>Wallets made for you</b><span>Locked behind your own PIN.</span></li>
+              </ul>
+              <label className="wt-code">
+                <span>Invite code <em>(optional)</em></span>
+                <input
+                  value={termsCode}
+                  maxLength={12}
+                  placeholder="Got a friend's code? Paste it"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(e) => { setTermsCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()); setTermsError(""); }}
+                />
+              </label>
               <label className="wraith-terms-check">
                 <input
                   type="checkbox"
@@ -3887,8 +3921,9 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                   onChange={(event) => setTermsChecked(event.target.checked)}
                 />
                 <span>
-                  I confirm that I am 18 or older and accept the Terms of
-                  Service and Privacy Policy.
+                  I am 18 or older and accept the{" "}
+                  <Link href="/terms" target="_blank">Terms</Link> and{" "}
+                  <Link href="/privacy" target="_blank">Privacy Policy</Link>.
                 </span>
               </label>
               {termsError && (
@@ -3902,7 +3937,7 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                 disabled={!termsChecked || termsSaving}
                 onClick={() => void acceptTerms()}
               >
-                {termsSaving ? "Saving…" : "Continue"}
+                {termsSaving ? "Checking…" : "Enter Wraith"}
               </button>
               <button
                 className="wraith-terms-logout"

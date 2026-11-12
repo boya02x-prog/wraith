@@ -276,7 +276,7 @@ export default function TokenChart({
         shiftVisibleRangeOnNewBar: true,
       },
       kineticScroll: { mouse: false, touch: false },
-      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
       handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true },
     });
     chartRef.current = chart;
