@@ -9,6 +9,7 @@ import type { MemeTrend } from "@/app/app/page";
 import { useWraithSession } from "@/components/SessionProvider";
 import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
 import ReferralPrompt from "@/components/ReferralPrompt";
+import StreetTheme from "@/components/StreetTheme";
 
 type SelectFn = (meme: MemeTrend) => void;
 type ShellCtx = { setSelect: (fn: SelectFn | null) => void };
@@ -48,6 +49,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Header onSelectMeme={hasSelect ? onSelect : undefined} />
       </div>
       <ReferralPrompt />
+      <StreetTheme />
       {children}
     </Ctx.Provider>
   );
