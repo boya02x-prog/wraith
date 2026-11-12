@@ -24,7 +24,7 @@ type Data = {
   totalPoints: number;
   rules: { airdropTokens: number; tradePointsPerUsd: number; dailyTradeCap: number; referralShare: number; referralFirstTradeBonus: number; xPostPoints: number };
   leaderboard: Row[];
-  me?: { points: number; rank: number | null; refCode: string; refCount: number; refActive: number; invitedBy: boolean; estimatedTokens: number; sharePct: number; canPostToday: boolean };
+  me?: { points: number; rank: number | null; refCode: string; refCount: number; refActive: number; invitedBy: boolean; canEnterCode?: boolean; estimatedTokens: number; sharePct: number; canPostToday: boolean };
   tasks?: Task[];
   activity?: Activity[];
   bugs?: BugRow[];
@@ -39,6 +39,36 @@ const ago = (iso: string) => {
   return `${Math.round(s / 86400)}d ago`;
 };
 const KIND: Record<string, string> = { task: "Task", trade: "Trade", referral: "Invite", x_post: "Post on X", bug: "Bug report", admin: "Bonus" };
+
+/** "Got an invite code?" for accounts that did not come through a link. */
+function InviteCodeBox({ onDone }: { onDone: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<{ ok: boolean; text: string } | null>(null);
+  async function apply() {
+    if (!code.trim() || busy) return;
+    setBusy(true); setRes(null);
+    try {
+      const r = await fetch("/api/quests/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      const j = (await r.json()) as { ok: boolean; message: string };
+      setRes({ ok: j.ok, text: j.message });
+      if (j.ok) onDone();
+    } catch { setRes({ ok: false, text: "No connection. Try again." }); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="q-code">
+      <label htmlFor="invite-code">Got an invite code?</label>
+      <div className="q-row">
+        <input id="invite-code" className="q-input" placeholder="Paste your friend's code" value={code} maxLength={12} autoCapitalize="characters" autoComplete="off" spellCheck={false}
+          onChange={(e) => setCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") void apply(); }} />
+        <button className="q-btn is-solid" disabled={busy || code.length < 5} onClick={() => void apply()}>{busy ? "…" : "Apply"}</button>
+      </div>
+      {res && <div className={`q-msg ${res.ok ? "is-ok" : "is-err"}`}>{res.text}</div>}
+      <small className="q-note">Only works in your first 3 days, before your first trade.</small>
+    </div>
+  );
+}
 
 export default function QuestsPage() {
   const [data, setData] = useState<Data | null>(null);
@@ -263,6 +293,8 @@ export default function QuestsPage() {
                     <div><b>{n(me.refActive)}</b><span>Traded</span></div>
                     <div><b>{me.refCode}</b><span>Your code</span></div>
                   </div>
+                  {me.canEnterCode && !me.invitedBy && <InviteCodeBox onDone={() => void load()} />}
+                  {me.invitedBy && <div className="q-note" style={{ marginTop: 10 }}>You joined with a friend&apos;s invite code.</div>}
                 </>
               ) : <div className="q-note">Sign in to get your invite link.</div>}
             </section>

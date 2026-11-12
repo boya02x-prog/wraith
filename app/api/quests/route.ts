@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/session";
 import {
   QUEST_RULES, TASKS, TG_CHANNEL_URL, X_HANDLE,
-  attachReferrer, getQuestProfile, isQuestAdmin, leaderboard, rankOf, recentActivity, totalPoints,
+  attachReferrer, canEnterReferralCode, getQuestProfile, isQuestAdmin, leaderboard, rankOf, recentActivity, totalPoints,
 } from "@/lib/quests";
 import { getDb } from "@/lib/mongoClient";
 import { getLaunchSettings } from "@/lib/launchSettingsServer";
@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   try {
     await attachReferrer(userId, req.cookies.get("wr_ref")?.value);
     const me = await getQuestProfile(userId);
+    const canEnterCode = await canEnterReferralCode(userId).catch(() => false);
     const [rank, activity, bugs] = await Promise.all([
       me.points > 0 ? rankOf(me.points) : Promise.resolve(null),
       recentActivity(userId, 20),
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
         refCount: me.refCount,
         refActive: me.refActive,
         invitedBy: !!me.referredBy,
+        canEnterCode,
         estimatedTokens: Math.floor(share * QUEST_RULES.airdropTokens),
         sharePct: share * 100,
         canPostToday: !me.lastXPostAt || Date.now() - me.lastXPostAt >= 20 * 3600_000,

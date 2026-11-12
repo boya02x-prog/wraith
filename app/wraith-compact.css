@@ -775,3 +775,22 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .fb-wrap.open .fb-tools button:not(.fb-txt) { width: 40px; height: 40px; }
   .fb-wrap.open .fb-tools button.fb-txt { height: 32px; align-self: center; }
 }
+
+/* Invite code: the one-time "Got an invite code?" card for new accounts, and the field on the Quests page */
+.rf-back { position: fixed; inset: 0; z-index: 1900; display: grid; place-items: start center; padding: calc(14vh + var(--sai-top, 0px)) 16px 16px; background: rgba(0, 0, 0, .6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: wx-fade .18s ease-out; }
+.rf-card { width: min(380px, 100%); display: grid; gap: 10px; padding: 18px; border-radius: 18px; border: 1px solid rgba(var(--accent-rgb), .4); background: #121214; box-shadow: 0 24px 70px rgba(0, 0, 0, .7); animation: rf-pop .22s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes rf-pop { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+.rf-card strong { font-size: 17px; }
+.rf-card p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-muted, #a1a1a6); }
+.rf-card input { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: #0a0a0b; color: #fff; font-family: var(--font-mono), monospace; font-size: 17px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.rf-card input:focus { outline: none; border-color: rgba(var(--accent-rgb), .7); }
+.rf-card .ok { font-size: 12.5px; color: #4ade80; }
+.rf-card .err { font-size: 12.5px; color: #f87171; }
+.rf-actions { display: flex; gap: 8px; margin-top: 4px; }
+.rf-actions button { flex: 1; height: 44px; border-radius: 12px !important; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; }
+.rf-skip { border: 1px solid rgba(255, 255, 255, .14); background: transparent; color: var(--text, #ededee); }
+.rf-go { border: 0; background: var(--accent, #ff7b3d); color: #1a0b03; }
+.rf-go:disabled { opacity: .45; cursor: default; }
+.q-code { display: grid; gap: 7px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, .07); }
+.q-code label { font-size: 13px; font-weight: 700; }
+.q-code .q-input { text-transform: uppercase; font-family: var(--font-mono), monospace; letter-spacing: .08em; }

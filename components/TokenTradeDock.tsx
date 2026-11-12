@@ -161,9 +161,6 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
     () => embeddedAddress ? new PublicKey(embeddedAddress) : null,
     [embeddedAddress],
   );
-  const shortAddress = embeddedAddress
-    ? `${embeddedAddress.slice(0, 5)}...${embeddedAddress.slice(-4)}`
-    : "Wallet not ready";
   const amountUsd = currencyRate && currencyRate > 0
     ? Number(amountCash) / currencyRate
     : 0;
@@ -456,10 +453,11 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
           ))}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
+        {/* One account, one Cash balance: no wallet address here. Deposits (USDC / USDT / USDG on any network) all show up as Cash. */}
+        <div title="One Cash balance for every network. Deposit USDC, USDT or USDG on any chain and it can buy any token on any chain." style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
           <Wallet size={14} color="var(--orange)" />
-          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{shortAddress}</span>
-          <span style={{ color: embeddedWallet ? "#37d58a" : "#ffba55" }}>{embeddedWallet ? "READY" : "SETUP"}</span>
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>Paying from your <b style={{ color: "var(--text)" }}>Cash balance</b></span>
+          <span style={{ color: embeddedWallet ? "#37d58a" : "#ffba55" }}>{embeddedWallet ? "READY" : "SETTING UP"}</span>
         </div>
 
         {mode === "buy" ? (

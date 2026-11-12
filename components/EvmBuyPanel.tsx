@@ -27,7 +27,6 @@ const PRESETS_USD = [5, 10, 25, 50];
 const SELL_PRESETS = [25, 50, 100];
 
 type Phase = "idle" | "quoting" | "approving" | "sending" | "bridging" | "done" | "error";
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 export default function EvmBuyPanel({ chainKey, tokenAddress, symbol, priceUsd, mcap, imageUrl }: { chainKey: string; tokenAddress: string; symbol: string; priceUsd: number; mcap?: number | null; imageUrl?: string | null }) {
   const { authenticated, login } = usePrivy();
@@ -280,10 +279,10 @@ export default function EvmBuyPanel({ chainKey, tokenAddress, symbol, priceUsd, 
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
+      <div title="One Cash balance for every network. Deposit USDC, USDT or USDG on any chain and it can buy any token on any chain." style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
         <Wallet size={14} color="var(--orange)" />
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{evm ? short(evm) : "No EVM wallet"}</span>
-        <span style={{ color: evm ? "#37d58a" : "#ffba55" }}>{evm ? "READY" : "SETUP"}</span>
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>Paying from your <b style={{ color: "var(--text)" }}>Cash balance</b></span>
+        <span style={{ color: evm ? "#37d58a" : "#ffba55" }}>{evm ? "READY" : "SETTING UP"}</span>
       </div>
 
       {mode === "buy" ? (

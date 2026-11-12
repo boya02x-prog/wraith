@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import type { MemeTrend } from "@/app/app/page";
 import { useWraithSession } from "@/components/SessionProvider";
 import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
+import ReferralPrompt from "@/components/ReferralPrompt";
 
 type SelectFn = (meme: MemeTrend) => void;
 type ShellCtx = { setSelect: (fn: SelectFn | null) => void };
@@ -46,6 +47,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className="wraith-dashboard wx-shell">
         <Header onSelectMeme={hasSelect ? onSelect : undefined} />
       </div>
+      <ReferralPrompt />
       {children}
     </Ctx.Provider>
   );

@@ -160,6 +160,9 @@ export default function EmbeddedWalletTransfers({
       {screen === "deposit-home" && (
         <div className="ewt-screen">
           <h3 className="ewt-title">Deposit with</h3>
+          <p className="ewt-deposit-hint" style={{ margin: "0 0 12px", textAlign: "left" }}>
+            <b>One Cash balance.</b> Deposit USDC, USDT or USDG on any network and it all adds up to a single balance in dollars. Buying a token spends from it, selling puts the money back.
+          </p>
           <button type="button" className="ewt-option" onClick={() => setScreen("deposit-crypto")}>
             <span className="ewt-option-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/></svg>

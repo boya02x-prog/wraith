@@ -42,6 +42,7 @@ export interface QuestProfile {
   referredBy?: string | null;
   refCount: number; // friends who signed up with the link
   refActive: number; // of those, friends who made a verified trade
+  refTries?: number; // invite codes typed in by hand that were wrong
   tasks: Partial<Record<TaskId, number>>; // task -> completed at (ms)
   lastXPostAt?: number;
   createdAt: Date;
@@ -109,19 +110,56 @@ export async function award(userId: string, kind: LedgerKind, pts: number, key: 
 }
 
 /** Link a new account to the friend who invited it. Only for accounts made in the last 3 days that have not traded yet. */
-export async function attachReferrer(userId: string, code: string | null | undefined): Promise<void> {
-  const ref = (code ?? "").trim().toUpperCase();
-  if (!/^[A-Z0-9]{5,12}$/.test(ref) || !ObjectId.isValid(userId)) return;
+const REF_WINDOW_MS = 3 * 86_400_000; // an invite code can be added during the first 3 days of an account
+const REF_MAX_TRIES = 10; // wrong codes a person may try by hand, so codes cannot be guessed one after another
+
+/** Why this account cannot add an invite code right now, or null when it can. */
+async function referralBlock(userId: string, me: QuestProfile): Promise<string | null> {
+  if (me.referredBy) return "You already added an invite code.";
+  if (me.tasks.first_trade) return "Invite codes can only be added before your first trade.";
   const d = await db();
-  const me = await getQuestProfile(userId);
-  if (me.referredBy || me.refCode === ref || me.tasks.first_trade) return;
-  const user = await d.collection("users").findOne({ _id: new ObjectId(userId) }, { projection: { createdAt: 1 } });
+  const user = ObjectId.isValid(userId) ? await d.collection("users").findOne({ _id: new ObjectId(userId) }, { projection: { createdAt: 1 } }) : null;
   const created = user?.createdAt instanceof Date ? user.createdAt.getTime() : 0;
-  if (!created || Date.now() - created > 3 * 86_400_000) return;
-  const inviter = await d.collection<QuestProfile>("quest_profiles").findOne({ refCode: ref });
-  if (!inviter || inviter._id === userId || inviter.referredBy === userId) return;
-  const res = await d.collection<QuestProfile>("quest_profiles").updateOne({ _id: userId, referredBy: null }, { $set: { referredBy: inviter._id, updatedAt: new Date() } });
-  if (res.modifiedCount) await d.collection<QuestProfile>("quest_profiles").updateOne({ _id: inviter._id }, { $inc: { refCount: 1 } });
+  if (!created || Date.now() - created > REF_WINDOW_MS) return "Invite codes can only be added in the first 3 days of an account.";
+  return null;
+}
+
+export async function canEnterReferralCode(userId: string): Promise<boolean> {
+  if (!ObjectId.isValid(userId)) return false;
+  const me = await getQuestProfile(userId);
+  return (await referralBlock(userId, me)) === null;
+}
+
+/**
+ * Credits this account to the friend who owns `code`. `manual` = typed in by the person (counted against REF_MAX_TRIES); otherwise it
+ * is the code remembered from an invite link. Every rule lives here, so the link path and the typed path can never disagree.
+ */
+export async function redeemReferralCode(userId: string, code: string | null | undefined, manual = false): Promise<{ ok: boolean; message: string }> {
+  const ref = (code ?? "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{5,12}$/.test(ref)) return { ok: false, message: "That doesn't look like an invite code. Codes are 5 to 12 letters and numbers." };
+  if (!ObjectId.isValid(userId)) return { ok: false, message: "Sign in first." };
+  const d = await db();
+  const profiles = d.collection<QuestProfile>("quest_profiles");
+  const me = await getQuestProfile(userId);
+  const blocked = await referralBlock(userId, me);
+  if (blocked) return { ok: false, message: blocked };
+  if (me.refCode === ref) return { ok: false, message: "That is your own code. Share it with friends instead." };
+  if (manual && (me.refTries ?? 0) >= REF_MAX_TRIES) return { ok: false, message: "Too many tries. Ask your friend to double check their code." };
+  const inviter = await profiles.findOne({ refCode: ref });
+  if (!inviter || inviter._id === userId || inviter.referredBy === userId) {
+    if (manual) await profiles.updateOne({ _id: userId }, { $inc: { refTries: 1 } });
+    return { ok: false, message: inviter ? "That code can't be used." : "We couldn't find that code. Check it with your friend." };
+  }
+  const res = await profiles.updateOne({ _id: userId, referredBy: null }, { $set: { referredBy: inviter._id, updatedAt: new Date() } });
+  if (!res.modifiedCount) return { ok: false, message: "You already added an invite code." };
+  await profiles.updateOne({ _id: inviter._id }, { $inc: { refCount: 1 } });
+  return { ok: true, message: "Invite code added. Your friend now earns when you trade." };
+}
+
+/** The code remembered from an invite link (cookie). Silent: it only ever helps, it never complains. */
+export async function attachReferrer(userId: string, code: string | null | undefined): Promise<void> {
+  if (!code) return;
+  await redeemReferralCode(userId, code, false).catch(() => undefined);
 }
 
 async function markTask(userId: string, task: TaskId, points: number): Promise<boolean> {

@@ -346,15 +346,66 @@ function CoinSearch({
       if (Array.isArray(list)) setRecentQ(list.filter((q) => typeof q === "string" && q).slice(0, 8));
     } catch { /* ignore */ }
   }, [open]);
-  const pushRecentQ = (q: string) => {
-    const t = q.trim();
-    if (t.length < 2) return;
-    try {
-      const next = [t, ...recentQ.filter((x) => x.toLowerCase() !== t.toLowerCase())].slice(0, 8);
-      setRecentQ(next);
-      localStorage.setItem("wraith_recent_queries", JSON.stringify(next));
-    } catch { /* ignore */ }
-  };
+  // Older versions remembered the words you typed. Now the token you opened is what is remembered (icon, name, market cap), and an
+  // old entry that was a pasted contract address is turned into the token it points to the next time the search opens.
+  const triedQ = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!open) return;
+    const addrs = recentQ
+      .filter((q) => (SOLANA_MINT_RE.test(q) || EVM_ADDR_RE.test(q)) && !triedQ.current.has(q) && !recent.some((t) => t.address.toLowerCase() === q.toLowerCase()))
+      .slice(0, 4);
+    if (!addrs.length) return;
+    addrs.forEach((q) => triedQ.current.add(q));
+    let alive = true;
+    void Promise.all(addrs.map(async (q): Promise<{ q: string; t: TokenResult | null }> => {
+      try {
+        const d = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${encodeURIComponent(q)}`).then((r) => r.json());
+        const pairs = ((d?.pairs ?? []) as { chainId: string; liquidity?: { usd?: number } }[])
+          .filter((x) => x.chainId === "solana" || chainOf(x.chainId))
+          .sort((a, b) => (b.liquidity?.usd ?? 0) - (a.liquidity?.usd ?? 0));
+        const pair = pairs[0] as (typeof pairs)[number] & Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (pair) {
+          return { q, t: {
+            address: pair.baseToken?.address ?? q,
+            name: cleanName(pair.baseToken?.name ?? "Unknown"),
+            symbol: cleanSym(pair.baseToken?.symbol ?? "???"),
+            icon: pair.info?.imageUrl ?? undefined,
+            priceUsd: parseFloat(pair.priceUsd ?? "0"),
+            marketCap: Number(pair.marketCap) > 0 ? Number(pair.marketCap) : 0,
+            liquidity: pair.liquidity?.usd ?? 0,
+            volume24h: pair.volume?.h24 ?? 0,
+            priceChange24h: pair.priceChange?.h24 ?? 0,
+            chainId: pair.chainId ?? "",
+            pairAddress: pair.pairAddress ?? "",
+          } };
+        }
+        if (SOLANA_MINT_RE.test(q)) {
+          const snap = await fetch(`/api/token-price?mint=${encodeURIComponent(q)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+          if (snap && (Number(snap.priceUsd) > 0 || Number(snap.marketCap) > 0 || snap.symbol)) {
+            return { q, t: {
+              address: q, name: cleanName(String(snap.name ?? "Unknown")), symbol: cleanSym(String(snap.symbol ?? "???")),
+              icon: typeof snap.image === "string" ? snap.image : undefined, priceUsd: Number(snap.priceUsd) || 0, marketCap: Number(snap.marketCap) || 0,
+              liquidity: Number(snap.liquidity) || 0, volume24h: Number(snap.volume24h) || 0, priceChange24h: Number(snap.priceChange24h ?? snap.priceChange) || 0,
+              chainId: "solana", pairAddress: "",
+            } };
+          }
+        }
+      } catch { /* offline: try again next time */ }
+      return { q, t: null };
+    })).then((rows) => {
+      const found = rows.filter((r): r is { q: string; t: TokenResult } => r.t !== null);
+      if (!alive || !found.length) return;
+      const nextTokens = [...found.map((f) => f.t), ...recent.filter((t) => !found.some((f) => f.t.address.toLowerCase() === t.address.toLowerCase()))].slice(0, 8);
+      const nextQ = recentQ.filter((x) => !found.some((f) => f.q === x));
+      setRecent(nextTokens);
+      setRecentQ(nextQ);
+      try {
+        localStorage.setItem("wraith_recent_tokens", JSON.stringify(nextTokens));
+        localStorage.setItem("wraith_recent_queries", JSON.stringify(nextQ));
+      } catch { /* ignore */ }
+    });
+    return () => { alive = false; };
+  }, [open, recentQ, recent]);
   const dropRecentQ = (q: string) => {
     const next = recentQ.filter((x) => x !== q);
     setRecentQ(next);
@@ -647,8 +698,14 @@ function CoinSearch({
   }, []);
 
   const handleSelectToken = (token: TokenResult) => {
-    pushRecentQ(query);
     pushRecent(token);
+    // typed text that pointed at this token is replaced by the token itself
+    const same = (x: string) => [token.address, token.symbol, token.name].some((v) => v && v.toLowerCase() === x.toLowerCase());
+    if (recentQ.some(same)) {
+      const nextQ = recentQ.filter((x) => !same(x));
+      setRecentQ(nextQ);
+      try { localStorage.setItem("wraith_recent_queries", JSON.stringify(nextQ)); } catch { /* ignore */ }
+    }
     // Build MemeTrend from the search result
     const meme: MemeTrend = {
       keyword: token.symbol,
@@ -1064,20 +1121,6 @@ function CoinSearch({
                   </span>
                 </div>
               )}
-              {recentQ.length > 0 && (
-                <div className="wx-cs-rq">
-                  <div className="wx-cs-rq-head"><span>Recent searches</span></div>
-                  {recentQ.map((q) => (
-                    <div key={q} className="wx-cs-rq-row">
-                      <button type="button" className="wx-cs-rq-main" onClick={() => { setQuery(q); setActiveIdx(-1); }}>
-                        <span className="wx-cs-rq-ico">↺</span>
-                        <span className="wx-cs-rq-txt">{q}</span>
-                      </button>
-                      <button type="button" className="wx-cs-rq-x" aria-label="Remove" onClick={() => dropRecentQ(q)}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              )}
               {recent.length > 0 && (
                 <>
                   <div
@@ -1092,7 +1135,7 @@ function CoinSearch({
                       letterSpacing: ".14em",
                     }}
                   >
-                    <span>Recents</span>
+                    <span>Recent searches</span>
                     <button
                       type="button"
                       onClick={clearRecent}
@@ -1114,6 +1157,20 @@ function CoinSearch({
                     />
                   ))}
                 </>
+              )}
+              {recentQ.length > 0 && (
+                <div className="wx-cs-rq">
+                  <div className="wx-cs-rq-head"><span>Other searches</span></div>
+                  {recentQ.map((q) => (
+                    <div key={q} className="wx-cs-rq-row">
+                      <button type="button" className="wx-cs-rq-main" onClick={() => { setQuery(q); setActiveIdx(-1); }}>
+                        <span className="wx-cs-rq-ico">↺</span>
+                        <span className="wx-cs-rq-txt">{q}</span>
+                      </button>
+                      <button type="button" className="wx-cs-rq-x" aria-label="Remove" onClick={() => dropRecentQ(q)}>✕</button>
+                    </div>
+                  ))}
+                </div>
               )}
               {trending.length > 0 && (
                 <div
