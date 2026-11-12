@@ -11,6 +11,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { appLockEnabled, appLockSupported, biometricReady, biometricVerify, disableAppLock, enableAppLock } from "@/components/AppLock";
 import { PIN_HASH_KEY, PIN_ENABLED_KEY, PIN_TIMEOUT_KEY, clearLocalPin, clearServerPin, hashPin, newSalt, pushLockPin, pushLockTimeout, saveLocalPin, storedSalt, syncLockFromAccount } from "@/lib/pinLockSync";
 import Link from "next/link";
+import OnboardingFlow from "@/components/OnboardingFlow";
 import { useRouter } from "next/navigation";
 import { cacheTokenNav } from "@/lib/tokenNav";
 import { Lock as LockIcon,
@@ -3072,15 +3073,6 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   const [termsChecked, setTermsChecked] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
   const [termsError, setTermsError] = useState("");
-  const [termsCode, setTermsCode] = useState("");
-  // an invite link already left its code in a cookie: show it, so a new account can see that the invite was noticed
-  useEffect(() => {
-    if (!termsRequired) return;
-    try {
-      const m = document.cookie.match(/(?:^|; )wr_ref=([A-Za-z0-9]{5,12})/);
-      if (m) setTermsCode((c) => c || m[1].toUpperCase());
-    } catch { /* cookies blocked */ }
-  }, [termsRequired]);
   const [profileDialog, setProfileDialog] = useState<ProfileDialog | null>(
     null,
   );
@@ -3191,14 +3183,14 @@ export default function Header({ onSelectMeme }: HeaderProps) {
     }
   };
 
-  const acceptTerms = async () => {
-    if (!termsChecked || termsSaving) return;
+  const acceptTerms = async (inviteCode = "") => {
+    if (termsSaving) return;
     setTermsSaving(true);
     setTermsError("");
     try {
       // an invite code typed here is checked FIRST, so a typo is caught before you are let in (leave it empty to skip)
-      if (termsCode.trim().length >= 5) {
-        const r = await fetch("/api/quests/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: termsCode }) });
+      if (inviteCode.trim().length >= 5) {
+        const r = await fetch("/api/quests/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: inviteCode }) });
         const j = (await r.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
         // a code that was already credited from an invite link answers "already added": that is fine, carry on
         if (j && j.ok === false && !/already added/i.test(j.message ?? "")) throw new Error(j.message ?? "That invite code did not work.");
@@ -3884,72 +3876,13 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   const termsDialog =
     mounted && session && termsRequired
       ? createPortal(
-          <div className="wraith-terms-backdrop">
-            <section
-              className="wraith-terms-dialog wt-new"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="wraith-terms-title"
-            >
-              <div className="wt-ghost" aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.svg" alt="" />
-              </div>
-              <span className="profile-eyebrow">WELCOME</span>
-              <h2 id="wraith-terms-title">Welcome to Wraith</h2>
-              <ul className="wt-points">
-                <li><b>One Cash balance</b><span>Deposit once, trade on any of 7 chains.</span></li>
-                <li><b>Calls with a track record</b><span>Every call is tracked, wins and losses.</span></li>
-                <li><b>Wallets made for you</b><span>Locked behind your own PIN.</span></li>
-              </ul>
-              <label className="wt-code">
-                <span>Invite code <em>(optional)</em></span>
-                <input
-                  value={termsCode}
-                  maxLength={12}
-                  placeholder="Got a friend's code? Paste it"
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  spellCheck={false}
-                  onChange={(e) => { setTermsCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()); setTermsError(""); }}
-                />
-              </label>
-              <label className="wraith-terms-check">
-                <input
-                  type="checkbox"
-                  checked={termsChecked}
-                  onChange={(event) => setTermsChecked(event.target.checked)}
-                />
-                <span>
-                  I am 18 or older and accept the{" "}
-                  <Link href="/terms" target="_blank">Terms</Link> and{" "}
-                  <Link href="/privacy" target="_blank">Privacy Policy</Link>.
-                </span>
-              </label>
-              {termsError && (
-                <p className="wraith-terms-error" role="alert">
-                  {termsError}
-                </p>
-              )}
-              <button
-                className="wraith-terms-continue"
-                type="button"
-                disabled={!termsChecked || termsSaving}
-                onClick={() => void acceptTerms()}
-              >
-                {termsSaving ? "Checking…" : "Enter Wraith"}
-              </button>
-              <button
-                className="wraith-terms-logout"
-                type="button"
-                onClick={() => {
-                  void logout().then(() => window.location.assign("/login"));
-                }}
-              >
-                Log out
-              </button>
-            </section>
-          </div>,
+          <OnboardingFlow
+            nameHint={session?.user?.name ?? session?.user?.email ?? ""}
+            saving={termsSaving}
+            error={termsError}
+            onAccept={(c) => acceptTerms(c)}
+            onLogout={() => { void logout().then(() => window.location.assign("/login")); }}
+          />,
           document.body,
         )
       : null;

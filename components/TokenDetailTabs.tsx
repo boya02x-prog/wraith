@@ -8,7 +8,6 @@ import { ArrowDownRight, ArrowUpRight, ExternalLink, ShieldAlert, ShieldCheck, U
 import { TokenCallouts } from "@/components/TokenCallouts";
 import SignalsTab from "@/components/SignalsTab";
 import WalletAvatar from "@/components/WalletAvatar";
-import { walletName } from "@/lib/walletIdentity";
 
 const TABS = ["Swaps", "Holders", "Signals", "Analysis", "Traders Intel"] as const;
 type Tab = (typeof TABS)[number];
@@ -264,8 +263,8 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
                     <span className="hl-rank">{i + 1}</span>
                     {u?.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="hl-pic" src={u.avatar} alt="" /> : <WalletAvatar address={h.wallet} size={38} kind="holder" bare />}
                     <span className="hl-who">
-                      <b>{u ? u.displayName : walletName(h.wallet)}{u && u.tier !== "GHOST" && <em>{u.tier}</em>}</b>
-                      <small className="mono">{short(h.wallet)} · {qty(h.quantity)}</small>
+                      <b className={u ? "" : "mono"}>{u ? u.displayName : short(h.wallet)}{u && u.tier !== "GHOST" && <em>{u.tier}</em>}</b>
+                      <small>{qty(h.quantity)} tokens{u ? "" : i === 0 && h.share > 20 ? " · likely pool / curve" : ""}</small>
                     </span>
                     <span className="hl-val">
                       <b>{h.share.toFixed(2)}%</b>
