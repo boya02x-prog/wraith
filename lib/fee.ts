@@ -3,7 +3,6 @@ import {
   Transaction,
   SystemProgram,
   PublicKey,
-  LAMPORTS_PER_SOL,
   Connection,
 } from "@solana/web3.js";
 
