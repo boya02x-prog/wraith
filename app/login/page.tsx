@@ -4,6 +4,7 @@ import "../site.css";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { preconnect, prefetchDNS } from "react-dom";
 import ChainLogo from "@/components/ChainLogo";
 import { CallsTable, ChartReal, Coin, LiveBoard, fmtUsd, useLandingData, xf } from "@/components/landing/Mocks";
 import "@/components/landing/landing.css";
@@ -186,6 +187,10 @@ function LoginInner() {
 }
 
 export default function LoginPage() {
+  // warm up the sign-in hops (Privy, then Google) while the page is still being read: saves the connection set-up when the button is tapped
+  preconnect("https://auth.privy.io");
+  prefetchDNS("https://accounts.google.com");
+  preconnect("https://accounts.google.com");
   return (
     <Suspense fallback={null}>
       <LoginInner />
