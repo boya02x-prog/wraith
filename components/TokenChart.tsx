@@ -7,7 +7,7 @@
 
 import { createPortal } from "react-dom";
 import { visibleInterval } from "@/lib/visibleInterval";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AreaSeries,
   CandlestickSeries,
@@ -97,8 +97,8 @@ function writePref(key: string, value: string) {
   }
 }
 
-/** Trade size for the tape: $1.2K, $139, $23, $4.0, $0.13 */
-function tapeUsd(n: number): string {
+/** Trade size for the live flow: $1.2K, $139, $23, $4.0, $0.13 */
+function flowUsd(n: number): string {
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
   if (n >= 10) return `$${Math.round(n)}`;
@@ -184,14 +184,6 @@ export default function TokenChart({
   const [pinItems, setPinItems] = useState<PinItem[]>([]);
   const [pins, setPins] = useState<{ key: string; x: number; y: number; kind: PinItem["kind"]; items: PinItem[]; value: number; cardLeft: number; up: boolean }[]>([]);
   const [pinOpen, setPinOpen] = useState<string | null>(null);
-  // live tape: the last few real buys and sells, drawn down the left edge of the chart as they happen
-  const [tapeNow, setTapeNow] = useState(() => Date.now());
-  useEffect(() => { const t = window.setInterval(() => setTapeNow(Date.now()), 20_000); return () => window.clearInterval(t); }, []);
-  const tape = useMemo(() => {
-    if (!trades?.length) return [];
-    const cut = Math.max(tapeNow, trades[0].ts) - 10 * 60_000; // only what happened in the last 10 minutes counts as "live"
-    return trades.filter((t) => t.ts >= cut && t.usd > 0).slice(0, 8).reverse();
-  }, [trades, tapeNow]);
   const [spotPos, setSpotPos] = useState<{ x: number; y: number } | null>(null);
   const [spotRect, setSpotRect] = useState<DOMRect | null>(null);
   const measureRef = useRef<Measure | null>(null);
@@ -709,6 +701,64 @@ export default function TokenChart({
     setDots(out.slice(0, 60));
   }, [wTraders, candles, tfSec, mult, spotTick, showTrades, style]);
 
+  // ── live flow: new real trades appear beside the price axis for a few seconds, then are gone ──
+  type Flow = { id: string; side: "buy" | "sell"; usd: number; wallet: string; y: number; right: number; big: boolean; born: number; life: number };
+  const [flows, setFlows] = useState<Flow[]>([]);
+  const flowSeen = useRef<Set<string>>(new Set());
+  const flowBuf = useRef<NonNullable<typeof trades>>([]);
+  const flowsLive = useRef<Flow[]>([]);
+  flowsLive.current = flows;
+  const flowOpened = useRef(Date.now());
+  useEffect(() => { flowSeen.current = new Set(); flowBuf.current = []; flowOpened.current = Date.now(); setFlows([]); }, [mint]);
+  // collect trades that happened after the chart opened (what was already on the list is history, not news)
+  useEffect(() => {
+    if (!trades?.length) return;
+    const now = Date.now();
+    for (const t of trades) {
+      if (flowSeen.current.has(t.id)) continue;
+      flowSeen.current.add(t.id);
+      if (t.ts >= flowOpened.current - 3000 && now - t.ts < 25_000 && t.usd >= 1) flowBuf.current.push(t);
+    }
+    if (flowSeen.current.size > 600) flowSeen.current = new Set([...flowSeen.current].slice(-300));
+  }, [trades]);
+  // every ~0.65s turn what was collected into pills: a busy token shows the biggest trade of that moment, never a wall of dust
+  useEffect(() => {
+    if (!showTrades) { flowBuf.current = []; setFlows([]); return; }
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      const buf = flowBuf.current;
+      flowBuf.current = [];
+      const main = mainRef.current;
+      let spawned: Flow[] = [];
+      if (buf.length && main && !document.hidden) {
+        buf.sort((a, b) => b.usd - a.usd);
+        const pick = buf.slice(0, 1).concat(buf.slice(1, 3).filter((t) => t.usd >= 250));
+        const H = hostRef.current?.clientHeight ?? 0;
+        let axis = 64;
+        try { axis = chartRef.current?.priceScale("right").width() || 64; } catch { /* chart not ready */ }
+        // a pill sits at the price its trade happened at; if another pill is already there it moves up or down to the nearest free row
+        const taken = flowsLive.current.filter((f) => now - f.born < f.life).map((f) => f.y);
+        const lo = 30, hi = Math.max(30, H - 64);
+        spawned = pick.map((t) => {
+          const raw = main.priceToCoordinate(t.priceUsd * mult);
+          const y0 = Math.min(Math.max(raw ?? H / 2, lo), hi);
+          let y = y0;
+          for (let k = 0; k < 10 && taken.some((v) => Math.abs(v - y) < 30); k++) {
+            y = Math.min(Math.max(y0 + Math.ceil((k + 1) / 2) * 30 * (k % 2 ? 1 : -1), lo), hi);
+          }
+          taken.push(y);
+          const big = t.usd >= 250;
+          return { id: t.id, side: t.side, usd: t.usd, wallet: t.wallet, y, right: axis + 12, big, born: now, life: big ? 6500 : 4200 };
+        });
+      }
+      setFlows((cur) => {
+        const keep = cur.filter((f) => now - f.born < f.life + 300);
+        return spawned.length || keep.length !== cur.length ? [...keep, ...spawned].slice(-6) : cur;
+      });
+    }, 650);
+    return () => window.clearInterval(timer);
+  }, [showTrades, mult]);
+
   // ── known wallets + platform intel for this token ──
   useEffect(() => {
     setPinItems([]); setPinOpen(null);
@@ -1218,11 +1268,14 @@ export default function TokenChart({
           </div>
         )}
 
-        {status === "ready" && showTrades && tape.length > 0 && (
-          <div className="wx-tape" aria-hidden="true">
-            {tape.map((t, i) => (
-              <span key={t.id} className={`wx-tape-row ${t.side}${t.usd >= 250 ? " big" : ""}`} style={{ opacity: 0.28 + 0.72 * ((i + 1) / tape.length) }}>
-                <i>{t.side === "buy" ? "▲" : "▼"}</i>{tapeUsd(t.usd)}
+        {status === "ready" && showTrades && flows.length > 0 && (
+          <div className="wx-flow" aria-hidden="true">
+            {flows.map((f) => (
+              <span key={f.id} className={`wx-flow-pill ${f.side}${f.big ? " big" : ""}`} style={{ top: f.y, right: f.right, ["--life" as string]: `${f.life}ms` }}>
+                {f.wallet ? <WalletAvatar address={f.wallet} size={f.big ? 22 : 18} /> : null}
+                <i>{f.side === "buy" ? "▲" : "▼"}</i>
+                <b>{flowUsd(f.usd)}</b>
+                {f.big && f.wallet ? <em>{walletName(f.wallet)}</em> : null}
               </span>
             ))}
           </div>

@@ -699,19 +699,23 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Live tape on the chart: the last real buys and sells down the left edge, newest at the bottom, older ones fading out.
-   A big buy gets a short shake. Hidden with the B/S button.
+   Live flow on the chart. Every new real buy or sell appears beside the price axis, at the price it traded at, as a small pill with
+   the trader's ghost. It slides in, drifts away (up for a buy, down for a sell) and is gone after a few seconds, like a toast: a
+   glance, not a list. A big trade stays longer, says who it was and gives a short shake. Hidden with the B/S button.
+   (The class names are wx-flow-*: an earlier version used wx-tape, which is also the bottom status bar's class, and broke it.)
    ─────────────────────────────────────────────────────────────────────── */
-.wx-tape { position: absolute; left: 10px; bottom: 84px; z-index: 2; display: grid; gap: 3px; justify-items: start; pointer-events: none; font-family: var(--font-mono), monospace; font-variant-numeric: tabular-nums; }
-.wx-tape-row { display: inline-flex; align-items: center; gap: 6px; padding: 1px 6px; border-radius: 6px; font-size: 12.5px; font-weight: 700; line-height: 1.5; text-shadow: 0 1px 2px rgba(0, 0, 0, .9); transition: opacity .35s ease; animation: wx-tape-in .32s cubic-bezier(.2, .9, .3, 1.2) both; }
-.wx-tape-row i { font-style: normal; font-size: 9px; }
-.wx-tape-row.buy { color: #34d399; }
-.wx-tape-row.sell { color: #f87171; }
-.wx-tape-row.big { font-size: 14px; background: rgba(52, 211, 153, .12); animation: wx-tape-in .32s cubic-bezier(.2, .9, .3, 1.2) both, wx-tape-shake .5s .3s ease-in-out; }
-.wx-tape-row.big.sell { background: rgba(248, 113, 113, .12); }
-@keyframes wx-tape-in { from { opacity: 0; transform: translateY(12px) scale(.9); } }
-@keyframes wx-tape-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-3px) rotate(-2deg); } 40% { transform: translateX(3px) rotate(2deg); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
-@media (max-width: 767px) { .wx-tape { left: 6px; bottom: 78px; } .wx-tape-row { font-size: 12px; } }
+.wx-flow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.wx-flow-pill { --c: 52, 211, 153; position: absolute; margin-top: -14px; display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px 3px 4px; border-radius: 999px; border: 1px solid rgba(var(--c), .5); background: rgba(13, 15, 16, .92); color: rgb(var(--c)); font-family: var(--font-mono), monospace; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 6px 18px rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: wx-flow-buy var(--life, 4200ms) cubic-bezier(.2, .8, .2, 1) forwards; }
+.wx-flow-pill.sell { --c: 248, 113, 113; animation-name: wx-flow-sell; }
+.wx-flow-pill i { font-style: normal; font-size: 9px; }
+.wx-flow-pill em { font-style: normal; font-weight: 600; font-size: 11px; color: #d4d4d8; }
+.wx-flow-pill .wa { flex: none; border-radius: 50%; overflow: hidden; }
+.wx-flow-pill .wa > *:not(svg) { display: none; } /* no type badge on something this small */
+.wx-flow-pill.big { font-size: 14px; padding-right: 13px; border-color: rgba(var(--c), .85); background: rgba(var(--c), .14); box-shadow: 0 0 0 1px rgba(var(--c), .25), 0 0 26px rgba(var(--c), .42), 0 8px 22px rgba(0, 0, 0, .55); animation: wx-flow-buy var(--life, 6500ms) cubic-bezier(.2, .8, .2, 1) forwards, wx-flow-shake .45s .3s ease-in-out; }
+.wx-flow-pill.big.sell { animation-name: wx-flow-sell, wx-flow-shake; }
+@keyframes wx-flow-buy { 0% { opacity: 0; transform: translateX(30px) scale(.9); } 7% { opacity: 1; transform: none; } 70% { opacity: 1; transform: translateY(-8px); } 100% { opacity: 0; transform: translateY(-36px); } }
+@keyframes wx-flow-sell { 0% { opacity: 0; transform: translateX(30px) scale(.9); } 7% { opacity: 1; transform: none; } 70% { opacity: 1; transform: translateY(8px); } 100% { opacity: 0; transform: translateY(36px); } }
+@keyframes wx-flow-shake { 0%, 100% { translate: 0; } 20% { translate: -4px 0; } 40% { translate: 4px 0; } 60% { translate: -2px 0; } 80% { translate: 2px 0; } }
 
 /* market cap on the token page: a small pop with the colour flash each time a trade moves it */
 .wx-flash-up, .wx-flash-down { transform-origin: left center; }
@@ -734,7 +738,7 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 @keyframes wx-tick-buy-a { 0% { box-shadow: inset 0 0 0 100vmax rgba(34, 197, 94, .2); transform: none; } 14% { transform: translateX(-3px) rotate(-.35deg); } 28% { transform: translateX(3px) rotate(.35deg); } 42% { transform: translateX(-2px); } 56% { transform: translateX(2px); } 70% { transform: translateX(-1px); } 100% { box-shadow: inset 0 0 0 100vmax rgba(34, 197, 94, 0); transform: none; } }
 @keyframes wx-tick-buy-b { 0% { box-shadow: inset 0 0 0 100vmax rgba(34, 197, 94, .2); transform: none; } 14% { transform: translateX(-3px) rotate(-.35deg); } 28% { transform: translateX(3px) rotate(.35deg); } 42% { transform: translateX(-2px); } 56% { transform: translateX(2px); } 70% { transform: translateX(-1px); } 100% { box-shadow: inset 0 0 0 100vmax rgba(34, 197, 94, 0); transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .wx-tape-row, .wx-tape-row.big { animation: none; }
+  .wx-flow-pill, .wx-flow-pill.big { animation: none; }
   .wx-flash-up { animation: wx-up .9s ease-out; }
   .wx-tick-buy-a, .wx-tick-buy-b { animation-name: wx-tick-up-a; }
 }
