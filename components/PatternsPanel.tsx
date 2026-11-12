@@ -26,6 +26,8 @@ interface Learning {
     holdout: { n: number; auc: number; baseRate: number; topQuartileRate: number; bottomQuartileRate: number; folds?: number[] };
     top: { name: string; w: number }[];
   };
+  /** the collapse (rug) warning model: same fields as `model`, where a "positive" is a call that collapsed */
+  rug?: null | { holdout: { n: number; auc: number; baseRate: number; topQuartileRate: number; bottomQuartileRate: number }; active?: boolean };
   patterns: PatternStat[];
   coverage: { calls: number; withIntel: number; withIntelPct: number };
   history?: { at: number; calls: number; auc: number | null; active: boolean; rugAuc: number | null }[];
@@ -175,9 +177,16 @@ export default function PatternsPanel({ signals, onOpen }: { signals: Sig[]; onO
               <span>{m ? `${m.wins.toLocaleString()} reached 2x (${pct(m.base)}) · retrained ${ago(m.trainedAt)}` : "Not enough finished calls yet"}</span>
             </div>
             <div className="pt-card">
-              <FlaskConical size={15} /><small>Score on unseen calls</small>
+              <FlaskConical size={15} /><small>Finding 2x winners</small>
               <b>{m ? `${m.holdout.auc.toFixed(2)} AUC` : "n/a"}</b>
               <span>{m ? `0.50 is a coin flip. Tested on later calls it never trained on: the top quarter of picks hit ${pct(m.holdout.topQuartileRate, 0)} vs ${pct(m.holdout.bottomQuartileRate, 0)} for the bottom (${m.holdout.n} calls, ${m.holdout.folds?.length ?? 1} rounds).` : "Needs 300+ finished calls"}</span>
+            </div>
+            <div className="pt-card">
+              <ShieldAlert size={15} /><small>Collapse warning</small>
+              <b>{data.rug ? `${data.rug.holdout.auc.toFixed(2)} AUC` : "n/a"}</b>
+              <span>{data.rug
+                ? `This is the part that works. Tested on later calls it never saw: of the calls it rated riskiest, ${pct(data.rug.holdout.topQuartileRate, 0)} collapsed; of the safest, ${pct(data.rug.holdout.bottomQuartileRate, 0)} (${data.rug.holdout.n} calls). Risky ones are kept out of HOT.`
+                : "Needs more finished calls"}</span>
             </div>
             <div className="pt-card">
               <Target size={15} /><small>Model status</small>
