@@ -24,7 +24,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { RefreshCw, Trash2, X } from "lucide-react";
-import ChartToolsMenu, { type ToolId } from "@/components/ChartToolsMenu";
+import ChartToolsMenu, { ChartToolRail, type ToolId } from "@/components/ChartToolsMenu";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/market";
 import { peekCandles } from "@/lib/candleCache";
 import { usePresence } from "@/lib/usePresence";
@@ -54,10 +54,13 @@ type Metric = "mcap" | "price";
 type Style = "candles" | "line";
 
 const ACCENT = "#ff7b3d";
+const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+const DRAW_COLORS = ["#4f9dff", "#22f5a8", "#ff4d7d", "#f0b90b", "#ff7b3d", "#b36bff", "#ffffff"];
 type PinItem = { kind: "dumper" | "proven" | "intel"; id: string; ts: number; name: string; href: string; line: string; wallet?: string; avatar?: string; text?: string; sol?: number; mcap?: number };
 
-const UP = "#26a69a";
-const DOWN = "#ef5350";
+// Wraith palette: neon mint up, hot coral down (the chart, the legend, the pills and the buy / sell dots all read these)
+const UP = "#22f5a8";
+const DOWN = "#ff4d7d";
 const POLL_MS = 10_000;
 const rowCache = new Map<string, ChartCandle[]>(); // last good series per token+timeframe: instant repaint on switch/revisit
 const EMPTY_POLL_MS = 2_500;
@@ -192,9 +195,9 @@ export default function TokenChart({
   measureModeRef.current = measureMode;
 
   // ── drawing tools: horizontal line, trend line, rectangle, fib. Stored by time + price, so they survive timeframe changes ──
-  type DrawKind = "hline" | "trend" | "rect" | "fib";
+  type DrawKind = "hline" | "vline" | "trend" | "ray" | "rect" | "fib";
   type DPt = { t: number; p: number };
-  type Drawing = { id: string; kind: DrawKind; a: DPt; b: DPt };
+  type Drawing = { id: string; kind: DrawKind; a: DPt; b: DPt; c?: string; w?: number };
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [tool, setTool] = useState<DrawKind | null>(null);
   const [draft, setDraft] = useState<Drawing | null>(null);
@@ -213,6 +216,7 @@ export default function TokenChart({
   selectedRef.current = selected;
   const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
   const boxFnRef = useRef<(d: Drawing) => { l: number; t: number; r: number; b: number } | null>(() => null);
+  const hitFnRef = useRef<(x: number, y: number) => { id: string; part: "a" | "b" | "body" } | null>(() => null);
   const drawKey = `wraith_draw_${mint}`;
   useEffect(() => {
     try { const raw = localStorage.getItem(drawKey); setDrawings(raw ? (JSON.parse(raw) as Drawing[]) : []); } catch { setDrawings([]); }
@@ -248,13 +252,13 @@ export default function TokenChart({
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.03)" },
-        horzLines: { color: "rgba(255,255,255,0.045)" },
+        vertLines: { visible: false },
+        horzLines: { color: "rgba(255,255,255,0.05)", style: LineStyle.Dotted },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "rgba(255,123,61,0.45)", labelBackgroundColor: ACCENT },
-        horzLine: { color: "rgba(255,123,61,0.45)", labelBackgroundColor: ACCENT },
+        vertLine: { color: "rgba(255,123,61,0.6)", style: LineStyle.Dashed, width: 1, labelBackgroundColor: ACCENT },
+        horzLine: { color: "rgba(255,123,61,0.6)", style: LineStyle.Dashed, width: 1, labelBackgroundColor: ACCENT },
       },
       rightPriceScale: {
         borderColor: "rgba(255,255,255,0.08)",
@@ -361,7 +365,7 @@ export default function TokenChart({
     const placeTool = (kind: DrawKind, pt: { clientX: number; clientY: number }) => {
       const p = toD(pt);
       if (!p) return;
-      if (kind === "hline") {
+      if (kind === "hline" || kind === "vline") {
         setDrawings((d) => [...d, { id: String(Date.now()), kind, a: p, b: p }]);
         setTool(null);
         return;
@@ -438,10 +442,42 @@ export default function TokenChart({
         return;
       }
       if (m && m.locked) setMeasure(null); // plain click clears a finished measurement
+      // Cursor mode, like TradingView: click a drawing to select it, drag it to move it, drag one of its handles to reshape it, and
+      // click empty space to deselect. Empty space is left alone, so the chart still pans and zooms as usual.
+      const q = hostPos(e.clientX, e.clientY);
+      const hit = drawingsRef.current.length ? hitFnRef.current(q.x, q.y) : null;
+      if (hit) {
+        e.stopPropagation();
+        e.preventDefault();
+        setSelected([hit.id]);
+        const d0 = drawingsRef.current.find((x) => x.id === hit.id);
+        const s0 = toD(e);
+        if (d0 && s0) {
+          const mv = (ev: MouseEvent) => {
+            const p = toD(ev);
+            if (!p) return;
+            const dt = p.t - s0.t, dp = p.p - s0.p;
+            setDrawings((list) => list.map((x) => (x.id !== d0.id ? x
+              : hit.part === "a" ? { ...d0, a: p }
+              : hit.part === "b" ? { ...d0, b: p }
+              : { ...d0, a: { t: d0.a.t + dt, p: d0.a.p + dp }, b: { t: d0.b.t + dt, p: d0.b.p + dp } })));
+          };
+          const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); };
+          window.addEventListener("mousemove", mv);
+          window.addEventListener("mouseup", up);
+        }
+        return;
+      }
+      if (selectedRef.current.length && !e.shiftKey) setSelected([]);
     };
     const onMove = (e: MouseEvent) => {
       const dr = draftRef.current;
       if (dr) { const p = toD(e); if (p) setDraft({ ...dr, b: p }); return; }
+      if (!toolRef.current && !selectModeRef.current && !measureRef.current && !measureModeRef.current && drawingsRef.current.length) {
+        const q = hostPos(e.clientX, e.clientY);
+        const h = hitFnRef.current(q.x, q.y);
+        host.style.cursor = h ? (h.part === "body" ? "move" : "grab") : "";
+      }
       const m = measureRef.current;
       if (!m || m.locked) return;
       const p = toPt(e);
@@ -449,6 +485,10 @@ export default function TokenChart({
     };
     const onKey = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable='true']");
+      if (!typing && e.altKey && !e.ctrlKey && !e.metaKey) {
+        const pick = ({ t: "trend", h: "hline", v: "vline", f: "fib", r: "rect" } as Record<string, DrawKind>)[e.key.toLowerCase()];
+        if (pick) { e.preventDefault(); setMeasure(null); setMeasureMode(false); setSelectMode(false); setDraft(null); setSelected([]); setTool(pick); return; }
+      }
       if (e.key === "Escape") {
         setMeasure(null);
         setMeasureMode(false);
@@ -496,7 +536,7 @@ export default function TokenChart({
         e.preventDefault();
         const hadDraft = !!draftRef.current;
         placeTool(kind, t0);
-        if (kind !== "hline" && !hadDraft) {
+        if (kind !== "hline" && kind !== "vline" && !hadDraft) {
           dragTouch(t0, (t) => { const p = toD(t); const d = draftRef.current; if (p && d) setDraft({ ...d, b: p }); }, (t, moved) => { if (moved && t) placeTool(kind, t); });
         }
         return;
@@ -578,8 +618,7 @@ export default function TokenChart({
         ? chart.addSeries(CandlestickSeries, {
             upColor: UP,
             downColor: DOWN,
-            borderUpColor: UP,
-            borderDownColor: DOWN,
+            borderVisible: false,
             wickUpColor: UP,
             wickDownColor: DOWN,
             priceFormat,
@@ -700,6 +739,20 @@ export default function TokenChart({
     }
     setDots(out.slice(0, 60));
   }, [wTraders, candles, tfSec, mult, spotTick, showTrades, style]);
+
+  // ── the live price: a pulsing dot on the newest candle, and a glow behind the chart tinted by where the price is heading ──
+  const [pulse, setPulse] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const chart = chartRef.current, main = mainRef.current;
+    const last = candlesRef.current[candlesRef.current.length - 1];
+    if (!chart || !main || !last || status !== "ready") { setPulse((p) => (p === null ? p : null)); return; }
+    const x = chart.timeScale().timeToCoordinate(chartTime(last.t));
+    const y = main.priceToCoordinate(last.c * mult);
+    const W = hostRef.current?.clientWidth ?? 0;
+    if (x === null || y === null || x < 0 || (W && x > W)) { setPulse((p) => (p === null ? p : null)); return; }
+    setPulse((p) => (p && Math.abs(p.x - x) < 1 && Math.abs(p.y - y) < 1 ? p : { x, y }));
+  }, [candles, tfSec, mult, spotTick, style, livePrice, status]);
+  const trendUp = candles.length < 2 || candles[candles.length - 1].c >= candles[0].c;
 
   // ── live flow: new real trades appear beside the price axis for a few seconds, then are gone ──
   type Flow = { id: string; side: "buy" | "sell"; usd: number; wallet: string; y: number; right: number; big: boolean; born: number; life: number };
@@ -883,7 +936,7 @@ export default function TokenChart({
       style === "candles"
         ? { time: chartTime(c.t), open: c.o * mult, high: c.h * mult, low: c.l * mult, close: c.c * mult }
         : { time: chartTime(c.t), value: c.c * mult };
-    const mkVol = (c: ChartCandle) => ({ time: chartTime(c.t), value: c.v, color: c.c >= c.o ? "rgba(38,166,154,0.42)" : "rgba(239,83,80,0.42)" });
+    const mkVol = (c: ChartCandle) => ({ time: chartTime(c.t), value: c.v, color: c.c >= c.o ? "rgba(34,245,168,0.34)" : "rgba(255,77,125,0.34)" });
 
     // Same series, only the tail changed (the 10s poll): update the last bars in place.
     // No full redraw, no flicker, and the viewport and any measure box stay put.
@@ -919,10 +972,11 @@ export default function TokenChart({
     if (needFitRef.current) {
       needFitRef.current = false;
       const n = mainData.length;
-      // Always the same comfortable framing: ~60-90 bars across, newest bar near the right edge.
-      // A young token with 8 candles therefore sits at the right with normal-width candles, not stretched wide.
-      const span = Math.max(60, Math.min(n, 90));
-      chart.timeScale().setVisibleLogicalRange({ from: n - span, to: n + 6 });
+      // Framing that needs no dragging to look right: up to 100 bars across with the newest near the right edge, and when a token
+      // has fewer than 40 bars they sit in the MIDDLE of a 44-bar window instead of being pushed against one side (which left most
+      // of the chart empty and made people drag it into place).
+      if (n >= 40) chart.timeScale().setVisibleLogicalRange({ from: n - Math.min(n, 100) - 5, to: n + 8 });
+      else { const mid = (n - 1) / 2; chart.timeScale().setVisibleLogicalRange({ from: mid - 22, to: mid + 22 }); }
       // a previous token (or a drag on the price axis) can leave auto-scale off: turn it back on so every token is framed properly
       try { main.priceScale().applyOptions({ autoScale: true }); } catch { /* series gone */ }
     }
@@ -1121,12 +1175,86 @@ export default function TokenChart({
     const x1 = X(d.a.t), x2 = X(d.b.t), y1 = Y(d.a.p), y2 = Y(d.b.p);
     if (y1 === null) return null;
     if (d.kind === "hline") return { l: 0, r: W, t: y1 - 5, b: y1 + 5 };
+    if (d.kind === "vline") return x1 === null ? null : { l: x1 - 5, r: x1 + 5, t: 0, b: hostRef.current?.clientHeight ?? 0 };
     if (x1 === null || x2 === null || y2 === null) return null;
     return { l: Math.min(x1, x2), r: Math.max(x1, x2), t: Math.min(y1, y2) - 4, b: Math.max(y1, y2) + 4 };
   };
 
+  // where each drawing is on screen (handles sit at a / b; a horizontal or vertical line has one handle in the middle)
+  const geoOf = (d: Drawing) => {
+    const chart = chartRef.current, main = mainRef.current, first = candlesRef.current[0];
+    if (!chart || !main || !first) return null;
+    const ts = chart.timeScale(), step = tfSec * 1000;
+    const X = (t: number) => ts.logicalToCoordinate(((t - first.t) / step) as Logical);
+    const Y = (pr: number) => main.priceToCoordinate(pr * mult);
+    const W = hostRef.current?.clientWidth ?? 0, H = hostRef.current?.clientHeight ?? 0;
+    const x1 = X(d.a.t), x2 = X(d.b.t), y1 = Y(d.a.p), y2 = Y(d.b.p);
+    if (d.kind === "hline") return y1 === null ? null : { x1: W / 2, y1, x2: W / 2, y2: y1 };
+    if (d.kind === "vline") return x1 === null ? null : { x1, y1: H / 2, x2: x1, y2: H / 2 };
+    if (x1 === null || x2 === null || y1 === null || y2 === null) return null;
+    return { x1, y1, x2, y2 };
+  };
+  const segDist = (px: number, py: number, ax: number, ay: number, bx: number, by: number, ray = false) => {
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let t = L ? ((px - ax) * dx + (py - ay) * dy) / L : 0;
+    t = ray ? Math.max(0, t) : Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  };
+  hitFnRef.current = (px: number, py: number) => {
+    const main = mainRef.current;
+    if (!main) return null;
+    // the handles of what is already selected come first, so you can grab an end that sits on top of another drawing
+    for (const id of selectedRef.current) {
+      const d = drawingsRef.current.find((x) => x.id === id), g = d ? geoOf(d) : null;
+      if (!d || !g) continue;
+      if (Math.hypot(px - g.x1, py - g.y1) <= 10) return { id, part: "a" as const };
+      if (d.kind !== "hline" && d.kind !== "vline" && Math.hypot(px - g.x2, py - g.y2) <= 10) return { id, part: "b" as const };
+    }
+    // then the drawings themselves, the newest first (what is drawn on top is hit first)
+    for (const d of [...drawingsRef.current].reverse()) {
+      const g = geoOf(d);
+      if (!g) continue;
+      let hit = false;
+      if (d.kind === "hline") hit = Math.abs(py - g.y1) <= 7;
+      else if (d.kind === "vline") hit = Math.abs(px - g.x1) <= 7;
+      else if (d.kind === "trend") hit = segDist(px, py, g.x1, g.y1, g.x2, g.y2) <= 7;
+      else if (d.kind === "ray") hit = segDist(px, py, g.x1, g.y1, g.x2, g.y2, true) <= 7;
+      else if (d.kind === "rect") hit = px >= Math.min(g.x1, g.x2) - 6 && px <= Math.max(g.x1, g.x2) + 6 && py >= Math.min(g.y1, g.y2) - 6 && py <= Math.max(g.y1, g.y2) + 6;
+      else {
+        if (px >= Math.min(g.x1, g.x2) - 6 && px <= Math.max(g.x1, g.x2) + 6) {
+          for (const lv of FIB_LEVELS) {
+            const yy = main.priceToCoordinate((d.b.p + (d.a.p - d.b.p) * lv) * mult);
+            if (yy !== null && Math.abs(py - yy) <= 6) hit = true;
+          }
+        }
+        if (!hit) hit = segDist(px, py, g.x1, g.y1, g.x2, g.y2) <= 7;
+      }
+      if (hit) return { id: d.id, part: "body" as const };
+    }
+    return null;
+  };
+
+  // one tool at a time: picking one switches the others off, picking the active one again turns it off. "cursor" turns everything off.
+  const activeTool: ToolId | null = tool ?? (measureMode || (measure && !measure.locked) ? "measure" : selectMode ? "select" : null);
+  const pickTool = (id: ToolId) => {
+    const wasTool = tool, wasMeasure = measureMode || !!(measure && !measure.locked), wasSelect = selectMode;
+    setMeasure(null); setMeasureMode(false); setDraft(null); setSelectMode(false); setSelected([]); setTool(null);
+    if (id === "cursor") return;
+    if (id === "measure") { if (!wasMeasure) setMeasureMode(true); }
+    else if (id === "select") { if (!wasSelect) setSelectMode(true); }
+    else if (wasTool !== id) setTool(id);
+  };
+  const deleteDrawings = () => {
+    if (selected.length) { const gone = new Set(selected); setDrawings((d) => d.filter((x) => !gone.has(x.id))); setSelected([]); }
+    else { setDrawings([]); setDraft(null); }
+  };
+  const setDrawStyle = (patch: { c?: string; w?: number }) => setDrawings((list) => list.map((x) => (selected.includes(x.id) ? { ...x, ...patch } : x)));
+  const firstSel = drawings.find((x) => selected.includes(x.id));
+  const selColor = firstSel?.c ?? (firstSel?.kind === "fib" ? "#f0b90b" : "#4f9dff");
+  const selWidth = firstSel?.w ?? 1.5;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+    <div className="wx-chartroot" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, ["--wx-trend" as string]: trendUp ? "34, 245, 168" : "255, 77, 125" }}>
       {/* toolbar */}
       <div className="wx-chart-toolbar">
         <div className="wx-seg" role="tablist" aria-label="Timeframe">
@@ -1179,23 +1307,7 @@ export default function TokenChart({
             </button>
           ))}
         </div>
-        <ChartToolsMenu
-          active={tool ?? (measureMode || (measure && !measure.locked) ? "measure" : selectMode ? "select" : null)}
-          drawCount={drawings.length}
-          selCount={selected.length}
-          onPick={(id: ToolId) => {
-            // one tool at a time: picking one switches the others off, picking the active one again turns it off
-            const wasTool = tool, wasMeasure = measureMode || !!(measure && !measure.locked), wasSelect = selectMode;
-            setMeasure(null); setMeasureMode(false); setDraft(null); setSelectMode(false); setSelected([]); setTool(null);
-            if (id === "measure") { if (!wasMeasure) setMeasureMode(true); }
-            else if (id === "select") { if (!wasSelect) setSelectMode(true); }
-            else if (wasTool !== id) setTool(id);
-          }}
-          onDelete={() => {
-            if (selected.length) { const gone = new Set(selected); setDrawings((d) => d.filter((x) => !gone.has(x.id))); setSelected([]); }
-            else { setDrawings([]); setDraft(null); }
-          }}
-        />
+        <ChartToolsMenu active={activeTool} drawCount={drawings.length} selCount={selected.length} onPick={pickTool} onDelete={deleteDrawings} />
         {trades && (
           <button type="button" className={`wx-icon-btn${showTrades ? " on" : ""}`} onClick={() => setShowTrades((v) => !v)} aria-pressed={showTrades} aria-label="Show who bought here: Wraith traders, known wallets and intel. Wraith trader buys and sells" title="Buys / sells by Wraith traders" style={{ width: "auto", padding: "0 9px", fontSize: 10, fontWeight: 700 }}>
             B/S
@@ -1233,12 +1345,13 @@ export default function TokenChart({
 
       {/* chart surface */}
       <div style={{ position: "relative", flex: 1, minHeight: 260 }}>
+        <ChartToolRail active={activeTool} drawCount={drawings.length} selCount={selected.length} onPick={pickTool} onDelete={deleteDrawings} />
         <div ref={hostRef} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
 
         {(tool || selectMode || measureMode || (measure && !measure.locked)) && (
           <div className="wx-tool-hint" role="status">
             <span>
-              {tool === "hline" ? "Tap where the line should go"
+              {tool === "hline" || tool === "vline" ? "Tap where the line should go"
                 : tool ? (draft ? "Tap or lift your finger at the end point" : "Tap or press where it starts")
                 : selectMode ? "Drag a box over drawings to select them"
                 : measure && !measure.locked ? "Tap the end point" : "Tap or press the start point"}
@@ -1278,6 +1391,12 @@ export default function TokenChart({
                 {f.big && f.wallet ? <em>{walletName(f.wallet)}</em> : null}
               </span>
             ))}
+          </div>
+        )}
+
+        {status === "ready" && pulse && (
+          <div className="wx-pulse-layer" aria-hidden="true">
+            <i className={`wx-pulse ${trendUp ? "up" : "down"}`} style={{ left: pulse.x, top: pulse.y }} />
           </div>
         )}
 
@@ -1382,30 +1501,41 @@ export default function TokenChart({
           const Y = (pr: number) => main.priceToCoordinate(pr * mult);
           const all = draft ? [...drawings, draft] : drawings;
           const W = hostRef.current?.clientWidth ?? 0;
-          const LV = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
-          const col = (id: string) => (selected.includes(id) ? "#ff7b3d" : "#4f9dff");
+          const col = (d: Drawing) => d.c ?? (d.kind === "fib" ? "#f0b90b" : "#4f9dff");
+          const H = hostRef.current?.clientHeight ?? 0;
           return (
             <div className="wx-measure wx-draw" aria-hidden="true">
               <svg className="wx-measure-svg" width="100%" height="100%">
                 {all.map((d) => {
                   const x1 = X(d.a.t), x2 = X(d.b.t), y1 = Y(d.a.p), y2 = Y(d.b.p);
-                  if (y1 === null) return null;
+                  const c = col(d), w = d.w ?? 1.5, on = selected.includes(d.id);
+                  const dot = (x: number, y: number, k: string) => (<circle key={k} cx={x} cy={y} r={5} fill="#0c0c0d" stroke={c} strokeWidth={2} />);
                   if (d.kind === "hline") {
-                    return (<g key={d.id}><line x1={0} x2={W} y1={y1} y2={y1} stroke={col(d.id)} strokeWidth={selected.includes(d.id) ? 2 : 1} /><text x={W - 8} y={y1 - 4} textAnchor="end" fill={col(d.id)} fontSize="10">{fmtVal(d.a.p * mult / (mult || 1))}</text></g>);
+                    if (y1 === null) return null;
+                    return (<g key={d.id}>{on && <line x1={0} x2={W} y1={y1} y2={y1} stroke={c} strokeWidth={w + 6} opacity=".16" />}<line x1={0} x2={W} y1={y1} y2={y1} stroke={c} strokeWidth={w} /><text x={W - 8} y={y1 - 4} textAnchor="end" fill={c} fontSize="10">{fmtVal(d.a.p)}</text>{on && dot(W / 2, y1, "h")}</g>);
                   }
-                  if (x1 === null || x2 === null || y2 === null) return null;
-                  if (d.kind === "trend") return (<line key={d.id} x1={x1} y1={y1} x2={x2} y2={y2} stroke={col(d.id)} strokeWidth={selected.includes(d.id) ? 2.5 : 1.5} />);
-                  if (d.kind === "rect") return (<rect key={d.id} x={Math.min(x1, x2)} y={Math.min(y1, y2)} width={Math.abs(x2 - x1)} height={Math.abs(y2 - y1)} fill={selected.includes(d.id) ? "rgba(255,123,61,.16)" : "rgba(79,157,255,.14)"} stroke={col(d.id)} strokeWidth={selected.includes(d.id) ? 2 : 1} />);
+                  if (d.kind === "vline") {
+                    if (x1 === null) return null;
+                    return (<g key={d.id}>{on && <line x1={x1} x2={x1} y1={0} y2={H} stroke={c} strokeWidth={w + 6} opacity=".16" />}<line x1={x1} x2={x1} y1={0} y2={H} stroke={c} strokeWidth={w} />{on && dot(x1, H / 2, "v")}</g>);
+                  }
+                  if (x1 === null || x2 === null || y1 === null || y2 === null) return null;
+                  if (d.kind === "trend" || d.kind === "ray") {
+                    let ex: number = x2, ey: number = y2;
+                    if (d.kind === "ray" && Math.abs(x2 - x1) > 0.5) { const t = ((x2 >= x1 ? W + 40 : -40) - x1) / (x2 - x1); ex = x1 + (x2 - x1) * t; ey = y1 + (y2 - y1) * t; }
+                    return (<g key={d.id}>{on && <line x1={x1} y1={y1} x2={ex} y2={ey} stroke={c} strokeWidth={w + 6} opacity=".16" />}<line x1={x1} y1={y1} x2={ex} y2={ey} stroke={c} strokeWidth={w} />{on && dot(x1, y1, "a")}{on && dot(x2, y2, "b")}</g>);
+                  }
+                  if (d.kind === "rect") return (<g key={d.id}><rect x={Math.min(x1, x2)} y={Math.min(y1, y2)} width={Math.abs(x2 - x1)} height={Math.abs(y2 - y1)} fill={c} fillOpacity={on ? 0.2 : 0.12} stroke={c} strokeWidth={w} />{on && dot(x1, y1, "a")}{on && dot(x2, y2, "b")}</g>);
                   const xl = Math.min(x1, x2), xr = Math.max(x1, x2);
                   return (
                     <g key={d.id}>
                       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,.35)" strokeWidth="1" strokeDasharray="3 3" />
-                      {LV.map((lv) => {
+                      {FIB_LEVELS.map((lv) => {
                         const pr = d.b.p + (d.a.p - d.b.p) * lv;
                         const yy = Y(pr);
                         if (yy === null) return null;
-                        return (<g key={lv}><line x1={xl} x2={xr} y1={yy} y2={yy} stroke={selected.includes(d.id) ? "#ff7b3d" : "#f0b90b"} strokeWidth={selected.includes(d.id) ? 2 : 1} opacity=".9" /><text x={xl + 4} y={yy - 3} fill="#f0b90b" fontSize="10">{lv} ({fmtVal(pr)})</text></g>);
+                        return (<g key={lv}><line x1={xl} x2={xr} y1={yy} y2={yy} stroke={c} strokeWidth={on ? w + 0.6 : w} opacity=".9" /><text x={xl + 4} y={yy - 3} fill={c} fontSize="10">{lv} ({fmtVal(pr)})</text></g>);
                       })}
+                      {on && dot(x1, y1, "a")}{on && dot(x2, y2, "b")}
                     </g>
                   );
                 })}
@@ -1417,13 +1547,15 @@ export default function TokenChart({
           );
         })()}
         {selected.length > 0 && (
-          <button
-            type="button"
-            className="wx-draw-del"
-            onClick={() => { const gone = new Set(selected); setDrawings((d) => d.filter((x) => !gone.has(x.id))); setSelected([]); }}
-          >
-            <Trash2 size={13} /> Delete {selected.length}
-          </button>
+          <div className="wx-dstyle" role="toolbar" aria-label="Drawing style">
+            <span className="wx-dstyle-sw">
+              {DRAW_COLORS.map((c) => <button key={c} type="button" className={selColor === c ? "on" : ""} style={{ background: c }} aria-label={`Colour ${c}`} onClick={() => setDrawStyle({ c })} />)}
+            </span>
+            <span className="wx-dstyle-w">
+              {[1, 2, 3].map((w) => <button key={w} type="button" className={Math.abs(selWidth - w) < 0.8 ? "on" : ""} aria-label={`Thickness ${w}`} onClick={() => setDrawStyle({ w })}><i style={{ height: w + 1 }} /></button>)}
+            </span>
+            <button type="button" className="wx-dstyle-del" aria-label={`Delete ${selected.length} selected`} title="Delete (Del)" onClick={deleteDrawings}><Trash2 size={14} /></button>
+          </div>
         )}
 
         {measureView && (

@@ -376,7 +376,8 @@ select.ewt-network-badge option{background:#14141a;color:#fff}
 .wx-measure-label, .wx-measure-label b, .wx-measure-label span, .wx-measure-label.up, .wx-measure-label.down { color: #fff !important; }
 .wx-measure-label b { font-size: 13px; }
 .wx-measure-label span { opacity: 1; font-size: 12px; }
-.wx-measure-svg line { stroke-width: 1px !important; vector-effect: non-scaling-stroke; shape-rendering: crispEdges; }
+.wx-measure:not(.wx-draw) .wx-measure-svg line { stroke-width: 1px !important; vector-effect: non-scaling-stroke; shape-rendering: crispEdges; }
+.wx-draw .wx-measure-svg line { vector-effect: non-scaling-stroke; }
 .wx-measure-box { border-width: 0 !important; }
 
 /* Drawing tools */

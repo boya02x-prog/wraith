@@ -4,14 +4,16 @@
 // a swipe-free tap outside); on a desktop it is a small popover under the button. Opening and closing are animated.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlignJustify, ChevronDown, Minus, MousePointer2, PenLine, Ruler, Slash, Square, Trash2, X, type LucideIcon } from "lucide-react";
+import { AlignJustify, ArrowUpRight, ChevronDown, Minus, MousePointer2, PenLine, Ruler, Slash, Square, Trash2, X, type LucideIcon } from "lucide-react";
 
-export type ToolId = "hline" | "trend" | "rect" | "fib" | "measure" | "select";
+export type ToolId = "hline" | "vline" | "trend" | "ray" | "rect" | "fib" | "measure" | "select" | "cursor";
 
 const GROUPS: { title: string; items: { id: ToolId; label: string; hint: string; Icon: LucideIcon }[] }[] = [
   { title: "Lines", items: [
     { id: "hline", label: "Horizontal line", hint: "Tap once where it goes", Icon: Minus },
+    { id: "vline", label: "Vertical line", hint: "Tap once where it goes", Icon: Minus },
     { id: "trend", label: "Trend line", hint: "Drag, or tap two points", Icon: Slash },
+    { id: "ray", label: "Ray", hint: "A line that keeps going to the right", Icon: ArrowUpRight },
   ] },
   { title: "Shapes", items: [{ id: "rect", label: "Rectangle", hint: "Drag, or tap two corners", Icon: Square }] },
   { title: "Fibonacci", items: [{ id: "fib", label: "Fib retracement", hint: "Drag from a low to a high", Icon: AlignJustify }] },
@@ -19,6 +21,40 @@ const GROUPS: { title: string; items: { id: ToolId; label: string; hint: string;
   { title: "Edit", items: [{ id: "select", label: "Select drawings", hint: "Drag a box over them, then delete", Icon: MousePointer2 }] },
 ];
 const ALL = GROUPS.flatMap((g) => g.items);
+
+// the desktop rail: same tools as the dropdown, in TradingView's order, with keyboard hints
+const RAIL: ({ id: ToolId; label: string; key?: string; Icon: LucideIcon; rot?: number } | "sep")[] = [
+  { id: "cursor", label: "Cursor: select, move and edit drawings", key: "Esc", Icon: MousePointer2 },
+  "sep",
+  { id: "trend", label: "Trend line", key: "Alt+T", Icon: Slash },
+  { id: "ray", label: "Ray", Icon: ArrowUpRight },
+  { id: "hline", label: "Horizontal line", key: "Alt+H", Icon: Minus },
+  { id: "vline", label: "Vertical line", key: "Alt+V", Icon: Minus, rot: 90 },
+  { id: "rect", label: "Rectangle", key: "Alt+R", Icon: Square },
+  { id: "fib", label: "Fib retracement", key: "Alt+F", Icon: AlignJustify },
+  "sep",
+  { id: "measure", label: "Measure price and %", key: "Shift+click", Icon: Ruler },
+];
+
+/** Vertical tool rail down the left of the chart (desktop only; CSS hides it on phones, which use the dropdown). */
+export function ChartToolRail({ active, drawCount, selCount, onPick, onDelete }: {
+  active: ToolId | null; drawCount: number; selCount: number; onPick: (id: ToolId) => void; onDelete: () => void;
+}) {
+  const cur = active ?? "cursor";
+  return (
+    <div className="wx-rail" role="toolbar" aria-label="Drawing tools" aria-orientation="vertical">
+      {RAIL.map((it, i) => it === "sep" ? <i key={i} className="wx-rail-sep" /> : (
+        <button key={it.id} type="button" className={`wx-rail-btn${cur === it.id ? " on" : ""}`} data-tip={`${it.label}${it.key ? `  (${it.key})` : ""}`} aria-label={it.label} aria-pressed={cur === it.id} onClick={() => onPick(it.id)}>
+          <it.Icon size={18} style={it.rot ? { transform: `rotate(${it.rot}deg)` } : undefined} />
+        </button>
+      ))}
+      <i className="wx-rail-sep" />
+      <button type="button" className="wx-rail-btn" disabled={drawCount === 0} data-tip={selCount ? `Delete ${selCount} selected  (Del)` : "Remove all drawings"} aria-label="Remove drawings" onClick={onDelete}>
+        <Trash2 size={18} />
+      </button>
+    </div>
+  );
+}
 
 export default function ChartToolsMenu({ active, drawCount, selCount, onPick, onDelete }: {
   active: ToolId | null; drawCount: number; selCount: number; onPick: (id: ToolId) => void; onDelete: () => void;
