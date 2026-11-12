@@ -162,6 +162,18 @@ export default function TokenChart({
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  // Zoom the price axis around the middle of what is on screen (factor < 1 = taller candles). Turns auto-fit off until Reset.
+  const zoomY = useCallback((factor: number) => {
+    try {
+      const ps = chartRef.current?.priceScale("right");
+      const r = ps?.getVisibleRange();
+      if (!ps || !r) return;
+      const mid = (r.from + r.to) / 2;
+      const half = ((r.to - r.from) / 2) * factor;
+      ps.applyOptions({ autoScale: false });
+      ps.setVisibleRange({ from: mid - half, to: mid + half });
+    } catch { /* chart not ready */ }
+  }, []);
   const mainRef = useRef<ISeriesApi<"Candlestick"> | ISeriesApi<"Area"> | null>(null);
   const volRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const candlesRef = useRef<ChartCandle[]>([]);
@@ -1313,6 +1325,10 @@ export default function TokenChart({
             B/S
           </button>
         )}
+        <span className="wx-yzoom" role="group" aria-label="Zoom the price axis">
+          <button type="button" className="wx-icon-btn" onClick={() => zoomY(0.6)} aria-label="Taller candles (zoom price in)" title="Taller candles">+</button>
+          <button type="button" className="wx-icon-btn" onClick={() => zoomY(1.6)} aria-label="Shorter candles (zoom price out)" title="Shorter candles">−</button>
+        </span>
         <button type="button" className="wx-icon-btn" onClick={() => { try { chartRef.current?.priceScale("right").applyOptions({ autoScale: true }); chartRef.current?.timeScale().scrollToRealTime(); } catch { /* ignore */ } void load(true); }} aria-label="Reset chart" title="Reset view / refresh">
           <RefreshCw size={13} />
         </button>

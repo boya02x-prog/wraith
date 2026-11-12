@@ -11,7 +11,6 @@ import NotificationBell from "@/components/NotificationBell";
 import { appLockEnabled, appLockSupported, biometricReady, biometricVerify, disableAppLock, enableAppLock } from "@/components/AppLock";
 import { PIN_HASH_KEY, PIN_ENABLED_KEY, PIN_TIMEOUT_KEY, clearLocalPin, clearServerPin, hashPin, newSalt, pushLockPin, pushLockTimeout, saveLocalPin, storedSalt, syncLockFromAccount } from "@/lib/pinLockSync";
 import Link from "next/link";
-import { readStreet, toggleStreet } from "@/components/StreetTheme";
 import { useRouter } from "next/navigation";
 import { cacheTokenNav } from "@/lib/tokenNav";
 import { Lock as LockIcon,
@@ -22,7 +21,6 @@ import { Lock as LockIcon,
   EyeOff,
   Fingerprint,
   Gift,
-  Sparkles,
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
@@ -3070,8 +3068,6 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   }, [sessionStatus]);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const isAdmin = useIsAdmin();
-  const [streetOn, setStreetOn] = useState(false);
-  useEffect(() => { setStreetOn(readStreet()); }, []);
   const [termsRequired, setTermsRequired] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
   const [termsSaving, setTermsSaving] = useState(false);
@@ -3540,14 +3536,6 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                 href="/app/quests"
                 onClick={() => setUserMenuOpen(false)}
               />
-              {isAdmin && (
-                <ProfileMenuItem
-                  icon={Sparkles}
-                  label="Street theme"
-                  detail={streetOn ? "On" : "Off"}
-                  onClick={() => { setStreetOn(toggleStreet()); }}
-                />
-              )}
               {isAdmin && (
                 <ProfileMenuItem
                   icon={Shield}

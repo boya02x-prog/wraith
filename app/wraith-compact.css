@@ -881,3 +881,34 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .callout-text { font-size: 14px; line-height: 1.5; color: var(--text); }
 .callout-position { border-radius: 12px; border: 1px solid rgba(255, 255, 255, .08); background: rgba(0, 0, 0, .25); }
 .callout-img { border-radius: 12px; }
+
+/* ── Search sheet: the bottom field sits above the list, and the rows breathe ── */
+@media (max-width: 760px) {
+  .wx-cs-inputrow { z-index: 20; background: #1b1b1e !important; box-shadow: 0 -14px 22px 6px rgba(10, 10, 11, .96), 0 6px 22px rgba(0, 0, 0, .5); isolation: isolate; }
+  .wx-cs-drop .wx-sr { padding-top: 13px; padding-bottom: 13px; }
+  .wx-cs-drop .wx-sr + .wx-sr { border-top: 1px solid rgba(255, 255, 255, .04); }
+  .wx-cs-drop .wx-search-group-label { padding-top: 16px; padding-bottom: 8px; }
+  .wx-cs-drop::after { content: ""; display: block; height: 28px; flex: 0 0 auto; }
+}
+.wx-sr-chain { position: static; z-index: 0; }
+
+/* ── Chart tool rail: starts under the OHLC line, never taller than the chart, tidy buttons ── */
+@media (hover: hover) and (pointer: fine) {
+  .wx-rail { top: 40px !important; transform: none !important; max-height: calc(100% - 96px); overflow-y: auto; overflow-x: visible; scrollbar-width: none; gap: 1px !important; padding: 4px !important; border-radius: 12px !important; background: rgba(18, 18, 20, .9) !important; }
+  .wx-rail::-webkit-scrollbar { display: none; }
+  .wx-rail-btn { width: 30px !important; height: 30px !important; }
+  .wx-rail-btn svg { width: 16px; height: 16px; }
+}
+
+/* ── Swaps / Holders / Signals / Analysis: pill tabs, readable type, calmer rows ── */
+.dt .dt-tabs { gap: 6px; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.dt .dt-tabs button { padding: 8px 14px; border-radius: 999px !important; font: 700 12.5px/1 inherit; font-family: inherit; color: var(--text-muted); background: rgba(255, 255, 255, .04); }
+.dt .dt-tabs button:hover { background: rgba(255, 255, 255, .08); }
+.dt .dt-tabs button.on { color: #fff; background: rgba(var(--accent-rgb), .22); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .55); }
+.dt .dt-tabs button.on::after { display: none; }
+.dt { font-family: inherit !important; border-radius: 18px; }
+.dt .dt-head { font-family: inherit; letter-spacing: .06em; }
+.dt .dt-row { font-size: 12.5px; padding-top: 11px; padding-bottom: 11px; }
+.dt .dt-strip b { font-size: 22px; }
+.wx-yzoom { display: inline-flex; gap: 4px; }
+.wx-yzoom .wx-icon-btn { width: 30px; font-size: 16px; font-weight: 800; line-height: 1; }
