@@ -10,6 +10,7 @@ import { refreshCalls, type SignalCall } from "@/lib/signalCalls";
 import type { Signal } from "@/app/api/signals/route";
 import { broadcast, claim, milestoneFor, signalMessage, tg, winMessage, winTeaser } from "@/lib/telegramBot";
 import { fcmConfigured } from "@/lib/fcm";
+import { winText } from "@/lib/notifyText";
 import { intelBudgetStatus } from "@/lib/signalIntel";
 import { APP_URL, tokenKeyboard } from "@/lib/telegramUi";
 import { runPushAlerts, pushBroadcast } from "@/lib/push";
@@ -146,7 +147,7 @@ export async function GET(req: NextRequest) {
       if (first) continue;
       const r = await broadcast("win", winMessage(c, m), { teaser: winTeaser(c, m), chain: c.chain ?? "solana", markup: tokenKeyboard(c.address, c.chain ?? "solana"), imageUrl: bannerUrl(req.nextUrl.origin, { kind: "win", sym: c.symbol, x: c.lastMcap / c.spottedMcap, called: c.spottedMcap, now: c.lastMcap, peak: c.peakMcap, chain: c.chain ?? "solana" }) });
       out.wins++; out.sent += r.sent;
-      await pushBroadcast({ title: `🏆 ${m}x $${c.symbol}`, body: `${(c.lastMcap / c.spottedMcap).toFixed(2)}x from the call`, url: `/app/token/${c.address}`, tag: `w:${c.address}:${m}` }, "signal").catch(() => 0);
+      await pushBroadcast({ ...winText({ symbol: c.symbol, milestone: m, x: c.lastMcap / c.spottedMcap, nowMcap: c.lastMcap }), url: `/app/token/${c.address}`, tag: `w:${c.address}:${m}` }, "signal").catch(() => 0);
     }
   } catch (e) {
     tgError = e;

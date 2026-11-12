@@ -16,6 +16,7 @@ import { readTokenFavorites } from "@/lib/tokenFavorites";
 import PushToggle from "@/components/PushToggle";
 import { enablePush, isStandalone, pushAvailable } from "@/lib/pushClient";
 import { pushState, restoreState, watchFavorites } from "@/lib/userStateSync";
+import { callText, intelText, savedText, tradeText, winMilestone, winText } from "@/lib/notifyText";
 
 type Kind = "trader" | "callout" | "saved" | "signal";
 interface Notif { id: string; kind: Kind; title: string; body: string; href: string; ts: number; img?: string }
@@ -43,13 +44,6 @@ async function getJson<T>(url: string): Promise<T | null> {
     return r.ok ? ((await r.json()) as T) : null;
   } catch { return null; }
 }
-function k(n?: number | null) {
-  if (!n || !Number.isFinite(n)) return "—";
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return `$${n.toFixed(0)}`;
-}
 function ago(ts: number) {
   const s = Math.max(1, Math.round((Date.now() - ts) / 1000));
   if (s < 60) return `${s}s`;
@@ -60,7 +54,7 @@ function ago(ts: number) {
 
 type FeedItem = { traderId: string; traderName?: string; avatarDataUrl?: string; type: "open" | "closed"; mint: string; symbol?: string; entryMcap?: number; pnlPct?: number; ts?: number; id?: string };
 type CalloutItem = { id?: string; _id?: string; userId: string; displayName?: string; avatarDataUrl?: string; avatarUrl?: string; text?: string; mint?: string; createdAt?: number | string };
-type CallItem = { address: string; symbol: string; spottedAt: number; spottedMcap: number; tier: "HOT" | "WATCH"; score: number; shadow?: boolean; imageUrl?: string; chain?: string };
+type CallItem = { address: string; symbol: string; spottedAt: number; spottedMcap: number; peakMcap?: number; lastMcap?: number; tier: "HOT" | "WATCH"; score: number; shadow?: boolean; imageUrl?: string; chain?: string };
 
 export default function NotificationBell() {
   const router = useRouter();
@@ -123,8 +117,7 @@ export default function NotificationBell() {
           const opened = c.type === "open";
           add({
             id: `t:${c.traderId}:${c.mint}:${c.type}:${ts}`, kind: "trader", ts, img: c.avatarDataUrl,
-            title: `${c.traderName || "A trader you follow"} ${opened ? "bought" : "closed"} ${c.symbol ? `$${c.symbol}` : "a token"}`,
-            body: opened ? `In at ${k(c.entryMcap)} market cap` : `${(c.pnlPct ?? 0) >= 0 ? "+" : ""}${Math.round(c.pnlPct ?? 0)}% result`,
+            ...tradeText({ name: c.traderName, type: opened ? "open" : "closed", symbol: c.symbol, entryMcap: c.entryMcap, pnlPct: c.pnlPct }),
             href: `/app/token/${c.mint}`,
           });
         }
@@ -137,8 +130,7 @@ export default function NotificationBell() {
           const ts = typeof c.createdAt === "number" ? c.createdAt : c.createdAt ? Date.parse(c.createdAt) || Date.now() : Date.now();
           add({
             id: `c:${id}`, kind: "callout", ts, img: c.avatarDataUrl || c.avatarUrl,
-            title: `${c.displayName || "Someone you follow"} posted intel`,
-            body: (c.text || "").slice(0, 110),
+            ...intelText({ name: c.displayName, text: c.text }),
             href: c.mint ? `/app/token/${c.mint}` : `/app/u/${encodeURIComponent(c.userId)}`,
           });
         }
@@ -150,10 +142,13 @@ export default function NotificationBell() {
         const cutoff = Date.now() - 24 * 3600_000;
         for (const c of d?.calls ?? []) {
           if (c.shadow || c.tier !== "HOT" || c.spottedAt < cutoff) continue;
+          // a call that has since reached 2x, 3x, 5x ...: one 🏆 entry per milestone, like the phone push
+          const x = c.spottedMcap > 0 ? Math.max(c.peakMcap ?? 0, c.lastMcap ?? 0) / c.spottedMcap : 0;
+          const m = winMilestone(x);
+          if (m) add({ id: `w:${c.address}:${m}`, kind: "signal", ts: Date.now(), img: c.imageUrl, ...winText({ symbol: c.symbol, milestone: m, x, nowMcap: c.lastMcap }), href: `/app/token/${c.address}` });
           add({
             id: `s:${c.address}`, kind: "signal", ts: c.spottedAt, img: c.imageUrl,
-            title: `Fresh call: $${c.symbol}`,
-            body: `Spotted at ${k(c.spottedMcap)} · score ${Math.round(c.score)}`,
+            ...callText({ symbol: c.symbol, mcap: c.spottedMcap, score: c.score }),
             href: `/app/token/${c.address}`,
           });
         }
@@ -176,8 +171,7 @@ export default function NotificationBell() {
           if (Math.abs(move) >= SAVED_MOVE) {
             add({
               id: `p:${mint}:${Math.floor(Date.now() / 3600_000)}`, kind: "saved", ts: Date.now(),
-              title: `$${f.keyword} is ${move > 0 ? "up" : "down"} ${Math.abs(Math.round(move * 100))}%`,
-              body: "A token you saved just moved",
+              ...savedText({ symbol: f.keyword, move }),
               href: `/app/token/${mint}`,
             });
             base[mint] = px;

@@ -2,6 +2,7 @@
 // Needs env: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:you@example.com) for web push,
 // and FIREBASE_SERVICE_ACCOUNT for the Android app.
 import webpush from "web-push";
+import { TEST_TEXT, callText, intelText, savedText, tradeText } from "@/lib/notifyText";
 import { isPushEndpoint } from "@/lib/pushEndpoint";
 import { getDb } from "@/lib/mongoClient";
 import { fcmConfigured, sendFcm } from "@/lib/fcm";
@@ -47,14 +48,6 @@ export function pushConfigured(): boolean {
   }
   return ready;
 }
-
-const k = (n?: number | null) => {
-  if (!n || !Number.isFinite(n)) return "—";
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return `$${n.toFixed(0)}`;
-};
 
 const wants = (s: PushSub, key: keyof PushPrefs) => s.prefs?.[key] !== false;
 
@@ -113,7 +106,7 @@ export async function sendTest(userId: string): Promise<TestReport> {
   };
   const dead: string[] = [];
   for (const s of activeSubs(all)) {
-    const o = await deliver(s, { title: "Wraith notifications are on", body: "You will get calls, trader buys and saved-token moves here.", url: "/app", tag: "test" });
+    const o = await deliver(s, { ...TEST_TEXT, url: "/app", tag: "test" });
     report.results.push({ kind: s.fcm ? "app" : "browser", ok: o.ok, ...(o.dead ? { dead: true } : {}), ...(o.error ? { error: o.error } : {}) });
     if (o.ok) {
       report.sent++;
@@ -245,15 +238,14 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
       const msgs: Msg[] = [];
       const cur = sub.cursor;
       if (wants(sub, "signal")) {
-        for (const c of hot) if (c.spottedAt > cur) msgs.push({ title: `Fresh call: $${c.symbol}`, body: `Spotted at ${k(c.spottedMcap)} · score ${Math.round(c.score)}`, url: `/app/token/${c.address}`, tag: `s:${c.address}` });
+        for (const c of hot) if (c.spottedAt > cur) msgs.push({ ...callText({ symbol: c.symbol, mcap: c.spottedMcap, score: c.score }), url: `/app/token/${c.address}`, tag: `s:${c.address}` });
       }
       const mine = followMap.get(sub.userId);
       if (mine && wants(sub, "trader")) {
         for (const e of events) {
           if (!mine.has(e.traderId) || e.ts <= cur || e.ts > now) continue;
           msgs.push({
-            title: `${e.name} ${e.type === "open" ? "bought" : "closed"} ${e.symbol ? `$${e.symbol}` : "a token"}`,
-            body: e.type === "open" ? `In at ${k(e.entryMcap)} market cap` : `${(e.pnlPct ?? 0) >= 0 ? "+" : ""}${Math.round(e.pnlPct ?? 0)}% result`,
+            ...tradeText({ name: e.name, type: e.type, symbol: e.symbol, entryMcap: e.entryMcap, pnlPct: e.pnlPct }),
             url: `/app/token/${e.mint}`, tag: `t:${e.traderId}:${e.mint}:${e.type}`,
           });
         }
@@ -261,7 +253,7 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
       if (mine && wants(sub, "callout")) {
         for (const c of callouts) {
           if (!mine.has(c.userId) || c.ts <= cur || c.ts > now) continue;
-          msgs.push({ title: `${c.name} posted intel`, body: c.text.slice(0, 110), url: c.mint ? `/app/token/${c.mint}` : `/app/u/${encodeURIComponent(c.userId)}`, tag: `c:${c.id}` });
+          msgs.push({ ...intelText({ name: c.name, text: c.text }), url: c.mint ? `/app/token/${c.mint}` : `/app/u/${encodeURIComponent(c.userId)}`, tag: `c:${c.id}` });
         }
       }
       const base = { ...(sub.base ?? {}) };
@@ -273,7 +265,7 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
           if (!b) { base[s.mint] = px; continue; }
           const move = px / b - 1;
           if (Math.abs(move) >= SAVED_MOVE) {
-            msgs.push({ title: `$${s.symbol} is ${move > 0 ? "up" : "down"} ${Math.abs(Math.round(move * 100))}%`, body: "A token you saved just moved", url: `/app/token/${s.mint}`, tag: `p:${s.mint}` });
+            msgs.push({ ...savedText({ symbol: s.symbol, move }), url: `/app/token/${s.mint}`, tag: `p:${s.mint}` });
             base[s.mint] = px;
           }
         }

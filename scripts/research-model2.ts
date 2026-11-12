@@ -285,6 +285,40 @@ async function main() {
     }
   }
 
+  if (GROUPS.has("cand")) {
+    // Does the SHAPE of the chart right before the call help (how far off its high, how much it already ran, volatility, volume pick-up)?
+    // scripts/backfill-candles.ts reads each token's chart from Jupiter up to the moment of the call (complete candles only, no peeking).
+    // Both runs use exactly the same calls; the only difference is whether the chart numbers are given to the model.
+    const CK = ["cN15", "cRet1h", "cRet4h", "cRet12h", "cAth", "cAthBars", "cLowDist", "cVol", "cVolPick", "cUp8", "cRange1h", "cHigh16", "c1mMom"];
+    const cm: Record<string, { ok: boolean; f?: Record<string, number> }> = existsSync("scripts/.pilot/cand.json") ? JSON.parse(readFileSync("scripts/.pilot/cand.json", "utf8")) : {};
+    const sub = raw.filter((c) => cm[c.address]?.ok);
+    console.log(`
+== CHART SHAPE before the call: ${sub.length} of ${raw.length} calls have it ==`);
+    if (sub.length < 300) { console.log("Too few so far (need 300+). Let scripts/backfill-candles.ts run longer."); }
+    else {
+      const extra = (c: Call) => CK.map((k) => { const v = cm[c.address]?.f?.[k]; return typeof v === "number" && Number.isFinite(v) ? v : NaN; });
+      const Lcol: Labeler = (c) => (c.ratioLast <= 0.2 ? 1 : 0);
+      const L15: Labeler = (c) => (c.ratioPeak >= 1.5 ? 1 : 0);
+      const b2 = runConfig("reach 2x: WITHOUT chart shape", sub, L2, TREE_DEFAULTS);
+      report(null, b2, sub, L2);
+      const w2 = runConfig("reach 2x: WITH chart shape", sub, L2, TREE_DEFAULTS, { extra });
+      report(b2, w2, sub, L2);
+      const bc = runConfig("collapse: WITHOUT chart shape", sub, Lcol, TREE_DEFAULTS);
+      report(null, bc, sub, Lcol);
+      const wc = runConfig("collapse: WITH chart shape", sub, Lcol, TREE_DEFAULTS, { extra });
+      report(bc, wc, sub, Lcol);
+      const b15 = runConfig("reach 1.5x: WITHOUT chart shape", sub, L15, TREE_DEFAULTS);
+      report(null, b15, sub, L15);
+      report(b15, runConfig("reach 1.5x: WITH chart shape", sub, L15, TREE_DEFAULTS, { extra }), sub, L15);
+      const hot = (i: number) => (sub[i].score ?? 0) >= 72;
+      const within = (r: Result, judge: Labeler) => { const keep = r.idx.map((i, k) => (hot(i) ? k : -1)).filter((k) => k >= 0); return keep.length > 30 ? auc(keep.map((k) => r.scores[k]), keep.map((k) => judge(sub[r.idx[k]]))).toFixed(3) : "n/a"; };
+      console.log(`WITHIN score 72+ calls: reach 2x AUC ${within(b2, L2)} -> ${within(w2, L2)} with chart shape | collapse AUC ${within(bc, Lcol)} -> ${within(wc, Lcol)}`);
+      // the hand-built scanner score on the same calls, for reference
+      const scoreOnly: Result = { name: "scanner score alone", scores: b2.idx.map((i) => sub[i].score ?? 0), labels: b2.labels, foldAuc: [], idx: b2.idx };
+      report(null, scoreOnly, sub, L2);
+    }
+  }
+
   if (GROUPS.has("stack")) {
     // The hand-built scanner score beats the learned model on its own. So the honest question is whether learning adds ANYTHING to it.
     console.log("\n== DOES LEARNING ADD ANYTHING TO THE HAND-BUILT SCORE? (every line is judged against the score alone) ==");
