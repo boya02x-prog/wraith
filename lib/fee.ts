@@ -9,8 +9,6 @@ import {
 
 export const FEE_WALLET = new PublicKey("YOUR_TREASURY_WALLET");
 
-// Flat fee per sniper trade
-export const SNIPER_FEE_LAMPORTS = 0.001 * LAMPORTS_PER_SOL; // 0.001 SOL
 
 // Or percentage-based (1%)
 export function calcFee(tradeAmountLamports: number) {

@@ -77,7 +77,7 @@ ${rule}
 Telegram alerts are a <b>SPECTER</b> and <b>WRAITH</b> tier feature.
 
 ◌ <b>GHOST</b>  free · scanner only
-◈ <b>SHADE</b>  250,000 OMEN · sniper &amp; hot wallet
+◈ <b>SHADE</b>  250,000 OMEN · auto take-profit / stop-loss &amp; hot wallet
 ◆ <b>SPECTER</b>  500,000 OMEN · AI score, live signals, <b>Telegram alerts</b>
 ⬡ <b>WRAITH</b>  1,000,000 OMEN · everything, 0% fees
 

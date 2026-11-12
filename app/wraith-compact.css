@@ -277,8 +277,9 @@ button.hc-act:hover { background: rgba(255, 255, 255, .06); color: var(--text); 
 .is-list .tc-main > .trader-follow { order: 9; margin-left: auto; flex: 0 0 auto; }
 .is-list .tc { gap: 14px; }
 .is-list .tc-foot { flex: 0 0 300px; }
-.wraith-discover { margin-left: 6px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.04); color: var(--text); font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; }
-.wraith-discover:hover { background: rgba(255,255,255,.09); }
+/* a plain text link, like the links in the website's top bar: no box around it */
+.wraith-discover { margin-left: 10px; padding: 6px 2px; border: 0; background: none; color: var(--text-muted); font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; letter-spacing: 0; text-decoration: none; white-space: nowrap; transition: color .15s; }
+.wraith-discover:hover, .wraith-discover:focus-visible { color: #fff; outline: none; }
 
 /* Phone sign-in: a clean full-screen layout instead of a floating desktop card over a blank blur */
 @media (max-width: 640px) {
@@ -736,4 +737,37 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wx-tape-row, .wx-tape-row.big { animation: none; }
   .wx-flash-up { animation: wx-up .9s ease-out; }
   .wx-tick-buy-a, .wx-tick-buy-b { animation-name: wx-tick-up-a; }
+}
+
+/* ───────────────────────────────────────────────────────────────────────
+   Intel composer on phones: a one-line bar pinned above the Buy / Sell buttons (avatar, "Post your take", photo, GIF, expand),
+   like the reply bar on X. Tapping it opens the composer as its own screen with Cancel / Post at the top and the text box right
+   under it, so the keyboard never covers what you type. On desktop nothing changes: the composer stays inline.
+   ─────────────────────────────────────────────────────────────────────── */
+.fb-pill, .fb-top { display: none; }
+.fb-wrap { display: contents; }
+@media (max-width: 767px) {
+  .fb-pill { position: fixed; z-index: 45; left: 10px; right: 10px; bottom: calc(72px + var(--sai-bottom, 0px)); display: flex; align-items: center; gap: 2px; height: 52px; padding: 0 6px 0 9px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .1); background: rgba(26, 26, 29, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 10px 30px rgba(0, 0, 0, .55); animation: fb-pill-in .22s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes fb-pill-in { from { opacity: 0; transform: translateY(14px); } }
+  .fb-pill button { border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+  .fb-pill-main { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 10px; padding: 0; color: var(--text-dim, #8a8a90); font-size: 15px; text-align: left; }
+  .fb-pill-main span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fb-pill-av { flex: none; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+  .wraith-dashboard .fb-pill > button:not(.fb-pill-main), .fb-pill > button:not(.fb-pill-main) { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50% !important; color: var(--text-muted, #a1a1a6); }
+  .fb-pill > button:not(.fb-pill-main):active { background: rgba(255, 255, 255, .08); color: #fff; }
+  .fb-pill-gif { font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .04em; padding: 2px 4px; border: 1.6px solid currentColor; border-radius: 5px; line-height: 1; }
+  .callouts-shell { padding-bottom: 66px; } /* room so the bar never covers the last post */
+
+  .fb-wrap { display: none; }
+  .fb-wrap.open { display: block; position: fixed; inset: 0; z-index: 2100; background: var(--bg, #0c0c0d); animation: wx-fade .16s ease-out; overflow-y: auto; }
+  .fb-wrap.open .fb-compose { margin: 0; min-height: 100%; padding: calc(10px + var(--sai-top, 0px)) 14px calc(12px + var(--sai-bottom, 0px)); border: 0; border-radius: 0; background: transparent; }
+  .fb-wrap.open .fb-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .fb-cancel { height: 40px; padding: 0 4px; border: 0; background: none; color: var(--text, #ededee); font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; }
+  .wraith-dashboard .fb-post, .fb-post { height: 38px; padding: 0 18px; border: 0; border-radius: 999px !important; background: var(--accent, #ff7b3d); color: #1a0b03; font-size: 14.5px; font-weight: 800; font-family: inherit; cursor: pointer; }
+  .fb-post:disabled { opacity: .45; }
+  .fb-wrap.open .fb-input { min-height: 120px; max-height: 40dvh; font-size: 17px; line-height: 1.45; }
+  .fb-wrap.open .fb-bar { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border, rgba(255, 255, 255, .08)); }
+  .fb-wrap.open .fb-send { display: none; } /* the Post button at the top does this */
+  .fb-wrap.open .fb-tools button:not(.fb-txt) { width: 40px; height: 40px; }
+  .fb-wrap.open .fb-tools button.fb-txt { height: 32px; align-self: center; }
 }

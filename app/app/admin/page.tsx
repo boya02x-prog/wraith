@@ -19,7 +19,7 @@ type BoolKey = "featuresFree" | "tiersLive" | "autoLaunch" | "vipRoomOpen" | "qu
 type Sw = { key: BoolKey; title: string; on: string; off: string };
 
 const TOOL_SWITCHES: Sw[] = [
-  { key: "featuresFree", title: "Free beta: every tool for everyone", on: "ON: every signed-in user gets signals, sniper, auto take-profit / stop-loss, hot wallet, AI score and Telegram alerts. The fee stays 1.5%.", off: "OFF: tools are locked behind OMEN tiers. If tiers are also off, nobody has the paid tools." },
+  { key: "featuresFree", title: "Free beta: every tool for everyone", on: "ON: every signed-in user gets signals, auto take-profit / stop-loss, hot wallet, AI score and Telegram alerts. The fee stays 1.5%.", off: "OFF: tools are locked behind OMEN tiers. If tiers are also off, nobody has the paid tools." },
   { key: "tiersLive", title: "OMEN tiers", on: "ON: how much OMEN a wallet holds decides its tier, fee discount and free-gas boost.", off: "OFF: holding OMEN does nothing yet. Turn this on at launch, after the token address is set." },
   { key: "vipRoomOpen", title: "Private Telegram group for OMEN holders", on: "ON: the bot guards the door of your private holders group. Someone asks to join, and the bot lets them in only if their Wraith account holds enough OMEN (SPECTER tier or higher). Once an hour it removes anyone who sold. Until OMEN is launched nobody holds any, so nobody gets in. Leave this OFF before launch.", off: "OFF: the private group is closed. Anyone who asks to join gets a reply that it opens at launch. This is the right setting before launch." },
 ];

@@ -1109,7 +1109,7 @@ export default function ProfilePage() {
       return;
     }
     if (transferSource === "hot" && (!encryptedHotWallet || !hotWalletPassword)) {
-      setError("Unlock the Sniper hot wallet with its password before sending.");
+      setError("Unlock the hot wallet with its password before sending.");
       return;
     }
     let recipient: PublicKey;
@@ -1791,13 +1791,16 @@ export default function ProfilePage() {
                 >
                   Connected wallet
                 </button>
-                <button
-                  className={transferSource === "hot" ? "is-active" : ""}
-                  type="button"
-                  onClick={() => setTransferSource("hot")}
-                >
-                  Sniper hot wallet
-                </button>
+                {/* only for people who already have one saved in this browser, so nothing left in it is ever stranded */}
+                {hasHotWallet && (
+                  <button
+                    className={transferSource === "hot" ? "is-active" : ""}
+                    type="button"
+                    onClick={() => setTransferSource("hot")}
+                  >
+                    Hot wallet
+                  </button>
+                )}
               </div>
               {transferSource === "connected" && (!connected || !publicKey) ? (
                 <div className="profile-connect-wallet">
@@ -1811,8 +1814,8 @@ export default function ProfilePage() {
                 <div className="profile-connect-wallet">
                   <LockKeyhole size={19} />
                   <div>
-                    <strong>No Sniper hot wallet in this browser</strong>
-                    <p>Create or import one in the Sniper panel first.</p>
+                    <strong>No hot wallet in this browser</strong>
+                    <p>There is no hot wallet saved in this browser.</p>
                   </div>
                 </div>
               ) : (
@@ -2223,7 +2226,7 @@ export default function ProfilePage() {
               <h2 id="profile-export-title">Read before exporting keys</h2>
               <div className="profile-export-warning-copy">
                 <p>
-                  Your private key controls all funds in the Sniper hot wallet.
+                  Your private key controls all funds in the hot wallet.
                   Anyone who gets it can permanently take those funds.
                 </p>
                 <p>

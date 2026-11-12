@@ -18,7 +18,7 @@ import { retryDelayMs, slippageFor, stepExit, type ExitCore, type ExitReason } f
 const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const TICK_MS = 3000;
 
-// A rule is measured in USD price when it knows the real fill price, otherwise (older rules, the sniper) in market cap.
+// A rule is measured in USD price when it knows the real fill price, otherwise (older rules) in market cap.
 const usesPrice = (r: LiveExitRule) => (r.entryPrice ?? 0) > 0;
 const toCore = (r: LiveExitRule): ExitCore => ({
   entry: usesPrice(r) ? (r.entryPrice as number) : r.entryMcap,

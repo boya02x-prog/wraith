@@ -54,7 +54,7 @@ export async function paidTier(u: TierRow): Promise<TierKey> {
   return t;
 }
 
-/** Tier for FEATURES (alerts, signals, sniper…): everyone is WRAITH while the beta switch is on. */
+/** Tier for FEATURES (alerts, signals, auto-sell…): everyone is WRAITH while the beta switch is on. */
 export async function featureTier(u: TierRow): Promise<TierKey> {
   if ((await getLaunchSettings()).featuresFree) return "WRAITH";
   return paidTier(u);

@@ -48,7 +48,6 @@ import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
 import { useWraithTier } from "@/hooks/useWraithTier";
 import AutoExit from "@/components/AutoExit";
 import LiveAutoExit from "@/components/LiveAutoExit";
-import SniperEngine from "@/components/SniperEngine";
 import { PRIVY_WALLETS_ENABLED as LIVE_EXIT_WALLETS } from "@/lib/privyConfig";
 import TierCard from "@/components/TierCard";
 import { useWraithSession } from "@/components/SessionProvider";
@@ -3449,15 +3448,6 @@ export default function Header({ onSelectMeme }: HeaderProps) {
               </div>
             </div>
             <TierCard />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { setUserMenuOpen(false); window.dispatchEvent(new Event("wraith:open-sniper")); }}
-              style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", margin: "6px 0 0", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 10, background: "transparent", color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
-            >
-              <span>Sniper · Auto-buy</span>
-              <span style={{ color: canUse("sniper") ? "var(--orange-hot)" : "var(--text-muted)", fontSize: 10 }}>{canUse("sniper") ? "OPEN" : "SHADE+"}</span>
-            </button>
 
             <div className="wraith-profile-menu-group">
               <ProfileMenuItem
@@ -3876,7 +3866,6 @@ export default function Header({ onSelectMeme }: HeaderProps) {
     <>
       <AutoExit enabled={canUse("auto_sell")} />
       {LIVE_EXIT_WALLETS && <LiveAutoExit enabled={canUse("auto_sell")} />}
-      {LIVE_EXIT_WALLETS && <SniperEngine allowed={canUse("sniper")} />}
       {mounted && pinLocked && (
         <PinLockOverlay
           onUnlock={() => {

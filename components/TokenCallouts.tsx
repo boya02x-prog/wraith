@@ -5,7 +5,9 @@ import { CALLOUT_POSTED_EVENT, useLiveRefresh } from "@/lib/useLiveRefresh";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { ImageIcon, Repeat2, MessageCircle, Smile } from "lucide-react";
+import { ImageIcon, Maximize2, Repeat2, MessageCircle, Smile } from "lucide-react";
+import { readHeaderProfile } from "@/lib/profileCache";
+import { defaultAvatar } from "@/lib/defaultArt";
 import { shrinkImage } from "@/lib/shrinkImage";
 import MemeMaker from "@/components/MemeMaker";
 import StickerSheet from "@/components/StickerSheet";
@@ -92,6 +94,25 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
   const fileInputRef = useRef<HTMLInputElement>(null);
   const TEXT_MAX = 280;
 
+  // Phones: the composer is a one-line bar pinned above the Buy / Sell buttons (like the reply bar on X) while this list is on
+  // screen. Tapping it opens the full composer as its own screen, with the text box at the top so the keyboard never covers it.
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const [me, setMe] = useState<{ avatar: string | null; uid: string | null }>({ avatar: null, uid: null });
+  useEffect(() => { const p = readHeaderProfile(); setMe({ avatar: p?.avatar ?? null, uid: p?.uid ?? null }); }, [authenticated]);
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setInView(true); return; }
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const openSheet = (then?: () => void) => {
+    setSheet(true);
+    window.setTimeout(() => { if (then) then(); else textareaRef.current?.focus(); }, 60);
+  };
+
   const load = useCallback(async () => {
     if (!mint) return;
     try {
@@ -160,6 +181,7 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
       setText("");
       setImagePreview(null);
       setEmojiOpen(false);
+      setSheet(false);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       await load();
       window.dispatchEvent(new Event(CALLOUT_POSTED_EVENT));
@@ -234,7 +256,7 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
   };
 
   return (
-    <div className="callouts-shell">
+    <div className="callouts-shell" ref={shellRef}>
       {/* Compose */}
       {authenticated && canPost === false ? (
         <div className="callouts-compose callouts-locked">
@@ -242,7 +264,25 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
           <span>Buy or sell this token on Wraith and you can share your take here.</span>
         </div>
       ) : authenticated ? (
+        <>
+        {canPost === true && inView && !sheet && (
+          <div className="fb-pill" role="group" aria-label="Post your take">
+            <button type="button" className="fb-pill-main" onClick={() => openSheet()}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="fb-pill-av" src={me.avatar || defaultAvatar(me.uid || "wraith")} alt="" />
+              <span>{text.trim() || "Post your take"}</span>
+            </button>
+            <button type="button" aria-label="Attach a photo" onClick={() => openSheet(() => fileInputRef.current?.click())}><ImageIcon size={20} /></button>
+            <button type="button" aria-label="Stickers and GIFs" onClick={() => openSheet(() => setGifOpen(true))}><i className="fb-pill-gif">GIF</i></button>
+            <button type="button" aria-label="Open the full composer" onClick={() => openSheet()}><Maximize2 size={18} /></button>
+          </div>
+        )}
+        <div className={`fb-wrap${sheet ? " open" : ""}`}>
         <div className="fb-compose">
+          <div className="fb-top">
+            <button type="button" className="fb-cancel" onClick={() => setSheet(false)}>Cancel</button>
+            <button type="button" className="fb-post" onClick={() => void post()} disabled={posting || !text.trim()}>{posting ? "Posting…" : "Post"}</button>
+          </div>
           {imagePreview && (
             <div className="fb-img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -287,6 +327,8 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
             </button>
           </div>
         </div>
+        </div>
+        </>
       ) : (
         <div className="callouts-auth-prompt">
           <span>Sign in to join the conversation</span>

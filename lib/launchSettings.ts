@@ -5,7 +5,7 @@ export type RoadmapStatus = "soon" | "live";
 export interface RoadmapItem { id: string; title: string; body: string; status: RoadmapStatus; date: string }
 
 export interface LaunchSettings {
-  /** Pre-launch beta: every signed-in user gets every tool (signals, sniper, auto-sell, Telegram alerts, AI score, hot wallet). Fees stay normal. */
+  /** Pre-launch beta: every signed-in user gets every tool (signals, auto-sell, Telegram alerts, AI score, hot wallet). Fees stay normal. */
   featuresFree: boolean;
   /** OMEN holdings decide tiers, fee discounts and the gas boost. Needs omenMint. */
   tiersLive: boolean;
@@ -111,7 +111,7 @@ export function normalizeSettings(raw: unknown, base: LaunchSettings = DEFAULT_S
 export const LAUNCH_ITEMS: { id: string; label: string; before: string; after: string }[] = [
   { id: "scanner", label: "Scanner, charts, trading, paper trading", before: "Free for everyone", after: "Free for everyone" },
   { id: "signals", label: "Live signals feed", before: "Unlocked by the beta switch", after: "WRAITH holders (1M OMEN)" },
-  { id: "sniper", label: "Sniper / auto-buy, auto TP/SL/trail, hot wallet", before: "Unlocked by the beta switch", after: "SHADE+ (250K OMEN)" },
+  { id: "autosell", label: "Auto TP/SL/trail, hot wallet", before: "Unlocked by the beta switch", after: "SHADE+ (250K OMEN)" },
   { id: "alerts", label: "Telegram DM alerts + AI score", before: "Unlocked by the beta switch", after: "SPECTER+ (500K OMEN)" },
   { id: "fees", label: "Fee discounts (1.5% → 0%)", before: "Everyone pays 1.5%", after: "By OMEN tier when tiers are live" },
   { id: "gas", label: "Gas sponsorship boost", before: "Off", after: "OMEN holders get a bigger boost" },

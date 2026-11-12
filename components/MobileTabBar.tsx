@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 
 /**
  * App-style floating bottom navigation for phones (≤767px, CSS-controlled).
+ * The five sections of the app, in the same order as the row at the top: Market, Scanner, Wins, Intel, Traders.
  * Market tab uses the Wraith logo as its icon. The round button on the right
  * opens token search. Hidden on the token page, which has its own
  * Chart / Trade / Market bar.
@@ -15,7 +16,7 @@ type Item = {
   key: string;
   label: string;
   href: string;
-  view?: "market" | "scanner" | "intel";
+  view?: "market" | "scanner" | "wins" | "intel";
   icon: ReactNode;
 };
 
@@ -53,6 +54,18 @@ const ITEMS: Item[] = [
         <circle cx="12" cy="12" r="9" />
         <circle cx="12" cy="12" r="4" />
         <path d="M12 12l6-6" />
+      </svg>
+    ),
+  },
+  {
+    key: "wins",
+    label: "Wins",
+    href: "/app",
+    view: "wins",
+    icon: (
+      <svg {...stroke}>
+        <path d="M3 17l6-6 4 4 8-8" />
+        <path d="M14 7h7v7" />
       </svg>
     ),
   },
@@ -113,7 +126,7 @@ export default function MobileTabBar() {
   const hidden = path.startsWith("/app/token");
   const onHome = path === "/app";
   const activeKey = onHome
-    ? (view === "scanner" ? "scanner" : view === "intel" ? "intel" : "market")
+    ? view
     : path.startsWith("/app/traders")
       ? "traders"
       : path.startsWith("/app/profile")

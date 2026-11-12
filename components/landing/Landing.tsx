@@ -21,7 +21,7 @@ const display = localFont({ src: "./fonts/bricolage-grotesque-latin-wght.woff2",
 const TIER_COLOR: Record<TierKey, string> = { GHOST: "#8d8d99", SHADE: "#38bdf8", SPECTER: "#c084fc", WRAITH: "#ff7b3d" };
 const NEED: Record<TierKey, string> = { GHOST: "No OMEN needed", SHADE: "Hold 250,000 OMEN", SPECTER: "Hold 500,000 OMEN", WRAITH: "Hold 1,000,000 OMEN" };
 const SHOW = [
-  ["scanner_view", "Scanner"], ["sniper", "Sniper and auto-buy"], ["auto_sell", "Auto TP / SL / trail"],
+  ["scanner_view", "Scanner"], ["auto_sell", "Auto TP / SL / trail"],
   ["ai_score", "AI score"], ["telegram_alerts", "Telegram alerts"], ["live_signals_view", "Live signals"],
 ] as const;
 const SOON_IDS = new Set<string>();

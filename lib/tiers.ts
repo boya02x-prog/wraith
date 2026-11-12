@@ -32,7 +32,6 @@ export const TIERS: Record<TierKey, Tier> = {
     features: [
       { id: "scanner_view", label: "View Scanner", unlocked: true },
       { id: "live_signals_view", label: "View Live Signals", unlocked: false },
-      { id: "sniper", label: "Sniper / Auto-buy", unlocked: false },
       { id: "auto_sell", label: "Auto TP/SL/Trail", unlocked: false },
       { id: "telegram_alerts", label: "Telegram Alerts", unlocked: false },
       { id: "ai_score", label: "AI Score Access", unlocked: false },
@@ -50,7 +49,6 @@ export const TIERS: Record<TierKey, Tier> = {
     features: [
       { id: "scanner_view", label: "View Scanner", unlocked: true },
       { id: "live_signals_view", label: "View Live Signals", unlocked: false },
-      { id: "sniper", label: "Sniper / Auto-buy", unlocked: true },
       { id: "auto_sell", label: "Auto TP/SL/Trail", unlocked: true },
       { id: "telegram_alerts", label: "Telegram Alerts", unlocked: false },
       { id: "ai_score", label: "AI Score Access", unlocked: false },
@@ -68,7 +66,6 @@ export const TIERS: Record<TierKey, Tier> = {
     features: [
       { id: "scanner_view", label: "View Scanner", unlocked: true },
       { id: "live_signals_view", label: "View Live Signals", unlocked: false },
-      { id: "sniper", label: "Sniper / Auto-buy", unlocked: true },
       { id: "auto_sell", label: "Auto TP/SL/Trail", unlocked: true },
       { id: "telegram_alerts", label: "Telegram Alerts", unlocked: true },
       { id: "ai_score", label: "AI Score Access", unlocked: true },
@@ -87,7 +84,6 @@ export const TIERS: Record<TierKey, Tier> = {
     features: [
       { id: "scanner_view", label: "View Scanner", unlocked: true },
       { id: "live_signals_view", label: "View Live Signals", unlocked: true },
-      { id: "sniper", label: "Sniper / Auto-buy", unlocked: true },
       { id: "auto_sell", label: "Auto TP/SL/Trail", unlocked: true },
       { id: "telegram_alerts", label: "Telegram Alerts", unlocked: true },
       { id: "ai_score", label: "AI Score Access", unlocked: true },
