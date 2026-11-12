@@ -7,6 +7,8 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, ExternalLink, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { TokenCallouts } from "@/components/TokenCallouts";
 import SignalsTab from "@/components/SignalsTab";
+import WalletAvatar from "@/components/WalletAvatar";
+import { walletName } from "@/lib/walletIdentity";
 
 const TABS = ["Swaps", "Holders", "Signals", "Analysis", "Traders Intel"] as const;
 type Tab = (typeof TABS)[number];
@@ -253,16 +255,26 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
               </div>
               <div style={{ textAlign: "right" }}><span>TOP HOLDER</span><b>{holders[0].share.toFixed(1)}%</b><em>{short(holders[0].wallet)}</em></div>
             </div>
-            <div className="dt-table">
-              <div className="dt-row dt-head hold"><span>#</span><span>Wallet</span><span>Tokens</span><span>Share</span></div>
-              {holders.map((h, i) => (
-                <div key={h.wallet} className={`dt-row hold${wmap[h.wallet] ? " wr" : ""}`}>
-                  <span className="mute">{i + 1}</span>
-                  {wmap[h.wallet] ? <WraithWallet u={wmap[h.wallet]} wallet={h.wallet} /> : <a className="lnk mono" href={`https://solscan.io/account/${h.wallet}`} target="_blank" rel="noopener noreferrer">{short(h.wallet)}</a>}
-                  <span>{qty(h.quantity)}</span>
-                  <span className="size"><b>{h.share.toFixed(2)}%</b><i className="amber" style={{ width: `${Math.max(3, Math.min(100, h.share * 3))}%` }} /></span>
-                </div>
-              ))}
+            <div className="hl">
+              {holders.map((h, i) => {
+                const u = wmap[h.wallet];
+                const val = currentMcap && currentMcap > 0 ? (h.share / 100) * currentMcap : null;
+                return (
+                  <a key={h.wallet} className={`hl-row${u ? " wr" : ""}`} href={`https://solscan.io/account/${h.wallet}`} target="_blank" rel="noopener noreferrer" style={{ animationDelay: `${Math.min(i, 12) * 22}ms` }}>
+                    <span className="hl-rank">{i + 1}</span>
+                    {u?.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="hl-pic" src={u.avatar} alt="" /> : <WalletAvatar address={h.wallet} size={38} />}
+                    <span className="hl-who">
+                      <b>{u ? u.displayName : walletName(h.wallet)}{u && u.tier !== "GHOST" && <em>{u.tier}</em>}</b>
+                      <small className="mono">{short(h.wallet)} · {qty(h.quantity)}</small>
+                    </span>
+                    <span className="hl-val">
+                      <b>{h.share.toFixed(2)}%</b>
+                      <small>{val != null ? usd(val) : ""}</small>
+                    </span>
+                    <i className="hl-bar" style={{ width: `${Math.max(2, Math.min(100, h.share * 3))}%` }} />
+                  </a>
+                );
+              })}
             </div>
             <p className="dt-note">Largest token accounts, merged by owner. Liquidity pools and the bonding curve appear as holders.</p>
           </>
@@ -425,6 +437,20 @@ const CSS = `
 .up{color:#37d58a}.dn{color:#e5594a}.mute{color:var(--text-muted)}.mono{font-family:var(--font-mono),monospace}
 .dt-table{overflow-x:auto}
 .dt-row{display:grid;grid-template-columns:54px 82px minmax(120px,1.4fr) 1fr 1fr 96px;gap:10px;align-items:center;padding:9px 16px;font-size:11px;border-top:1px solid rgba(255,255,255,.04);min-width:560px;transition:background .12s;font-variant-numeric:tabular-nums}
+.hl{display:grid}
+.hl-row{position:relative;display:grid;grid-template-columns:22px 38px 1fr auto;gap:11px;align-items:center;padding:11px 16px;border-top:1px solid rgba(255,255,255,.045);text-decoration:none;color:inherit;overflow:hidden;animation:hl-in .32s ease both;transition:background .14s}
+@keyframes hl-in{from{opacity:0;transform:translateY(6px)}}
+.hl-row:hover{background:rgba(255,255,255,.03)}
+.hl-rank{font-size:11px;font-weight:700;color:var(--text-dim);text-align:center}
+.hl-row:nth-child(-n+3) .hl-rank{color:var(--accent-text)}
+.hl-pic{width:38px;height:38px;border-radius:50%;object-fit:cover}
+.hl-who{display:grid;gap:2px;min-width:0}
+.hl-who b{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.hl-who b em{font-style:normal;font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(255,123,61,.16);color:var(--accent-text)}
+.hl-who small,.hl-val small{font-size:10.5px;color:var(--text-muted)}
+.hl-val{display:grid;gap:2px;text-align:right}
+.hl-val b{font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
+.hl-bar{position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,#ffba55,#ff7b3d);opacity:.7;border-radius:0 2px 2px 0}
 .dt-row.hold{grid-template-columns:36px 1.2fr 1fr minmax(140px,1.4fr);min-width:480px}
 .dt-row:not(.dt-head):hover{background:rgba(255,255,255,.025)}
 .dt-row.fresh{animation:dt-flash 1.2s ease-out}
