@@ -1018,3 +1018,19 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .ps-play { display: flex; gap: 8px; justify-content: center; }
 .ps-play button { height: 38px; padding: 0 16px; border-radius: 999px !important; border: 1px solid rgba(var(--accent-rgb), .5); background: rgba(var(--accent-rgb), .14); color: var(--accent-text); font-weight: 800; font-size: 13.5px; cursor: pointer; }
 .ps-play button:disabled { opacity: .6; }
+
+/* Profile header on phones: counts get their own row (no more "Followin g"), the buttons share the next row */
+.profile-social-counts span, .profile-count-item span, .profile-count-item strong { white-space: nowrap; }
+@media (max-width: 767px) {
+  .profile-hero .profile-identity {
+    grid-template-areas: "avatar name" "avatar handle" "counts counts" "edit edit" "bio bio" "meta meta" !important;
+  }
+  .profile-hero .profile-social-counts { justify-self: start; margin: 14px 0 0 !important; gap: 30px !important; }
+  .profile-hero .profile-btn-pair { justify-self: stretch !important; width: 100%; margin: 12px 0 0; }
+  .profile-hero .profile-btn-pair .profile-edit-button { flex: 1; justify-content: center; }
+}
+.pub-social-count span, .pub-social-count strong { white-space: nowrap; }
+@media (max-width: 767px) {
+  .pub-id-right { flex-wrap: wrap; row-gap: 10px; width: 100%; }
+  .pub-social { gap: 26px; flex: 0 0 100%; }
+}
