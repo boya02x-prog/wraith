@@ -914,7 +914,7 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wx-yzoom .wx-icon-btn { width: 30px; font-size: 16px; font-weight: 800; line-height: 1; }
 
 /* price-axis drag strip (right edge of the chart): the only part that captures a vertical finger drag */
-.wx-axis-grip { position: absolute; z-index: 4; top: 0; right: 0; bottom: 28px; width: 70px; touch-action: none; cursor: ns-resize; }
+.wx-axis-grip { position: absolute; z-index: 4; top: 0; right: 26px; bottom: 28px; width: 46px; touch-action: none; cursor: ns-resize; }
 .hl-bar { display: none !important; }
 .hl-row { padding-top: 12px; padding-bottom: 12px; }
 
@@ -987,3 +987,15 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .ps-acts button span { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .07); transition: transform .1s, background .15s; }
 .ps-acts button:active span { transform: scale(.92); background: rgba(var(--accent-rgb), .3); }
 .ps-note { justify-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px; background: rgba(55, 213, 138, .15); color: #37d58a; font-size: 13px; font-weight: 700; }
+
+/* ── Phone chart toolbar: ONE slim row (swipe sideways), smaller buttons ── */
+@media (max-width: 760px) {
+  .wraith-dashboard .wx-chart-toolbar { flex-wrap: nowrap !important; overflow-x: auto !important; overflow-y: hidden; row-gap: 0 !important; gap: 2px !important; padding: 4px 8px 2px !important; scrollbar-width: none; }
+  .wraith-dashboard .wx-chart-toolbar .wx-seg button { padding: 5px 8px !important; font-size: 11.5px !important; min-height: 0; }
+  .wraith-dashboard .wx-chart-toolbar .wx-icon-btn { width: 28px !important; height: 28px !important; min-width: 0; }
+  .wraith-dashboard .wx-chart-toolbar .cm-trigger { min-width: 0 !important; height: 28px !important; padding: 0 6px !important; }
+  .wraith-dashboard .wx-chart-toolbar .wx-icon-btn[aria-label*="Show who bought"] { height: 28px !important; padding: 0 7px !important; }
+}
+/* the token page tabs card: same surface and corners as the stat cards */
+.dt { background: var(--surface, #141416) !important; border: 1px solid rgba(255, 255, 255, .07) !important; }
+@media (max-width: 760px) { .dt { margin: 0 12px; } }

@@ -16,6 +16,7 @@ import TokenChart from "@/components/TokenChart";
 import { snapCache } from "@/lib/prefetchChart";
 import { fetchSolPrice } from "@/lib/solPriceClient";
 import { swrRead, swrWrite } from "@/lib/swrCache";
+import PhotoViewer from "@/components/PhotoViewer";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
@@ -108,6 +109,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
   const solUsdRef = useRef(0);
   const [spotted, setSpotted] = useState<{ spottedMcap: number; spottedAt: number } | null>(null);
   // The trade dock renders <div id="wx-about-slot">; stats + risk checks live there as part of "About".
+  const [picOpen, setPicOpen] = useState<string | null>(null);
   const [aboutSlot, setAboutSlot] = useState<HTMLElement | null | "none">(null);
   useEffect(() => {
     let tries = 0;
@@ -647,12 +649,13 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
 
   return (
     <div className="wx-panel">
+      {picOpen && <PhotoViewer src={picOpen} alt={symbol} onClose={() => setPicOpen(null)} />}
       {aboutSlot && aboutSlot !== "none" && createPortal(aboutBlock, aboutSlot)}
       {/* ── header ── */}
       <header className="wx-token-head">
         <button type="button" className="wx-back-btn" aria-label="Back" onClick={goBack}><ArrowLeft size={18} /></button>
         <div className="wx-token-id">
-          <TokenIcon contractAddress={mint} imageUrl={snap?.imageUrl ?? selectedMeme.tokenImageUrl ?? undefined} symbol={symbol} size={48} />
+          <button type="button" className="wx-token-pic" onClick={() => { const u = snap?.imageUrl ?? selectedMeme.tokenImageUrl; if (u) setPicOpen(u); }} aria-label="View token image" style={{ padding: 0, border: 0, background: "none", cursor: "pointer", borderRadius: "50%", flex: "0 0 auto" }}><TokenIcon contractAddress={mint} imageUrl={snap?.imageUrl ?? selectedMeme.tokenImageUrl ?? undefined} symbol={symbol} size={48} /></button>
           <div style={{ minWidth: 0 }}>
             <div className="wx-token-name">
               <h1>{symbol}</h1>
@@ -772,12 +775,11 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
         </div>
       )}
 
-      {aboutSlot === "none" && aboutBlock}
-
       {/* ── activity ── */}
       <div style={{ padding: "0 0 20px" }}>
         <TokenDetailTabs trades={tradeRows} mint={mint} intelLinks={analysis?.links} intelSummary={analysis?.predictionReason} thread={analysis?.thread} safetyScore={analysis?.safetyScore} safetyBreakdown={analysis?.safetyBreakdown} currentMcap={snap?.marketCap} />
       </div>
+      {aboutSlot === "none" && <div style={{ paddingBottom: 20 }}>{aboutBlock}</div>}
     </div>
   );
 }

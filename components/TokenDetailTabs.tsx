@@ -9,7 +9,7 @@ import { TokenCallouts } from "@/components/TokenCallouts";
 import SignalsTab from "@/components/SignalsTab";
 import WalletAvatar from "@/components/WalletAvatar";
 
-const TABS = ["Swaps", "Holders", "Signals", "Analysis", "Traders Intel"] as const;
+const TABS = ["Holders", "Swaps", "Signals", "Analysis", "Traders Intel"] as const;
 type Tab = (typeof TABS)[number];
 
 export interface TradeRow {
@@ -110,7 +110,7 @@ function Ring({ value, size = 76 }: { value: number; size?: number }) {
 }
 
 export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSummary, thread, safetyScore, safetyBreakdown, currentMcap }: TokenDetailTabsProps) {
-  const [tab, setTab] = useState<Tab>("Swaps");
+  const [tab, setTab] = useState<Tab>("Holders");
   const [holders, setHolders] = useState<Holder[]>([]);
   const [top10, setTop10] = useState<number | null>(null);
   const [holdersState, setHoldersState] = useState<"loading" | "ready" | "error">("loading");
