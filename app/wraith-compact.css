@@ -1015,3 +1015,6 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .profile-hero .profile-btn-pair { grid-area: edit; align-self: center; display: flex; gap: 8px; margin: 8px 0 0; flex-wrap: nowrap; }
 .profile-hero .profile-btn-pair .profile-edit-button { grid-area: auto; margin: 0; }
 @media (max-width: 760px) { .profile-hero .profile-btn-pair { justify-self: end; } }
+.ps-play { display: flex; gap: 8px; justify-content: center; }
+.ps-play button { height: 38px; padding: 0 16px; border-radius: 999px !important; border: 1px solid rgba(var(--accent-rgb), .5); background: rgba(var(--accent-rgb), .14); color: var(--accent-text); font-weight: 800; font-size: 13.5px; cursor: pointer; }
+.ps-play button:disabled { opacity: .6; }

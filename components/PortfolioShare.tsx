@@ -37,6 +37,9 @@ export default function PortfolioShare({
   const [ref, setRef] = useState("");
   const [note, setNote] = useState("");
   const canvas = useRef<HTMLCanvasElement>(null);
+  const [prog, setProg] = useState(0);
+  const [playKey, setPlayKey] = useState(0);
+  const [saving, setSaving] = useState(false);
   const [imgs, setImgs] = useState<{ av: HTMLImageElement | null; ghost: HTMLImageElement | null }>({ av: null, ghost: null });
 
   useEffect(() => {
@@ -55,7 +58,8 @@ export default function PortfolioShare({
     return { pts, change: acc, pct: start && start > 0 ? (acc / start) * 100 : null, n: rows.length };
   }, [trades, range, value]);
 
-  const draw = useCallback((c: HTMLCanvasElement) => {
+  const draw = useCallback((c: HTMLCanvasElement, prog = 1) => {
+    const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, prog)), 3); // ease-out: fast start, settles at the end
     const g = c.getContext("2d");
     if (!g) return;
     c.width = W; c.height = H;
@@ -83,11 +87,13 @@ export default function PortfolioShare({
     g.fillStyle = "rgba(255,123,61,.18)"; g.beginPath(); g.roundRect(W - 96 - 214, 108, 214, 56, 28); g.fill();
     g.fillStyle = "#ff9a66"; g.font = "800 26px sans-serif"; g.textAlign = "center"; g.fillText("PORTFOLIO", W - 96 - 107, 145); g.textAlign = "left";
     // value + change
-    g.fillStyle = "#fff"; g.font = "800 150px sans-serif"; g.fillText(value !== null ? fmt(value) : "—", 92, 440);
+    g.fillStyle = "#fff"; g.font = "800 150px sans-serif"; const startVal = value !== null ? value - stats.change : null;
+    g.fillText(value !== null && startVal !== null ? fmt(startVal + (value - startVal) * e) : "—", 92, 440);
+    const shown = stats.change * e;
     const up = stats.change >= 0;
     const col = up ? "#37d58a" : "#ff5d4d";
     g.fillStyle = col; g.font = "800 56px sans-serif";
-    const chg = asPct ? (stats.pct !== null ? `${up ? "+" : ""}${stats.pct.toFixed(1)}%` : "—") : `${up ? "+" : "−"}${fmt(Math.abs(stats.change))}`;
+    const chg = asPct ? (stats.pct !== null ? `${up ? "+" : ""}${(stats.pct * e).toFixed(1)}%` : "—") : `${up ? "+" : "−"}${fmt(Math.abs(shown))}`;
     g.fillText(chg, 96, 524);
     const cw = g.measureText(chg).width;
     g.fillStyle = "rgba(255,255,255,.5)"; g.font = "600 40px sans-serif"; g.fillText(range, 96 + cw + 22, 522);
@@ -104,9 +110,12 @@ export default function PortfolioShare({
     path.lineTo(X(pts.length - 1) + 0, Y(pts[pts.length - 1]));
     const fill = new Path2D(path); fill.lineTo(cx + cwid, cy + chei); fill.lineTo(cx, cy + chei); fill.closePath();
     const fg = g.createLinearGradient(0, cy, 0, cy + chei); fg.addColorStop(0, up ? "rgba(55,213,138,.30)" : "rgba(255,93,77,.30)"); fg.addColorStop(1, "rgba(0,0,0,0)");
+    g.save(); g.beginPath(); g.rect(cx - 10, cy - 30, (cwid + 20) * Math.min(1, prog), chei + 60); g.clip();
     g.fillStyle = fg; g.fill(fill);
     g.strokeStyle = col; g.lineWidth = 7; g.lineJoin = "round"; g.shadowColor = col; g.shadowBlur = 24; g.stroke(path); g.shadowBlur = 0;
-    const ex = cx + cwid, ey = Y(pts[pts.length - 1]);
+    g.restore();
+    const pi = Math.min(pts.length - 1, Math.floor(Math.min(1, prog) * (pts.length - 1)));
+    const ex = cx + cwid * Math.min(1, prog), ey = Y(pts[pi]);
     g.fillStyle = col; g.beginPath(); g.arc(ex, ey, 13, 0, 7); g.fill();
     g.fillStyle = "rgba(255,255,255,.4)"; g.font = "600 28px sans-serif";
     g.fillText(stats.n ? `${stats.n} closed trade${stats.n === 1 ? "" : "s"}` : "No closed trades in this range", cx, cy + chei + 56);
@@ -121,11 +130,44 @@ export default function PortfolioShare({
     g.textAlign = "left";
   }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt]);
 
-  useEffect(() => { if (canvas.current) draw(canvas.current); }, [draw]);
+  // the journey: the curve draws itself and the numbers count up over 10 seconds (plays on open, Replay plays it again)
+  useEffect(() => {
+    let raf = 0; const t0 = performance.now();
+    const tick = (now: number) => { const p = Math.min(1, (now - t0) / 10000); setProg(p); if (p < 1) raf = requestAnimationFrame(tick); };
+    setProg(0); raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playKey, range]);
+  useEffect(() => { if (canvas.current) draw(canvas.current, prog); }, [draw, prog]);
 
   const toBlob = () => new Promise<Blob | null>((res) => { const c = document.createElement("canvas"); draw(c); try { c.toBlob((b) => res(b), "image/png"); } catch { res(null); } });
   const flash = (m: string) => { setNote(m); window.setTimeout(() => setNote(""), 2200); };
   const link = `https://www.wraith.farm/app/u/${encodeURIComponent(username ?? name)}`;
+
+  const saveVideo = async () => {
+    if (saving) return;
+    const c = document.createElement("canvas");
+    if (!("MediaRecorder" in window) || !c.captureStream) { flash("This browser cannot record video"); return; }
+    setSaving(true);
+    try {
+      draw(c, 0);
+      const types = ["video/mp4", "video/webm;codecs=vp9", "video/webm"];
+      const mime = types.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
+      const rec = new MediaRecorder(c.captureStream(30), mime ? { mimeType: mime, videoBitsPerSecond: 4_000_000 } : undefined);
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (ev) => { if (ev.data.size) chunks.push(ev.data); };
+      const done = new Promise<void>((res) => { rec.onstop = () => res(); });
+      rec.start();
+      const t0 = performance.now();
+      await new Promise<void>((res) => { const f = (now: number) => { const p = Math.min(1, (now - t0) / 10000); draw(c, p); if (p < 1) requestAnimationFrame(f); else setTimeout(res, 700); }; requestAnimationFrame(f); });
+      rec.stop(); await done;
+      const blob = new Blob(chunks, { type: rec.mimeType || "video/webm" });
+      const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+      const file = new File([blob], `wraith-portfolio.${ext}`, { type: blob.type });
+      try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text: ref ? `Trade with me on Wraith. Code ${ref}` : "My Wraith portfolio" }); setSaving(false); return; } } catch { setSaving(false); return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); flash("Saved the video");
+    } catch { flash("Could not record the video"); }
+    setSaving(false);
+  };
 
   const share = async () => {
     const blob = await toBlob();
@@ -151,6 +193,10 @@ export default function PortfolioShare({
           <div className="ps-seg">{(["24h", "7d", "30d"] as Range[]).map((r) => <button key={r} type="button" className={range === r ? "on" : ""} onClick={() => setRange(r)}>{r}</button>)}</div>
           <div className="ps-seg"><button type="button" className={!asPct ? "on" : ""} onClick={() => setAsPct(false)}>$</button><button type="button" className={asPct ? "on" : ""} onClick={() => setAsPct(true)}>%</button></div>
           <button type="button" className={`ps-ref${showRef ? " on" : ""}`} onClick={() => setShowRef((v) => !v)} disabled={!ref}>{showRef ? <Eye size={16} /> : <EyeOff size={16} />} Ref code</button>
+        </div>
+        <div className="ps-play">
+          <button type="button" onClick={() => setPlayKey((k) => k + 1)}>▶ Replay journey</button>
+          <button type="button" onClick={() => void saveVideo()} disabled={saving}>{saving ? "Recording 10s…" : "Save video"}</button>
         </div>
         <div className="ps-acts">
           <button type="button" onClick={() => void share()}><span><Share2 size={22} /></span>Share</button>
