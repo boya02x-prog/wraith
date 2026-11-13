@@ -2,6 +2,7 @@
 // Needs env: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:you@example.com) for web push,
 // and FIREBASE_SERVICE_ACCOUNT for the Android app.
 import webpush from "web-push";
+import { alertHit, alertLabel, type PriceAlert } from "@/lib/priceAlerts";
 import { TEST_TEXT, callText, intelText, savedText, tradeText } from "@/lib/notifyText";
 import { isPushEndpoint } from "@/lib/pushEndpoint";
 import { getDb } from "@/lib/mongoClient";
@@ -229,7 +230,13 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
 
   // saved tokens
   const savedMints = [...new Set(subs.filter((s) => wants(s, "saved")).flatMap((s) => (s.saved ?? []).map((x) => x.mint)))].slice(0, 300);
-  const prices = savedMints.length ? await jupPrices(savedMints) : {};
+  // price alerts the person set on a token ("tell me when it dips 25%"): one price read covers saved tokens and alerts together
+  const alertRows = (await db.collection("price_alerts").find({ userId: { $in: [...new Set(subs.map((x) => x.userId))] }, firedAt: { $exists: false } }).limit(2000).toArray()) as unknown as (PriceAlert & { _id: unknown })[];
+  const alertsByUser = new Map<string, (PriceAlert & { _id: unknown })[]>();
+  for (const a of alertRows) alertsByUser.set(a.userId, [...(alertsByUser.get(a.userId) ?? []), a]);
+  const priceMints = [...new Set([...savedMints, ...alertRows.map((a) => a.mint)])];
+  const prices = priceMints.length ? await jupPrices(priceMints) : {};
+  const firedAlerts = new Set<string>();
 
   const dead: string[] = [];
   const writes: Parameters<typeof col.bulkWrite>[0] = [];
@@ -255,6 +262,13 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
           if (!mine.has(c.userId) || c.ts <= cur || c.ts > now) continue;
           msgs.push({ ...intelText({ name: c.name, text: c.text }), url: c.mint ? `/app/token/${c.mint}` : `/app/u/${encodeURIComponent(c.userId)}`, tag: `c:${c.id}` });
         }
+      }
+      for (const a of alertsByUser.get(sub.userId) ?? []) {
+        const px = prices[a.mint];
+        if (!px || !alertHit(a, px)) continue;
+        const moved = Math.round((px / a.basePrice - 1) * 100);
+        msgs.push({ title: `🔔 $${a.symbol} ${a.kind === "drop" ? "dipped" : "ran"} (${alertLabel(a)})`, body: `Now ${moved >= 0 ? "+" : ""}${moved}% since you set the alert. Tap to open.`, url: `/app/token/${a.mint}`, tag: `a:${String(a._id)}` });
+        firedAlerts.add(String(a._id));
       }
       const base = { ...(sub.base ?? {}) };
       if (wants(sub, "saved")) {
@@ -295,6 +309,10 @@ export async function runPushAlerts(): Promise<{ subs: number; sent: number; fai
     }
   });
   if (writes.length) await col.bulkWrite(writes, { ordered: false }).catch((e) => console.error("[push] cursor update", e));
+  if (firedAlerts.size) {
+    // each alert fires once, then it is done
+    await db.collection("price_alerts").updateMany({ _id: { $in: alertRows.filter((a) => firedAlerts.has(String(a._id))).map((a) => a._id as never) } }, { $set: { firedAt: now } }).catch((e) => console.error("[push] alert mark", e));
+  }
   if (dead.length) { await col.deleteMany({ _id: { $in: dead } }); res.removed = dead.length; }
   return res;
 }

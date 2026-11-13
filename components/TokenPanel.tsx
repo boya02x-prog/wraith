@@ -17,6 +17,7 @@ import { snapCache } from "@/lib/prefetchChart";
 import { fetchSolPrice } from "@/lib/solPriceClient";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import PhotoViewer from "@/components/PhotoViewer";
+import PriceAlertButton from "@/components/PriceAlertButton";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
@@ -702,6 +703,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           <button type="button" className="wx-icon-btn" onClick={() => copy("link")} aria-label="Copy page link" title="Copy link">
             {copied === "link" ? <Check size={14} /> : <Link2 size={14} />}
           </button>
+          <PriceAlertButton mint={mint} symbol={symbol} />
           <button type="button" className={`wx-icon-btn${saved ? " active" : ""}`} onClick={toggleSave} aria-pressed={saved} aria-label={saved ? "Remove bookmark" : "Bookmark"} title={saved ? "Saved" : "Save token"}>
             <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
           </button>
