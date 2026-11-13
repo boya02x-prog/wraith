@@ -12,7 +12,8 @@ import type { SandboxTok } from "@/lib/useSandboxTokens";
 import { useWraithTier } from "@/hooks/useWraithTier";
 import ExitBox from "@/components/ExitBox";
 import { DEVNET_RPC_PUBLIC } from "@/lib/publicRpc";
-import { armLiveExit, disarmLiveExit, EXIT_PREFS_KEY, LIVE_EXITS_EVENT, readRules, writeRules, type LiveExitRule } from "@/lib/liveExits";
+import { armLiveExit, disarmLiveExit, EXIT_PREFS_KEY, QUICK_EXIT, loadExitPrefs, LIVE_EXITS_EVENT, readRules, writeRules, type LiveExitRule } from "@/lib/liveExits";
+import { type ExitPrefs } from "@/components/ExitBox";
 
 const DEVNET_RPC = DEVNET_RPC_PUBLIC;
 const SELL_PRESETS = [25, 50, 100];
@@ -38,10 +39,10 @@ export default function TestTradeDock({ token }: { token: SandboxTok }) {
   const [busy, setBusy] = useState(false);
   const { canUse } = useWraithTier();
   const [exitOn, setExitOn] = useState(false);
-  const [exitPrefs, setExitPrefs] = useState({ tp: "100", sl: "30", trail: "0" });
+  const [exitPrefs, setExitPrefs] = useState<ExitPrefs>({ ...QUICK_EXIT });
   const [armed, setArmed] = useState<LiveExitRule | null>(null);
   useEffect(() => {
-    try { const p = JSON.parse(localStorage.getItem(EXIT_PREFS_KEY) || "null"); if (p && typeof p === "object") { setExitPrefs((c) => ({ ...c, ...p.prefs })); setExitOn(!!p.on); } } catch { /* none */ }
+    { const p = loadExitPrefs(); setExitPrefs((c) => ({ ...c, ...p.prefs })); setExitOn(p.on); }
   }, []);
   useEffect(() => { try { localStorage.setItem(EXIT_PREFS_KEY, JSON.stringify({ on: exitOn, prefs: exitPrefs })); } catch { /* full */ } }, [exitOn, exitPrefs]);
   useEffect(() => {

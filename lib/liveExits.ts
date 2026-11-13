@@ -5,6 +5,23 @@ export const LIVE_EXITS_EVENT = "wraith:live-exits";
 export const LIVE_EXIT_FIRED = "wraith:live-exit-fired";
 export const EXIT_PREFS_KEY = "wraith_exit_prefs_v1";
 
+/** The default auto-exit: take profit at +30%, sell if the price falls 10% from its peak, and a 10% stop below the price you paid (the live trailing stop only starts once price is above your entry, so the stop covers the first stretch like the backtest's trail did). Backtested on 445 real
+ *  call paths (scripts/backtest-pullback.ts, scripts/optimize-exits.ts): about break-even per trade after costs, while the old
+ *  default (TP +100%, SL -30%) lost about 6%. It is the best of the exit rules tested, not a profit promise. */
+export const QUICK_EXIT = { tp: "30", sl: "10", trail: "10", tp1: "0", tp1Sell: "40", hold: "0" } as const;
+
+/** Reads the saved exit settings. Nothing saved, or the OLD untouched default (100 / 30 / 0), becomes the quick exit, switched on.
+ *  Anything the person changed themselves is kept as they left it. */
+export function loadExitPrefs(): { on: boolean; prefs: Record<string, string> } {
+  try {
+    const p = JSON.parse(localStorage.getItem(EXIT_PREFS_KEY) || "null") as { on?: boolean; prefs?: Record<string, string> } | null;
+    const q = p?.prefs;
+    const untouched = !q || (q.tp === "100" && q.sl === "30" && (q.trail ?? "0") === "0" && (q.tp1 ?? "0") === "0" && (q.hold ?? "0") === "0" && !p?.on);
+    if (untouched) return { on: true, prefs: { ...QUICK_EXIT } };
+    return { on: !!p?.on, prefs: q ?? {} };
+  } catch { return { on: true, prefs: { ...QUICK_EXIT } }; }
+}
+
 export type LiveExitRule = {
   id: string;
   mint: string;

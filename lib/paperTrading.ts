@@ -28,9 +28,9 @@ const WINS_BOUGHT_KEY = "wraith_bought_keys";
 
 // Defaults used when a position is opened with no SL/TP/trail config UI in
 // front of it — same numbers PaperTrader itself defaults to.
-const DEFAULT_SL = -20;
-const DEFAULT_TP = 2;
-const DEFAULT_TRAIL = 15;
+const DEFAULT_SL = -10; // same quick exit as live trades: take profit at +30%, sell if it falls 10% from the peak
+const DEFAULT_TP = 1.3;
+const DEFAULT_TRAIL = 10;
 
 const SYNC_EVENT = "wraith:paper-sync";
 

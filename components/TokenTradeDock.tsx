@@ -26,7 +26,7 @@ import WalletWatch from "@/components/WalletWatch";
 import SizeHint from "@/components/SizeHint";
 import { getLiveUsdPrice } from "@/lib/livePrice";
 import { getMcap } from "@/lib/getTokenPrice";
-import { armLiveExit, disarmLiveExit, EXIT_PREFS_KEY, LIVE_EXIT_FIRED, LIVE_EXITS_EVENT, readRules, type LiveExitRule } from "@/lib/liveExits";
+import { armLiveExit, disarmLiveExit, EXIT_PREFS_KEY, QUICK_EXIT, loadExitPrefs, LIVE_EXIT_FIRED, LIVE_EXITS_EVENT, readRules, type LiveExitRule } from "@/lib/liveExits";
 import { parseUnits } from "viem";
 
 const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
@@ -129,10 +129,10 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
   const [busy, setBusy] = useState(false);
   const { canUse } = useWraithTier();
   const [exitOn, setExitOn] = useState(false);
-  const [exitPrefs, setExitPrefs] = useState<ExitPrefs>({ tp: "100", sl: "30", trail: "0", tp1: "0", tp1Sell: "40", hold: "0", risk: "1" });
+  const [exitPrefs, setExitPrefs] = useState<ExitPrefs>({ ...QUICK_EXIT, risk: "1" });
   const [armedRule, setArmedRule] = useState<LiveExitRule | null>(null);
   useEffect(() => {
-    try { const p = JSON.parse(localStorage.getItem(EXIT_PREFS_KEY) || "null"); if (p && typeof p === "object") { setExitPrefs((c) => ({ ...c, ...p.prefs })); setExitOn(!!p.on); } } catch { /* none */ }
+    { const p = loadExitPrefs(); setExitPrefs((c) => ({ ...c, ...p.prefs })); setExitOn(p.on); }
   }, []);
   useEffect(() => { try { localStorage.setItem(EXIT_PREFS_KEY, JSON.stringify({ on: exitOn, prefs: exitPrefs })); } catch { /* full */ } }, [exitOn, exitPrefs]);
   useEffect(() => {
