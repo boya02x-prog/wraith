@@ -21,6 +21,7 @@ import { VIEM_CHAINS } from "@/lib/cashTokens";
 import { execEvmRoute, friendlyError, lifiQuote, SOLANA_LIFI_ID, waitForRoute } from "@/lib/lifi";
 import { useCashSources } from "@/lib/useCashSources";
 import { useWraithTier } from "@/hooks/useWraithTier";
+import { celebrate } from "@/lib/celebrate";
 import ExitBox, { type ExitPrefs } from "@/components/ExitBox";
 import WalletWatch from "@/components/WalletWatch";
 import SizeHint from "@/components/SizeHint";
@@ -142,6 +143,7 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
       const d = (e as CustomEvent).detail as { kind: string; symbol: string; mint: string; pnl: number };
       if (d.mint !== mint) return;
       const label = d.kind === "tp1" ? "First target hit, part sold" : d.kind === "time" ? "Time stop hit" : d.kind === "tp" ? "Take-profit hit" : d.kind === "sl" ? "Stop-loss hit" : d.kind === "trail" ? "Trailing stop hit" : d.kind === "gone" ? "Auto-exit cancelled — no tokens left" : "Auto-exit failed — sell manually";
+      if ((d.kind === "tp" || d.kind === "tp1" || d.kind === "trail") && d.pnl > 0) celebrate(d.pnl >= 100 ? "big" : "small");
       push(`${label} · ${d.symbol} ${d.pnl >= 0 ? "+" : ""}${d.pnl.toFixed(0)}%`, d.kind === "failed" ? "error" : d.kind === "sl" ? "warning" : "success", { timeoutMs: 9000 });
     };
     window.addEventListener(LIVE_EXITS_EVENT, sync);
