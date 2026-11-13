@@ -184,8 +184,8 @@ export default function TokenChart({
     try {
       const ps = chartRef.current?.priceScale("right");
       if (!ps) return;
-      // finger down = taller candles (zoom in), finger up = shorter; smooth exponential feel
-      const f = Math.exp(-(e.clientY - d.y) / 160);
+      // finger down = smaller candles (zoom out), finger up = bigger (zoom in); smooth exponential feel
+      const f = Math.exp((e.clientY - d.y) / 160);
       const mid = (d.from + d.to) / 2;
       const half = ((d.to - d.from) / 2) * f;
       ps.applyOptions({ autoScale: false });
@@ -701,7 +701,18 @@ export default function TokenChart({
     const bump = () => setSpotTick((t) => t + 1);
     chart.timeScale().subscribeVisibleLogicalRangeChange(bump);
     chart.timeScale().subscribeSizeChange(bump);
+    // the library has no event for the PRICE axis moving (axis drag, auto-fit): watch its range so pins and the pulse follow
+    let raf = 0, lf = NaN, lt = NaN;
+    const watch = () => {
+      try {
+        const r = chart.priceScale("right").getVisibleRange();
+        if (r && (r.from !== lf || r.to !== lt)) { lf = r.from; lt = r.to; bump(); }
+      } catch { /* chart gone */ }
+      raf = requestAnimationFrame(watch);
+    };
+    raf = requestAnimationFrame(watch);
     return () => {
+      cancelAnimationFrame(raf);
       try { chart.timeScale().unsubscribeVisibleLogicalRangeChange(bump); chart.timeScale().unsubscribeSizeChange(bump); } catch { /* chart gone */ }
     };
   }, []);

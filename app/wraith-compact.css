@@ -999,3 +999,14 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 /* the token page tabs card: same surface and corners as the stat cards */
 .dt { background: var(--surface, #141416) !important; border: 1px solid rgba(255, 255, 255, .07) !important; }
 @media (max-width: 760px) { .dt { margin: 0 12px; } }
+
+/* ── Phone: the timeframe + tools bar sits UNDER the chart like TradingView; legend on top ── */
+@media (max-width: 760px) {
+  .wx-chartroot .wx-legend { order: 1; }
+  .wx-chartroot > div[style*="position: relative"] { order: 2; }
+  .wraith-dashboard .wx-chart-toolbar { order: 3; border-top: 1px solid rgba(255, 255, 255, .07); padding: 6px 8px calc(6px + 2px) !important; background: rgba(10, 10, 12, .6); }
+  .wraith-dashboard .wx-chart-toolbar .wx-seg button { padding: 7px 9px !important; font-size: 12.5px !important; }
+  .wraith-dashboard .wx-chart-toolbar .cm-trigger { min-width: 46px !important; height: 34px !important; padding: 0 9px !important; border-radius: 10px !important; background: rgba(var(--accent-rgb), .14) !important; border: 1px solid rgba(var(--accent-rgb), .5) !important; color: var(--accent-text) !important; }
+  .wraith-dashboard .wx-chart-toolbar .cm-trigger svg { width: 20px !important; height: 20px !important; }
+  .wraith-dashboard .wx-chart-toolbar .wx-icon-btn { width: 34px !important; height: 34px !important; }
+}
