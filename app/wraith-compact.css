@@ -1010,3 +1010,8 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wraith-dashboard .wx-chart-toolbar .cm-trigger svg { width: 20px !important; height: 20px !important; }
   .wraith-dashboard .wx-chart-toolbar .wx-icon-btn { width: 34px !important; height: 34px !important; }
 }
+
+/* Edit profile + Share side by side (they used to sit on top of each other in the same grid cell) */
+.profile-hero .profile-btn-pair { grid-area: edit; align-self: center; display: flex; gap: 8px; margin: 8px 0 0; flex-wrap: nowrap; }
+.profile-hero .profile-btn-pair .profile-edit-button { grid-area: auto; margin: 0; }
+@media (max-width: 760px) { .profile-hero .profile-btn-pair { justify-self: end; } }

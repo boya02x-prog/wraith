@@ -43,6 +43,11 @@ function LearningCurve({ h }: { h: NonNullable<Learning["history"]> }) {
   const y = (v: number) => H - pad - ((v - lo) / (hi - lo)) * (H - pad * 2);
   const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.auc as number).toFixed(1)}`).join(" ");
   const first = pts[0], last = pts[pts.length - 1];
+  const delta = (last.auc as number) - (first.auc as number);
+  // retrains are tested on different later calls, so a swing under about 0.03 is noise, not the model getting smarter or dumber
+  const verdict = Math.abs(delta) < 0.03
+    ? "Flat. A move of 0.01 here is noise (every retrain is tested on different calls), not forgetting. It has plateaued."
+    : delta > 0 ? "Improving: the score on unseen calls went up." : "Slipping: the newest retrain scores lower on unseen calls. If it drops below 0.57 the model switches its score tilt off, so a weak retrain cannot hurt the calls.";
   return (
     <div className="pc-curve">
       <div className="pc-curve-head"><b>Is it learning?</b><span>{first.calls.toLocaleString()} → {last.calls.toLocaleString()} calls · score {(first.auc as number).toFixed(2)} → {(last.auc as number).toFixed(2)}</span></div>
@@ -51,7 +56,7 @@ function LearningCurve({ h }: { h: NonNullable<Learning["history"]> }) {
         <path d={d} fill="none" stroke="var(--orange)" strokeWidth="2" strokeLinejoin="round" />
         {pts.map((p, i) => <circle key={p.at} cx={x(i)} cy={y(p.auc as number)} r="2.6" fill={p.active ? "var(--orange)" : "var(--text-dim)"} />)}
       </svg>
-      <p>Each dot is one retrain, scored only on calls it had never seen. The dashed line is a coin flip (0.50). Dots that are grey were not good enough to change any scores.</p>
+      <p><b>{verdict}</b> Each dot is one retrain, scored only on calls it had never seen. The dashed line is a coin flip (0.50). Dots that are grey were not good enough to change any scores.</p>
     </div>
   );
 }

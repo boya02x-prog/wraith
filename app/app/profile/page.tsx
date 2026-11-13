@@ -1350,6 +1350,7 @@ export default function ProfilePage() {
                 <span>Followers</span>
               </button>
             </div>
+            <div className="profile-btn-pair">
             <button
               className="profile-edit-button"
               id="profile-settings"
@@ -1364,6 +1365,7 @@ export default function ProfilePage() {
             <button className="profile-edit-button" type="button" onClick={() => setShareOpen(true)} disabled={!profileReady}>
               <Share2 size={15} /> Share
             </button>
+            </div>
           </div>
         </section>
 
