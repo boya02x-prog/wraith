@@ -1638,17 +1638,15 @@ export default function TokenChart({
 
         {status === "loading" && (
           <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
-            {/* a ghost candlestick chart that breathes while the real one loads: no text */}
-            <div className="wx-cskel-bars">
-              {Array.from({ length: 34 }, (_, i) => {
-                const base = 46 + Math.sin(i * 0.42) * 16 + Math.sin(i * 1.3 + 1) * 8;
-                const body = 10 + ((i * 37) % 17);
-                return (
-                  <i key={i} style={{ ["--y" as string]: `${base}%`, ["--h" as string]: `${body}%`, ["--d" as string]: `${(i % 12) * 70}ms`, ["--up" as string]: i % 3 === 1 ? 0 : 1 }} />
-                );
-              })}
-            </div>
-            <div className="wx-cskel-sweep" />
+            {/* a line that draws itself across the chart, with a glowing head: no text, no fake candles */}
+            <svg className="wx-cskel-svg" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="wxcl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgb(var(--accent-rgb))" stopOpacity=".28" /><stop offset="1" stopColor="rgb(var(--accent-rgb))" stopOpacity="0" /></linearGradient>
+              </defs>
+              <path className="wx-cskel-area" d="M0 150 C30 140 50 170 85 150 S130 90 165 110 S215 170 250 120 S300 60 335 80 S380 50 400 40 L400 220 L0 220 Z" fill="url(#wxcl)" />
+              <path className="wx-cskel-line" d="M0 150 C30 140 50 170 85 150 S130 90 165 110 S215 170 250 120 S300 60 335 80 S380 50 400 40" fill="none" stroke="rgb(var(--accent-rgb))" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" pathLength="1" />
+            </svg>
+            <i className="wx-cskel-dot" />
           </div>
         )}
         {status === "empty" && (
