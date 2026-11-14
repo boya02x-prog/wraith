@@ -757,6 +757,8 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
       )}
       {snapState === "error" && !snap && <div className="wx-note warn">Market data is slow to respond. Retrying…</div>}
 
+      <Lookalikes mint={mint} name={snap?.name ?? ""} symbol={snap?.symbol ?? ""} mcap={snap?.marketCap ?? null} createdAt={birthMs ?? snap?.pairCreatedAt ?? null} compact />
+
       {/* ── chart ── */}
       {/* wallets Wraith has seen dump (or win) before, shown where you read the chart, not only in the buy panel */}
       <div style={{ padding: "0 12px" }}><WalletWatch mint={mint} /></div>

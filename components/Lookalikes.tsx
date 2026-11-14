@@ -8,7 +8,7 @@ interface Item { address: string; name: string; symbol: string; mcap: number; li
 const usd = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${n.toFixed(0)}`);
 const age = (t: number | null) => { if (!t) return "—"; const m = (Date.now() - t) / 60000; return m < 90 ? `${Math.max(1, Math.round(m))}m` : m < 2880 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
 
-export default function Lookalikes({ mint, name, symbol, mcap, createdAt }: { mint: string; name: string; symbol: string; mcap: number | null; createdAt: number | null }) {
+export default function Lookalikes({ mint, name, symbol, mcap, createdAt, compact = false }: { mint: string; name: string; symbol: string; mcap: number | null; createdAt: number | null; compact?: boolean }) {
   const [items, setItems] = useState<Item[] | null>(null);
   useEffect(() => {
     let on = true;
@@ -21,8 +21,17 @@ export default function Lookalikes({ mint, name, symbol, mcap, createdAt }: { mi
   const biggest = items[0];
   const bigger = mcap != null && biggest.mcap > mcap * 1.5;
   const older = items.some((i) => i.createdAt && createdAt && i.createdAt < createdAt - 3600e3);
+  // the short banner sits above the chart and only speaks up when a bigger copy exists; the full list is further down the page
+  if (compact) {
+    if (!bigger) return null;
+    return (
+      <button type="button" className="la-chip" onClick={() => document.getElementById("la-full")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+        <b>{items.length} lookalike{items.length > 1 ? "s" : ""}</b><span>a bigger one exists: {biggest.symbol} at {usd(biggest.mcap)}</span><i>See</i>
+      </button>
+    );
+  }
   return (
-    <section className={`la${bigger ? " warn" : ""}`}>
+    <section id="la-full" className={`la${bigger ? " warn" : ""}`}>
       <div className="la-head">
         <b>{items.length} lookalike{items.length > 1 ? "s" : ""}</b>
         <span>{bigger ? `A bigger one exists: ${biggest.symbol} at ${usd(biggest.mcap)}` : older ? "An older one exists" : "This one is the biggest so far"}</span>

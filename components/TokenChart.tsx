@@ -1389,7 +1389,7 @@ export default function TokenChart({
       <div style={{ position: "relative", flex: 1, minHeight: 260 }}>
         <ChartToolRail active={activeTool} drawCount={drawings.length} selCount={selected.length} onPick={pickTool} onDelete={deleteDrawings} />
         <div className="wx-axis-grip" onPointerDown={axisDown} onPointerMove={axisMove} onPointerUp={axisUp} onPointerCancel={axisUp} aria-hidden="true" title="Drag up or down to stretch the candles" />
-        <div ref={hostRef} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
+        <div ref={hostRef} className={`wx-chart-host${status === "loading" ? " is-loading" : ""}`} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
 
         {(tool || selectMode || measureMode || (measure && !measure.locked)) && (
           <div className="wx-tool-hint" role="status">
