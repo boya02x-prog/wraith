@@ -1099,3 +1099,24 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wx-cs-inputrow input::placeholder { color: var(--text-dim); }
 }
 .wx-mbar-search { flex: 0 0 62px; }
+
+/* ───────── Motion standard for the whole app: things arrive in order, taps give back ───────── */
+/* Market: the list/table fades up once as a whole (rows are not animated one by one: their price-flash classes would restart it) */
+.wx-table, .wx-side-list, .wx-side-scroll { animation: wx-rise .4s cubic-bezier(.2, .8, .2, 1) both; }
+/* Traders: cards rise in, top to bottom */
+.trader-card:not(.trader-card-skeleton) { animation: wx-rise .42s cubic-bezier(.2, .8, .2, 1) both; }
+.traders-grid > *:nth-child(1) { animation-delay: 0ms; } .traders-grid > *:nth-child(2) { animation-delay: 40ms; } .traders-grid > *:nth-child(3) { animation-delay: 80ms; }
+.traders-grid > *:nth-child(4) { animation-delay: 120ms; } .traders-grid > *:nth-child(5) { animation-delay: 160ms; } .traders-grid > *:nth-child(6) { animation-delay: 200ms; }
+.traders-grid > *:nth-child(n+7) { animation-delay: 240ms; }
+.trader-tabs, .traders-heading { animation: wx-fade .35s ease both; }
+/* Profile: header first, then the numbers, then the panels */
+.profile-hero { animation: wx-fade .4s ease both; }
+.profile-stat-card, .pnlc { animation: wx-rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: 90ms; }
+.profile-panel, .pcal, .profile-open-list { animation: wx-rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: 160ms; }
+/* Press feedback: rows and cards give a little when tapped */
+.wx-tcard, .trader-card, .wx-side-row, .wx-sr, .la-row, .hl-row, .tr-row, .profile-open-row { transition: transform .12s ease, background-color .15s ease; }
+.wx-tcard:active, .trader-card:active, .wx-side-row:active, .wx-sr:active, .la-row:active, .hl-row:active, .tr-row:active { transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) {
+  .wx-table, .wx-side-list, .wx-side-scroll, .trader-card, .trader-tabs, .traders-heading, .profile-hero, .profile-stat-card, .pnlc, .profile-panel, .pcal, .profile-open-list { animation: none !important; }
+  .wx-tcard:active, .trader-card:active, .wx-side-row:active, .wx-sr:active { transform: none; }
+}

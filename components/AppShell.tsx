@@ -5,6 +5,7 @@
 // Each screen still writes <Header /> (see HeaderSlot): that only reserves the bar's space and hands over its handlers.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import type { MemeTrend } from "@/app/app/page";
 import { useWraithSession } from "@/components/SessionProvider";
 import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
@@ -23,6 +24,12 @@ const Header = dynamic(() => import("@/components/Header"), {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const select = useRef<SelectFn | null>(null);
+  // Load the main screens' code in the background once the app is up, so a tap on the tab bar never waits for a download.
+  const router = useRouter();
+  useEffect(() => {
+    const t = window.setTimeout(() => { for (const r of ["/app", "/app/traders", "/app/profile", "/app/quests"]) { try { router.prefetch(r); } catch { /* ignore */ } } }, 1200);
+    return () => window.clearTimeout(t);
+  }, [router]);
   const [hasSelect, setHasSelect] = useState(false);
   const setSelect = useCallback((fn: SelectFn | null) => { select.current = fn; setHasSelect(!!fn); }, []);
   const ctx = useMemo(() => ({ setSelect }), [setSelect]);
