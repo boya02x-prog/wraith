@@ -18,6 +18,7 @@ import { fetchSolPrice } from "@/lib/solPriceClient";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import PhotoViewer from "@/components/PhotoViewer";
 import PriceAlertButton from "@/components/PriceAlertButton";
+import Lookalikes from "@/components/Lookalikes";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
@@ -628,6 +629,8 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           </div>
         ))}
       </div>
+
+      <Lookalikes mint={mint} name={snap?.name ?? ""} symbol={snap?.symbol ?? ""} mcap={snap?.marketCap ?? null} createdAt={birthMs ?? snap?.pairCreatedAt ?? null} />
 
       {analysis?.safetyBreakdown && analysis.safetyBreakdown.length > 0 && (
         <section className="wx-safety">
