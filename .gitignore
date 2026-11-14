@@ -62,3 +62,5 @@ scripts/.pilot-run*.log
 
 .vercel
 .env*
+
+/.recordings/
