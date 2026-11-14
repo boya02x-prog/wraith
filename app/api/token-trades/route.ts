@@ -57,9 +57,16 @@ async function loadHelius(mint: string): Promise<ApiTrade[] | null> {
   return swaps.slice(0, 60).map((s) => ({ id: s.sig, ts: s.ts, side: s.side, usd: s.sol * solUsd, tokens: s.tokens, priceUsd: s.priceSol * solUsd, wallet: s.wallet, tx: s.sig }));
 }
 
+/** Both sources start together (they used to run one after the other, so a slow first one added its whole wait). Helius is preferred
+ *  when it answers within 2.5 s; otherwise whatever the pool sources return is used. */
 async function load(mint: string): Promise<ApiTrade[] | null> {
-  const fast = await loadHelius(mint);
+  const slow = loadPool(mint).catch(() => null);
+  const fast = await Promise.race([loadHelius(mint).catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 2500))]);
   if (fast) return fast;
+  return slow;
+}
+
+async function loadPool(mint: string): Promise<ApiTrade[] | null> {
   const pool = await resolvePool(mint);
   if (!pool) return null;
   try {
