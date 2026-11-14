@@ -15,9 +15,15 @@ import { SOLANA_MINT_RE } from "@/lib/market";
 import { chainOf, EVM_ADDR_RE } from "@/lib/chains";
 import { TokenIcon } from "@/components/TokenIcon";
 import SheetBoundary from "@/components/SheetBoundary";
+import TokenSkeleton from "@/components/TokenSkeleton";
 
 import Header from "@/components/HeaderSlot";
-const TokenPanel = dynamic(() => import("@/components/TokenPanel"), { ssr: false });
+// While the (large) panel chunk downloads, show the token's name, icon and market cap from the list plus same-size placeholders.
+function PanelLoading() {
+  const params = useParams();
+  return <TokenSkeleton address={decodeURIComponent((params?.address as string) ?? "")} />;
+}
+const TokenPanel = dynamic(() => import("@/components/TokenPanel"), { ssr: false, loading: () => <PanelLoading /> });
 const TokenMarketList = dynamic(() => import("@/components/TokenMarketList"), { ssr: false });
 const EvmTokenView = dynamic(() => import("@/components/EvmTokenView"), { ssr: false });
 const SignalsSidebar = dynamic(() => import("@/components/SignalsSidebar"), { ssr: false });
@@ -205,7 +211,15 @@ export default function TokenPage() {
     );
   }
 
-  if (!meme || isMobile === null) return <div className="wraith-dashboard wx-page" />;
+  if (!meme || isMobile === null) {
+    // not blank: header, price and chart placeholders right away (the identity resolves a moment later)
+    return (
+      <div className="wraith-dashboard wraith-token-page wx-page">
+        <Header onSelectMeme={go} />
+        <div className="wx-mobile-body"><TokenSkeleton address={address} /></div>
+      </div>
+    );
+  }
 
 
   return (
