@@ -1083,3 +1083,19 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 
 .la-chip { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); margin: 0 12px 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255, 186, 85, .5); background: rgba(255, 186, 85, .1); color: #ffba55; font-size: 12.5px; cursor: pointer; text-align: left; }
 .la-chip b { font-weight: 800; } .la-chip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .la-chip i { font-style: normal; font-weight: 800; text-decoration: underline; }
+
+/* ───────── Search sheet on phones: roomy rows, sans headings, clear spacing (like the reference) ───────── */
+@media (max-width: 760px) {
+  .wx-cs-drop .wx-sr { padding: 14px 16px !important; gap: 14px; }
+  .wx-cs-drop .wx-sr + .wx-sr { border-top: 1px solid rgba(255, 255, 255, .05); }
+  .wx-cs-drop .wx-sr-av { width: 46px; height: 46px; }
+  .wx-cs-drop .wx-sr-sym { font-size: 17px; }
+  .wx-cs-drop .wx-sr-name { font-size: 13.5px; margin-top: 2px; }
+  .wx-cs-drop .wx-sr-px b { font-size: 15.5px; } .wx-cs-drop .wx-sr-px small { font-size: 13px; margin-top: 3px; }
+  .wx-cs-drop .wx-search-group-label, .wx-cs-drop [class*="recent"] { font-family: var(--font-sans, inherit) !important; letter-spacing: 0 !important; text-transform: none !important; font-size: 15px !important; font-weight: 700; color: var(--text-muted); }
+  .wx-cs-drop .wx-sr { animation: wx-rise .3s cubic-bezier(.2, .8, .2, 1) both; }
+  .wx-cs-drop .wx-sr:nth-child(2) { animation-delay: 25ms; } .wx-cs-drop .wx-sr:nth-child(3) { animation-delay: 50ms; } .wx-cs-drop .wx-sr:nth-child(4) { animation-delay: 75ms; }
+  .wx-cs-drop .wx-sr:nth-child(5) { animation-delay: 100ms; } .wx-cs-drop .wx-sr:nth-child(n+6) { animation-delay: 125ms; }
+  .wx-cs-inputrow input::placeholder { color: var(--text-dim); }
+}
+.wx-mbar-search { flex: 0 0 62px; }

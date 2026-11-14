@@ -729,6 +729,30 @@ function CoinSearch({
     setResults([]);
   };
 
+  // A pasted Solana contract address opens its token straight away: no lookup, no Enter. The token page resolves the rest itself
+  // (name, price, chart) and shows its placeholder shell meanwhile.
+  const goDirect = (address: string) => {
+    const meme: MemeTrend = { keyword: address.slice(0, 4).toUpperCase(), score: 0, posts: 0, source: "direct", contractAddress: address, hasTicker: true, isNewCoin: false };
+    if (onSelectMeme) onSelectMeme(meme);
+    else { cacheTokenNav(meme); router.push(`/app/token/${encodeURIComponent(address)}`); }
+    setOpen(false); setQuery(""); setResults([]);
+  };
+  // EVM addresses need the chain: wait for the lookup, then open the exact match
+  const autoAddr = useRef("");
+  useEffect(() => {
+    const a = autoAddr.current;
+    if (!a || !results.length) return;
+    const hit = results.find((r) => r.address.toLowerCase() === a.toLowerCase());
+    if (hit) { autoAddr.current = ""; handleSelectToken(hit); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results]);
+  const onPasteAddress = (text: string): boolean => {
+    const t = text.trim();
+    if (SOLANA_MINT_RE.test(t)) { goDirect(t); return true; }
+    if (EVM_ADDR_RE.test(t)) { autoAddr.current = t; setQuery(t); setActiveIdx(-1); return true; }
+    return false;
+  };
+
   const toggleBookmark = async (trader: TraderSearchResult) => {
     if (!session?.user?.id) {
       setError("Sign in to bookmark traders");
@@ -956,6 +980,7 @@ function CoinSearch({
                 setQuery(e.target.value);
                 setActiveIdx(-1);
               }}
+              onPaste={(e) => { if (onPasteAddress(e.clipboardData.getData("text"))) e.preventDefault(); }}
               onKeyDown={(e) => {
                 const totalItems =
                   searchMode === "tokens"
@@ -1045,7 +1070,7 @@ function CoinSearch({
               onClick={async () => {
                 try {
                   const t = (await navigator.clipboard.readText()).trim();
-                  if (t) { setQuery(t); setActiveIdx(-1); }
+                  if (t && !onPasteAddress(t)) { setQuery(t); setActiveIdx(-1); }
                 } catch { inputRef.current?.focus(); }
               }}
             >

@@ -6,7 +6,7 @@ import { usePresence } from "@/lib/usePresence";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import BookmarkBtn from "@/components/BookmarkBtn";
-import { Activity, Bookmark, Flame, Radar, Wallet } from "lucide-react";
+import { Activity, Bookmark, Flame, Radar, Search, Wallet } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import type { MemeTrend } from "@/app/app/page";
 import { readTokenNav, cacheTokenNav } from "@/lib/tokenNav";
@@ -239,6 +239,10 @@ export default function TokenPage() {
               <button type="button" className="wx-mbar-nav" onClick={() => setMobileTab(mobileTab === "market" ? "chart" : "market")}>
                 {mobileTab === "market" ? <Activity size={18} /> : <Flame size={18} />}
                 <span>{mobileTab === "market" ? "Chart" : "Market"}</span>
+              </button>
+              <button type="button" className="wx-mbar-nav wx-mbar-search" aria-label="Search tokens and traders" onClick={() => window.dispatchEvent(new CustomEvent("wraith:open-search"))}>
+                <Search size={18} />
+                <span>Search</span>
               </button>
               <button type="button" className="wx-mbar-buy" onClick={() => setSheet("buy")}>Buy</button>
               <button type="button" className="wx-mbar-sell" onClick={() => setSheet("sell")}>Sell</button>
