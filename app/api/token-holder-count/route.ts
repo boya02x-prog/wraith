@@ -65,6 +65,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Holder count temporarily unavailable" }, { status: 503 });
   }
 
+  // Jupiter already knows the holder count (about 0.1 s, no Helius credits); the paged Helius count below is only the fallback
+  try {
+    const r = await fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`, { signal: AbortSignal.timeout(4000), headers: { Accept: "application/json" } });
+    if (r.ok) {
+      const j = (await r.json()) as { id?: string; holderCount?: number }[];
+      const n = j.find((x) => x.id === mint)?.holderCount;
+      if (typeof n === "number" && n >= 0) {
+        holderCache.set(mint, { count: n, expiresAt: Date.now() + CACHE_MS });
+        return NextResponse.json({ mint, holderCount: n, source: "Jupiter" }, { headers: { "Cache-Control": "private, max-age=60" } });
+      }
+    }
+  } catch { /* fall through to Helius */ }
+
   const viaHelius = await heliusCount(mint);
   if (viaHelius != null) {
     holderCache.set(mint, { count: viaHelius, expiresAt: Date.now() + CACHE_MS });

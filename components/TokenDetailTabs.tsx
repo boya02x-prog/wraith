@@ -48,7 +48,7 @@ export interface TokenDetailTabsProps {
   currentMcap?: number | null;
 }
 
-type Holder = { wallet: string; quantity: number; share: number };
+type Holder = { wallet: string; quantity: number; share: number; label?: string | null };
 type WUser = { userId: string; displayName: string; username: string | null; avatar: string; tier: string };
 type Trader = {
   userId: string; displayName: string; username: string | null; avatar: string; lastSide: "buy" | "sell"; lastAt: number; count: number;
@@ -264,7 +264,7 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
                     {u?.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="hl-pic" src={u.avatar} alt="" /> : <WalletAvatar address={h.wallet} size={38} kind="holder" bare />}
                     <span className="hl-who">
                       <b className={u ? "" : "mono"}>{u ? u.displayName : short(h.wallet)}{u && u.tier !== "GHOST" && <em>{u.tier}</em>}</b>
-                      <small>{qty(h.quantity)} tokens{u ? "" : i === 0 && h.share > 20 ? " · likely pool / curve" : ""}</small>
+                      <small>{qty(h.quantity)} tokens{h.label ? ` · ${h.label}` : ""}</small>
                     </span>
                     <span className="hl-val">
                       <b>{h.share.toFixed(2)}%</b>

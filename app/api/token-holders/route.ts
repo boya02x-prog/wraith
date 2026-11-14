@@ -24,11 +24,35 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T | null> {
   return null;
 }
 
+
+/** Jupiter's own holder list (what its app shows): about 0.1 s, includes names for pools and bonding curves, and the true holder count.
+ *  The RPC route below stays as the fallback. */
+async function jupiterHolders(mint: string) {
+  try {
+    const [h, t] = await Promise.all([
+      fetch(`https://datapi.jup.ag/v1/holders/${mint}`, { signal: AbortSignal.timeout(5000), headers: { Accept: "application/json" } }),
+      fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`, { signal: AbortSignal.timeout(5000), headers: { Accept: "application/json" } }),
+    ]);
+    if (!h.ok) return null;
+    const hj = (await h.json()) as { holders?: { address: string; amount: number; tags?: { name?: string }[] }[]; count?: number };
+    const tj = t.ok ? ((await t.json()) as { id?: string; totalSupply?: number; circSupply?: number; holderCount?: number }[]) : [];
+    const info = tj.find((x) => x.id === mint);
+    const total = Number(info?.totalSupply ?? info?.circSupply ?? 0);
+    const rows = (hj.holders ?? []).filter((x) => x.amount > 0);
+    if (!rows.length || !(total > 0)) return null;
+    const holders = rows.slice(0, 20).map((x) => ({ wallet: x.address, quantity: x.amount, share: (x.amount / total) * 100, label: x.tags?.[0]?.name ?? null }));
+    return { holders, top10: holders.slice(0, 10).reduce((a, x) => a + x.share, 0), total, count: hj.count ?? info?.holderCount ?? null };
+  } catch { return null; }
+}
+
 export async function GET(req: NextRequest) {
   const mint = req.nextUrl.searchParams.get("mint") ?? "";
   if (!SOLANA_MINT_RE.test(mint)) return NextResponse.json({ error: "Invalid mint" }, { status: 400 });
   const hit = cache.get(mint);
   if (hit && Date.now() - hit.ts < 30_000) return edge(NextResponse.json(hit.body), 15, 60);
+
+  const fast = await jupiterHolders(mint);
+  if (fast) { cache.set(mint, { ts: Date.now(), body: fast }); return edge(NextResponse.json(fast), 15, 60); }
 
   type Largest = { value: { address: string; amount: string; decimals: number; uiAmount: number | null }[] };
   const [largest, supply] = await Promise.all([

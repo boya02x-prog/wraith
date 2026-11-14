@@ -1,4 +1,5 @@
 import type { MemeTrend } from "@/app/app/page";
+import { prefetchToken } from "@/lib/tokenPrefetch";
 
 // sessionStorage, not localStorage — this is a handoff for the click that
 // just happened, not something that should still be "true" days later
@@ -13,6 +14,7 @@ export function cacheTokenNav(meme: MemeTrend) {
   try {
     sessionStorage.setItem(PREFIX + meme.contractAddress, JSON.stringify(meme));
   } catch {}
+  prefetchToken(meme.contractAddress); // start the slow first requests now, while the page is still opening
 }
 
 export function readTokenNav(address: string): MemeTrend | null {
