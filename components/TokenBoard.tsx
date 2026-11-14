@@ -99,6 +99,7 @@ function CardBase({ token, onOpen, quickSol }: { token: MarketToken; onOpen: () 
   return (
     <div
       className={`wx-tcard${tick ? ` ${tick.cls}` : ""}`}
+      data-dir={(token.change.h1 ?? 0) > 0 ? "up" : (token.change.h1 ?? 0) < 0 ? "down" : "flat"}
       style={tick ? { animationDelay: `${tick.delay}ms` } : undefined}
       role="link"
       tabIndex={0}

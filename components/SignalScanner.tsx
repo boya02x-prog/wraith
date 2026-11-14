@@ -117,7 +117,7 @@ function ScoreRing({ score, tier, locked }: { score: number; tier: "HOT" | "WATC
 function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; showScore: boolean }) {
   const t = s.token;
   return (
-    <div className="sg-card" role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
+    <div className="sg-card" data-tier={s.tier} data-dir={(t.change.h1 ?? 0) >= 0 ? "up" : "down"} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
       <div className="sg-card-top">
         <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={44} />
         <div className="sg-id">

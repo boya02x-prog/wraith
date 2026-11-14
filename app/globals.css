@@ -6,11 +6,11 @@
     "Segoe UI", sans-serif;
 
   /* Neutral graphite: no blue tint, no brown tint */
-  --bg: #0c0c0d;
-  --surface: #131314;
-  --surface-2: #1a1a1c;
-  --surface-3: #222224;
-  --border: rgba(255, 255, 255, 0.08);
+  --bg: #050506;
+  --surface: #0b0b0c;
+  --surface-2: #111113;
+  --surface-3: #18181a;
+  --border: rgba(255, 255, 255, 0.07);
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #ededee;
   --text-muted: #a1a1a6;
