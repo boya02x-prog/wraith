@@ -715,6 +715,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
 
       {/* ── price strip ── */}
       <div className="wx-pricebar">
+        <Lookalikes mint={mint} name={snap?.name ?? ""} symbol={snap?.symbol ?? ""} mcap={snap?.marketCap ?? null} createdAt={birthMs ?? snap?.pairCreatedAt ?? null} compact />
         <div>
           <div className="wx-kicker">Market cap{ageText ? <span className="wx-age-chip" title="Time since this token launched">{ageText} old</span> : null}{isLive && <span title="Live price feed connected" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#22c55e", marginLeft: 8, verticalAlign: "middle", boxShadow: "0 0 6px #22c55e" }} />}</div>
           {loadingSnap ? (
@@ -756,8 +757,6 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
         </div>
       )}
       {snapState === "error" && !snap && <div className="wx-note warn">Market data is slow to respond. Retrying…</div>}
-
-      <Lookalikes mint={mint} name={snap?.name ?? ""} symbol={snap?.symbol ?? ""} mcap={snap?.marketCap ?? null} createdAt={birthMs ?? snap?.pairCreatedAt ?? null} compact />
 
       {/* ── chart ── */}
       {/* wallets Wraith has seen dump (or win) before, shown where you read the chart, not only in the buy panel */}

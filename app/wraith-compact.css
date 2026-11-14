@@ -1124,3 +1124,8 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wx-cs-drop .wx-sr-id { gap: 4px; }
 .wx-cs-drop .wx-sr-sym { line-height: 1.2; } .wx-cs-drop .wx-sr-name { line-height: 1.25; }
 .wx-cs-drop .wx-sr-px { gap: 4px; }
+
+/* Lookalike warning: a small pill in the price bar's top right corner. It floats, so it can never push the chart down when it arrives. */
+.wx-pricebar { position: relative; }
+.wx-pricebar .la-chip { position: absolute; top: 4px; right: 12px; width: auto; margin: 0; padding: 6px 11px; border-radius: 999px; gap: 6px; font-size: 12px; z-index: 2; animation: wx-fade .15s ease both; }
+.wx-pricebar .la-chip i { text-decoration: none; font-size: 15px; line-height: 1; }

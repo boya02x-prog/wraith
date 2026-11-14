@@ -25,8 +25,8 @@ export default function Lookalikes({ mint, name, symbol, mcap, createdAt, compac
   if (compact) {
     if (!bigger) return null;
     return (
-      <button type="button" className="la-chip" onClick={() => document.getElementById("la-full")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
-        <b>{items.length} lookalike{items.length > 1 ? "s" : ""}</b><span>a bigger one exists: {biggest.symbol} at {usd(biggest.mcap)}</span><i>See</i>
+      <button type="button" className="la-chip" title={`A bigger one exists: ${biggest.symbol} at ${usd(biggest.mcap)}`} onClick={() => document.getElementById("la-full")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+        <b>⚠ {items.length} lookalike{items.length > 1 ? "s" : ""}</b><i>›</i>
       </button>
     );
   }
