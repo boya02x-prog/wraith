@@ -1637,9 +1637,18 @@ export default function TokenChart({
         )}
 
         {status === "loading" && (
-          <div className="wx-chart-overlay">
-            <div className="wx-skel" style={{ width: "100%", height: "100%", borderRadius: 0, opacity: 0.55 }} />
-            <span className="wx-chart-msg">Loading chart…</span>
+          <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
+            {/* a ghost candlestick chart that breathes while the real one loads: no text */}
+            <div className="wx-cskel-bars">
+              {Array.from({ length: 34 }, (_, i) => {
+                const base = 46 + Math.sin(i * 0.42) * 16 + Math.sin(i * 1.3 + 1) * 8;
+                const body = 10 + ((i * 37) % 17);
+                return (
+                  <i key={i} style={{ ["--y" as string]: `${base}%`, ["--h" as string]: `${body}%`, ["--d" as string]: `${(i % 12) * 70}ms`, ["--up" as string]: i % 3 === 1 ? 0 : 1 }} />
+                );
+              })}
+            </div>
+            <div className="wx-cskel-sweep" />
           </div>
         )}
         {status === "empty" && (
