@@ -1120,3 +1120,10 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wx-table, .wx-side-list, .wx-side-scroll, .trader-card, .trader-tabs, .traders-heading, .profile-hero, .profile-stat-card, .pnlc, .profile-panel, .pcal, .profile-open-list { animation: none !important; }
   .wx-tcard:active, .trader-card:active, .wx-side-row:active, .wx-sr:active { transform: none; }
 }
+
+/* Search rows must never be squashed: inside the scrolling flex column they had shrunk below their content, so names overlapped the next row */
+.wx-cs-drop > *, .wx-cs-drop .wx-sr { flex-shrink: 0 !important; }
+.wx-cs-drop .wx-sr { min-height: 76px; height: auto !important; overflow: visible; box-sizing: border-box; }
+.wx-cs-drop .wx-sr-id { gap: 4px; }
+.wx-cs-drop .wx-sr-sym { line-height: 1.2; } .wx-cs-drop .wx-sr-name { line-height: 1.25; }
+.wx-cs-drop .wx-sr-px { gap: 4px; }
