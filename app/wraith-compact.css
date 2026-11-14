@@ -1065,20 +1065,19 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .la-note { margin: 10px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--text-dim); }
 
 /* ───────── Smooth reveal: pieces arrive in order instead of all popping at once ───────── */
-@keyframes wx-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes wx-from-right { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes wx-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes wx-from-right { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
 @keyframes wx-fade { from { opacity: 0; } to { opacity: 1; } }
 /* timeframe and tool buttons slide in from the right, one after another */
-.wx-chart-toolbar > * { animation: wx-from-right .34s cubic-bezier(.2, .8, .2, 1) both; }
-.wx-chart-toolbar > *:nth-child(1) { animation-delay: 40ms; } .wx-chart-toolbar > *:nth-child(2) { animation-delay: 90ms; }
-.wx-chart-toolbar > *:nth-child(3) { animation-delay: 140ms; } .wx-chart-toolbar > *:nth-child(4) { animation-delay: 190ms; }
-.wx-chart-toolbar > *:nth-child(5) { animation-delay: 240ms; } .wx-chart-toolbar > *:nth-child(n+6) { animation-delay: 290ms; }
+.wx-chart-toolbar > * { animation: wx-from-right .16s ease-out both; }
+.wx-chart-toolbar > *:nth-child(1) { animation-delay: 0ms; } .wx-chart-toolbar > *:nth-child(2) { animation-delay: 15ms; }
+.wx-chart-toolbar > *:nth-child(3) { animation-delay: 30ms; } .wx-chart-toolbar > *:nth-child(4) { animation-delay: 45ms; }
+.wx-chart-toolbar > *:nth-child(5) { animation-delay: 60ms; } .wx-chart-toolbar > *:nth-child(n+6) { animation-delay: 75ms; }
 /* the chart itself fades in once its data is there (no candles popping in half drawn) */
-.wx-chart-host { transition: opacity .5s ease; }
-.wx-chart-host.is-loading { opacity: 0; }
+/* the chart stays visible while a new timeframe loads: hiding it made every switch feel slower */
 /* the cards under the chart rise in, top to bottom */
-.wx-panel .dt, .wx-panel .wx-stats, .wx-panel .wx-safety, .wx-panel .la, .wx-panel .la-chip { animation: wx-rise .42s cubic-bezier(.2, .8, .2, 1) both; }
-.wx-panel .dt { animation-delay: 80ms; } .wx-panel .wx-stats { animation-delay: 160ms; } .wx-panel .wx-safety { animation-delay: 220ms; } .wx-panel .la { animation-delay: 260ms; }
+.wx-panel .dt, .wx-panel .wx-stats, .wx-panel .wx-safety, .wx-panel .la, .wx-panel .la-chip { animation: wx-rise .2s ease-out both; }
+.wx-panel .dt { animation-delay: 0ms; } .wx-panel .wx-stats { animation-delay: 30ms; } .wx-panel .wx-safety { animation-delay: 50ms; } .wx-panel .la { animation-delay: 60ms; }
 @media (prefers-reduced-motion: reduce) { .wx-chart-toolbar > *, .wx-panel .dt, .wx-panel .wx-stats, .wx-panel .wx-safety, .wx-panel .la, .wx-panel .la-chip { animation: none !important; } .wx-chart-host { transition: none; } }
 
 .la-chip { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); margin: 0 12px 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255, 186, 85, .5); background: rgba(255, 186, 85, .1); color: #ffba55; font-size: 12.5px; cursor: pointer; text-align: left; }
@@ -1093,26 +1092,24 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wx-cs-drop .wx-sr-name { font-size: 13.5px; margin-top: 2px; }
   .wx-cs-drop .wx-sr-px b { font-size: 15.5px; } .wx-cs-drop .wx-sr-px small { font-size: 13px; margin-top: 3px; }
   .wx-cs-drop .wx-search-group-label, .wx-cs-drop [class*="recent"] { font-family: var(--font-sans, inherit) !important; letter-spacing: 0 !important; text-transform: none !important; font-size: 15px !important; font-weight: 700; color: var(--text-muted); }
-  .wx-cs-drop .wx-sr { animation: wx-rise .3s cubic-bezier(.2, .8, .2, 1) both; }
-  .wx-cs-drop .wx-sr:nth-child(2) { animation-delay: 25ms; } .wx-cs-drop .wx-sr:nth-child(3) { animation-delay: 50ms; } .wx-cs-drop .wx-sr:nth-child(4) { animation-delay: 75ms; }
-  .wx-cs-drop .wx-sr:nth-child(5) { animation-delay: 100ms; } .wx-cs-drop .wx-sr:nth-child(n+6) { animation-delay: 125ms; }
+  .wx-cs-drop .wx-sr { animation: wx-fade .12s ease-out both; }
   .wx-cs-inputrow input::placeholder { color: var(--text-dim); }
 }
 .wx-mbar-search { flex: 0 0 62px; }
 
 /* ───────── Motion standard for the whole app: things arrive in order, taps give back ───────── */
 /* Market: the list/table fades up once as a whole (rows are not animated one by one: their price-flash classes would restart it) */
-.wx-table, .wx-side-list, .wx-side-scroll { animation: wx-rise .4s cubic-bezier(.2, .8, .2, 1) both; }
+.wx-table, .wx-side-list, .wx-side-scroll { animation: wx-fade .15s ease-out both; }
 /* Traders: cards rise in, top to bottom */
-.trader-card:not(.trader-card-skeleton) { animation: wx-rise .42s cubic-bezier(.2, .8, .2, 1) both; }
-.traders-grid > *:nth-child(1) { animation-delay: 0ms; } .traders-grid > *:nth-child(2) { animation-delay: 40ms; } .traders-grid > *:nth-child(3) { animation-delay: 80ms; }
-.traders-grid > *:nth-child(4) { animation-delay: 120ms; } .traders-grid > *:nth-child(5) { animation-delay: 160ms; } .traders-grid > *:nth-child(6) { animation-delay: 200ms; }
-.traders-grid > *:nth-child(n+7) { animation-delay: 240ms; }
-.trader-tabs, .traders-heading { animation: wx-fade .35s ease both; }
+.trader-card:not(.trader-card-skeleton) { animation: wx-rise .2s ease-out both; }
+.traders-grid > *:nth-child(1) { animation-delay: 0ms; } .traders-grid > *:nth-child(2) { animation-delay: 10ms; } .traders-grid > *:nth-child(3) { animation-delay: 20ms; }
+.traders-grid > *:nth-child(4) { animation-delay: 30ms; } .traders-grid > *:nth-child(5) { animation-delay: 40ms; } .traders-grid > *:nth-child(6) { animation-delay: 50ms; }
+.traders-grid > *:nth-child(n+7) { animation-delay: 60ms; }
+.trader-tabs, .traders-heading { animation: wx-fade .15s ease both; }
 /* Profile: header first, then the numbers, then the panels */
-.profile-hero { animation: wx-fade .4s ease both; }
-.profile-stat-card, .pnlc { animation: wx-rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: 90ms; }
-.profile-panel, .pcal, .profile-open-list { animation: wx-rise .45s cubic-bezier(.2, .8, .2, 1) both; animation-delay: 160ms; }
+.profile-hero { animation: wx-fade .15s ease both; }
+.profile-stat-card, .pnlc { animation: wx-rise .2s ease-out both; animation-delay: 20ms; }
+.profile-panel, .pcal, .profile-open-list { animation: wx-rise .2s ease-out both; animation-delay: 40ms; }
 /* Press feedback: rows and cards give a little when tapped */
 .wx-tcard, .trader-card, .wx-side-row, .wx-sr, .la-row, .hl-row, .tr-row, .profile-open-row { transition: transform .12s ease, background-color .15s ease; }
 .wx-tcard:active, .trader-card:active, .wx-side-row:active, .wx-sr:active, .la-row:active, .hl-row:active, .tr-row:active { transform: scale(.985); }
