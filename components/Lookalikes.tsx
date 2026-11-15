@@ -3,6 +3,7 @@
 // it is and which is older. Size and age only: the biggest copy is often the crowd's choice, not always the original.
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SiteIcon, TelegramIcon, XIcon } from "@/components/BrandIcons";
 
 interface Links { twitter: string | null; website: string | null; telegram: string | null; holders: number | null; dev: string | null; organic: number | null }
 interface Item { links?: Links | null; address: string; name: string; symbol: string; mcap: number; liquidity: number; volume24h: number; txns24h: number; createdAt: number | null; image: string | null }
@@ -42,7 +43,7 @@ export default function Lookalikes({ mint, name, symbol, mcap, createdAt, compac
         {items.slice(0, 4).map((i) => (
           <Link key={i.address} href={`/app/token/${i.address}`} className="la-row">
             {i.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={i.image} alt="" /> : <span className="la-ph">{i.symbol[0]}</span>}
-            <span className="la-who"><b>{i.name || i.symbol}</b><small>${i.symbol} · {age(i.createdAt)} old{i.links?.holders != null ? ` · ${i.links.holders.toLocaleString()} holders` : ""}</small><em className="la-links"><u className={i.links?.twitter ? "on" : ""}>X</u><u className={i.links?.website ? "on" : ""}>Web</u><u className={i.links?.telegram ? "on" : ""}>TG</u></em></span>
+            <span className="la-who"><b>{i.name || i.symbol}</b><small>${i.symbol} · {age(i.createdAt)} old{i.links?.holders != null ? ` · ${i.links.holders.toLocaleString()} holders` : ""}</small>{(i.links?.twitter || i.links?.website || i.links?.telegram) ? <em className="la-links">{i.links?.twitter ? <XIcon size={13} /> : null}{i.links?.website && !/(x|twitter)\.com/i.test(i.links.website) ? <SiteIcon url={i.links.website} size={13} /> : null}{i.links?.telegram ? <TelegramIcon size={13} /> : null}</em> : null}</span>
             <span className="la-val"><b>{usd(i.mcap)}</b><small>vol {usd(i.volume24h)}</small></span>
           </Link>
         ))}

@@ -1240,3 +1240,18 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wx-sheet, .cm-menu, .pa-pop, .wx-cs-drop { transition-timing-function: var(--ease-out); }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* ── Lookalikes + Mentioned by: no overflow, no grey boxes (only real links are shown, as small logos) ── */
+.la, .mn { min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+.la-row { grid-template-columns: 40px minmax(0, 1fr) auto; padding: 9px 4px; }
+.la-who { min-width: 0; }
+.la-who small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-links { display: inline-flex !important; align-items: center; gap: 6px; margin-top: 3px !important; color: var(--text-muted); }
+.la-links u { display: none; }
+.la-row img, .la-ph { width: 40px; height: 40px; }
+.mn-rows { min-width: 0; }
+.mn-row { min-width: 0; max-width: 100%; box-sizing: border-box; padding: 11px 12px; gap: 10px; }
+.mn-row i { flex: 0 0 22px; display: grid; place-items: center; color: var(--text); }
+.mn-row b { flex: 0 0 auto; white-space: nowrap; }
+.mn-row span { flex: 1 1 0; min-width: 0; text-align: right; }
+.mn-row.off i { opacity: .55; }
