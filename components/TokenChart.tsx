@@ -1638,12 +1638,14 @@ export default function TokenChart({
 
         {status === "loading" && (
           <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
-            {/* the Wraith ghost floating over a faint grid, with a radar pulse: on brand, no text */}
-            <div className="wx-cskel-grid" />
-            <div className="wx-cskel-ghost">
-              <i /><i /><i />
+            {/* the Wraith ghost scanning: its light sweeps over floating tags and locks onto one (like the Wraith banner) */}
+            <div className="wx-scan">
+              <div className="wx-scan-beam" />
+              {["$????", "$????", "$????", "$????", "$????", "$????"].map((t, i) => (
+                <span key={i} className={`wx-scan-tag t${i}`}>{t}</span>
+              ))}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.svg" alt="" />
+              <img className="wx-scan-ghost" src="/logo.svg" alt="" />
             </div>
           </div>
         )}

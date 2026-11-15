@@ -1157,18 +1157,22 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 /* the bar under the market cap catches a little light */
 .wx-bar > i { box-shadow: 0 0 10px rgba(var(--tint), .35); }
 
-/* ───────── Chart loading state: the Wraith ghost, floating, with a radar pulse (no text) ───────── */
+/* ───────── Chart loading state: the Wraith ghost scanning (small, moving, no text) ───────── */
 /* while history loads, the real chart is hidden (a lone live candle used to show alone), with no fade so it appears at once when ready */
 .wx-chart-host.is-loading { visibility: hidden; }
-.wx-cskel { overflow: hidden; background: radial-gradient(60% 45% at 50% 48%, rgba(var(--accent-rgb), .10), transparent 70%), var(--bg, #050506) !important; }
-.wx-cskel-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.4px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(70% 60% at 50% 48%, #000, transparent 80%); mask-image: radial-gradient(70% 60% at 50% 48%, #000, transparent 80%); }
-.wx-cskel-ghost { position: absolute; left: calc(50% - 37px); top: 50%; width: 74px; height: 74px; margin-top: -45px; display: grid; place-items: center; }
-.wx-cskel-ghost img { width: 46px; height: auto; position: relative; filter: drop-shadow(0 0 14px rgba(var(--accent-rgb), .75)); animation: wx-ghost-float 2.2s ease-in-out infinite; }
-.wx-cskel-ghost i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(var(--accent-rgb), .55); opacity: 0; animation: wx-ghost-ring 2.4s ease-out infinite; }
-.wx-cskel-ghost i:nth-child(2) { animation-delay: .8s; } .wx-cskel-ghost i:nth-child(3) { animation-delay: 1.6s; }
-@keyframes wx-ghost-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
-@keyframes wx-ghost-ring { 0% { transform: scale(.55); opacity: .8; } 100% { transform: scale(3.1); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .wx-cskel-ghost img, .wx-cskel-ghost i { animation: none; } .wx-cskel-ghost i { opacity: .25; } }
+.wx-cskel { overflow: hidden; background: var(--bg, #050506) !important; display: grid; place-items: center; }
+.wx-scan { position: relative; width: min(250px, 72vw); height: 104px; }
+.wx-scan-ghost { position: absolute; right: 0; top: 50%; width: 40px; height: auto; margin-top: -24px; filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), .8)); animation: wx-scan-float 2.2s ease-in-out infinite; }
+/* the light cone: starts at the ghost's eyes and fans out to the left, sweeping up and down */
+.wx-scan-beam { position: absolute; right: 22px; top: 50%; width: 82%; height: 100%; margin-top: -52px; transform-origin: 100% 50%; background: linear-gradient(270deg, rgba(var(--accent-rgb), .42), rgba(var(--accent-rgb), 0) 92%); clip-path: polygon(100% 47%, 0 0, 0 100%, 100% 53%); animation: wx-scan-sweep 2.4s ease-in-out infinite; }
+.wx-scan-tag { position: absolute; padding: 2px 6px; border-radius: 6px; font: 700 8.5px/1.2 var(--font-mono), monospace; color: rgba(255, 255, 255, .22); border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .02); animation: wx-scan-lock 2.4s ease-in-out infinite; white-space: nowrap; }
+.wx-scan-tag.t0 { left: 4%; top: 6%; animation-delay: .1s; } .wx-scan-tag.t1 { left: 40%; top: 14%; animation-delay: .5s; }
+.wx-scan-tag.t2 { left: 14%; top: 40%; animation-delay: 1s; } .wx-scan-tag.t3 { left: 50%; top: 48%; animation-delay: 1.5s; }
+.wx-scan-tag.t4 { left: 2%; top: 74%; animation-delay: 1.9s; } .wx-scan-tag.t5 { left: 36%; top: 78%; animation-delay: 2.2s; }
+@keyframes wx-scan-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes wx-scan-sweep { 0%, 100% { transform: rotate(-7deg); opacity: .55; } 50% { transform: rotate(7deg); opacity: 1; } }
+@keyframes wx-scan-lock { 0%, 62%, 100% { color: rgba(255, 255, 255, .22); border-color: rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .02); box-shadow: none; } 20%, 34% { color: #ffb48a; border-color: rgba(var(--accent-rgb), .8); background: rgba(var(--accent-rgb), .14); box-shadow: 0 0 12px rgba(var(--accent-rgb), .45); } }
+@media (prefers-reduced-motion: reduce) { .wx-scan-ghost, .wx-scan-beam, .wx-scan-tag { animation: none; } }
 
 .la-links { display: inline-flex; gap: 4px; margin-top: 4px; font-style: normal; }
 .la-links u { text-decoration: none; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, .05); color: var(--text-dim); }
