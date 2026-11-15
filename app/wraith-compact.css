@@ -1157,18 +1157,18 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 /* the bar under the market cap catches a little light */
 .wx-bar > i { box-shadow: 0 0 10px rgba(var(--tint), .35); }
 
-/* ───────── Chart loading state: candles that build themselves, green and red (no text) ───────── */
+/* ───────── Chart loading state: the Wraith ghost, floating, with a radar pulse (no text) ───────── */
 /* while history loads, the real chart is hidden (a lone live candle used to show alone), with no fade so it appears at once when ready */
 .wx-chart-host.is-loading { visibility: hidden; }
-.wx-cskel { overflow: hidden; background: var(--bg, #050506) !important; }
-.wx-cskel-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px); background-size: 100% 12.5%; pointer-events: none; }
-.wx-cskel-bars { position: absolute; inset: 6% 78px 12% 12px; display: flex; align-items: stretch; justify-content: space-between; gap: 4px; }
-.wx-cskel-bars i { position: relative; flex: 1; max-width: 13px; transform-origin: center; opacity: 0; animation: wx-cskel-in 2.4s ease-in-out infinite; animation-delay: var(--d); }
-.wx-cskel-bars i::before { content: ""; position: absolute; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--y) - var(--w)); height: calc(var(--w) * 2); border-radius: 2px; background: currentColor; opacity: .7; }
-.wx-cskel-bars i::after { content: ""; position: absolute; left: 0; right: 0; top: calc(var(--y) - var(--h) / 2); height: var(--h); border-radius: 3px; background: currentColor; }
-.wx-cskel-bars i.u, .wx-cskel-bars i.d { color: rgba(255, 255, 255, .2); }
-@keyframes wx-cskel-in { 0% { opacity: 0; transform: scaleY(.2); } 14% { opacity: 1; transform: scaleY(1); } 70% { opacity: 1; } 88%, 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .wx-cskel-bars i { animation: none; opacity: .6; } }
+.wx-cskel { overflow: hidden; background: radial-gradient(60% 45% at 50% 48%, rgba(var(--accent-rgb), .10), transparent 70%), var(--bg, #050506) !important; }
+.wx-cskel-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.4px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(70% 60% at 50% 48%, #000, transparent 80%); mask-image: radial-gradient(70% 60% at 50% 48%, #000, transparent 80%); }
+.wx-cskel-ghost { position: absolute; left: calc(50% - 37px); top: 50%; width: 74px; height: 74px; margin-top: -45px; display: grid; place-items: center; }
+.wx-cskel-ghost img { width: 46px; height: auto; position: relative; filter: drop-shadow(0 0 14px rgba(var(--accent-rgb), .75)); animation: wx-ghost-float 2.2s ease-in-out infinite; }
+.wx-cskel-ghost i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(var(--accent-rgb), .55); opacity: 0; animation: wx-ghost-ring 2.4s ease-out infinite; }
+.wx-cskel-ghost i:nth-child(2) { animation-delay: .8s; } .wx-cskel-ghost i:nth-child(3) { animation-delay: 1.6s; }
+@keyframes wx-ghost-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
+@keyframes wx-ghost-ring { 0% { transform: scale(.55); opacity: .8; } 100% { transform: scale(3.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .wx-cskel-ghost img, .wx-cskel-ghost i { animation: none; } .wx-cskel-ghost i { opacity: .25; } }
 
 .la-links { display: inline-flex; gap: 4px; margin-top: 4px; font-style: normal; }
 .la-links u { text-decoration: none; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, .05); color: var(--text-dim); }
@@ -1255,3 +1255,14 @@ html { scroll-behavior: smooth; }
 .mn-row b { flex: 0 0 auto; white-space: nowrap; }
 .mn-row span { flex: 1 1 0; min-width: 0; text-align: right; }
 .mn-row.off i { opacity: .55; }
+
+/* ── Card spacing on the token page: every card has the same side margin and gap, like the stat cards ── */
+.wx-panel > .la, .wx-panel > .mn, .wx-panel > .wx-safety, .wx-panel > .wx-stats, .wx-panel > div > .la, .wx-panel > div > .mn { margin-left: 12px; margin-right: 12px; }
+.wx-panel .la, .wx-panel .mn { margin-top: 14px; margin-bottom: 14px; padding: 16px; border-radius: 18px; }
+.wx-panel .la { border-left: 3px solid #ffba55; }
+.la-head { margin-bottom: 12px; row-gap: 6px; } .la-head b { font-size: 16px; }
+.la-list { gap: 2px; } .la-row { padding: 12px 2px; } .la-row + .la-row { border-top: 1px solid rgba(255, 255, 255, .05); }
+.la-tips { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .06); }
+.la-note, .mn-note { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .06); }
+.mn-rows { gap: 8px; } .mn-row { padding: 13px 14px; border-radius: 14px; }
+.mn-row.off b { color: var(--text-muted); }

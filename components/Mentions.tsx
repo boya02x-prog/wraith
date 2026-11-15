@@ -2,6 +2,7 @@
 // "Mentioned by": where this token is talked about that Wraith can actually see, with no paid feed: the creator's linked X post /
 // website / Telegram (from Jupiter's token info), and posts about it by Wraith traders. It says plainly what it cannot see.
 import { useEffect, useState } from "react";
+import { Globe, Send } from "lucide-react";
 import { SiteIcon, TelegramIcon, XIcon } from "@/components/BrandIcons";
 
 interface Links { twitter: string | null; website: string | null; telegram: string | null }
@@ -27,9 +28,9 @@ export default function Mentions({ mint, name, symbol }: { mint: string; name: s
     <section className="mn">
       <div className="mn-head"><b>Mentioned by</b><span>what Wraith can see</span></div>
       <div className="mn-rows">
-        {row(<XIcon size={17} />, isPost(links?.twitter) ? "Linked X post" : "Creator's X", links?.twitter)}
-        {row(links?.website ? <SiteIcon url={links.website} size={18} /> : <SiteIcon url="https://example.invalid" size={18} />, isPost(links?.website) ? "Linked post" : "Website", links?.website)}
-        {row(<TelegramIcon size={18} />, "Telegram", links?.telegram)}
+        {row(<XIcon size={16} />, isPost(links?.twitter) ? "Linked X post" : "Creator's X", links?.twitter)}
+        {row(links?.website ? <SiteIcon url={links.website} size={18} /> : <Globe size={18} />, isPost(links?.website) ? "Linked post" : "Website", links?.website)}
+        {row(links?.telegram ? <TelegramIcon size={18} /> : <Send size={17} />, "Telegram", links?.telegram)}
         <div className={`mn-row${posts && posts.length ? "" : " off"}`}><i><img src="/logo.svg" width={18} height={18} alt="" /></i><b>Wraith traders</b><span>{posts === null ? "checking…" : posts.length ? `${posts.length} post${posts.length > 1 ? "s" : ""} from ${people} trader${people > 1 ? "s" : ""}` : "no posts yet"}</span></div>
       </div>
       <p className="mn-note">Posts on X, Telegram groups and news that mention this token&apos;s address are not visible to Wraith: they need paid or login-only access.</p>

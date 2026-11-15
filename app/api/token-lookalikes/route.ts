@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       txns24h: (p.txns?.h24?.buys ?? 0) + (p.txns?.h24?.sells ?? 0),
       createdAt: p.pairCreatedAt ?? null,
       image: p.info?.imageUrl ?? null,
-    })).filter((x) => x.liquidity >= 500 || x.mcap >= 3000).sort((a, b) => b.mcap - a.mcap).slice(0, 6);
+    })).filter((x) => (x.liquidity >= 500 || x.mcap >= 3000) && !(x.mcap > 5e6 && x.liquidity < x.mcap / 200)).sort((a, b) => b.mcap - a.mcap).slice(0, 6);
     // who stands behind each one: linked X post / website / Telegram, holder count, dev wallet (Jupiter's token info, one batch call)
     type Info = { id?: string; twitter?: string; website?: string; telegram?: string; holderCount?: number; dev?: string; organicScore?: number; isVerified?: boolean; firstPool?: { createdAt?: string } };
     const ids = [mint, ...items.map((i) => i.address)].join(",");
@@ -75,7 +75,12 @@ export async function GET(req: NextRequest) {
       const t = infoMap.get(a);
       return t ? { twitter: t.twitter ?? null, website: t.website ?? null, telegram: t.telegram ?? null, holders: t.holderCount ?? null, dev: t.dev ?? null, organic: t.organicScore ?? null } : null;
     };
-    const body = { items: items.map((i) => ({ ...i, links: pick(i.address) })), self: pick(mint) };
+    // a market cap far out of line with the pool behind it is a pricing artefact, not a real big token: drop it (found $6.8B on a 26-minute-old token)
+    const sane = items.filter((i) => {
+      const h = infoMap.get(i.address)?.holderCount;
+      return !(h != null && h < 100 && i.mcap > 1e6);
+    });
+    const body = { items: sane.map((i) => ({ ...i, links: pick(i.address) })), self: pick(mint) };
     cache.set(key, { at: Date.now(), body });
     if (cache.size > 300) cache.delete(cache.keys().next().value as string);
     return NextResponse.json(body);

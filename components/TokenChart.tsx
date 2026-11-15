@@ -1638,18 +1638,13 @@ export default function TokenChart({
 
         {status === "loading" && (
           <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
-            {/* candles that build themselves left to right, green and red, like a chart being drawn live: no text */}
-            <div className="wx-cskel-bars">
-              {Array.from({ length: 30 }, (_, i) => {
-                const mid = 52 - i * 0.9 + Math.sin(i * 0.55) * 14 + Math.sin(i * 1.7) * 6;
-                const body = 7 + ((i * 53) % 15);
-                const up = Math.sin(i * 2.3 + 1) > -0.25;
-                return (
-                  <i key={i} className={up ? "u" : "d"} style={{ ["--y" as string]: `${mid}%`, ["--h" as string]: `${body}%`, ["--w" as string]: `${body * 0.9 + 6}%`, ["--d" as string]: `${i * 38}ms` }} />
-                );
-              })}
-            </div>
+            {/* the Wraith ghost floating over a faint grid, with a radar pulse: on brand, no text */}
             <div className="wx-cskel-grid" />
+            <div className="wx-cskel-ghost">
+              <i /><i /><i />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="" />
+            </div>
           </div>
         )}
         {status === "empty" && (
