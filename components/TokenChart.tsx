@@ -27,6 +27,7 @@ import { RefreshCw, Trash2, X } from "lucide-react";
 import ChartToolsMenu, { ChartToolRail, type ToolId } from "@/components/ChartToolsMenu";
 import { fmtPct, fmtPrice, fmtUsd } from "@/lib/market";
 import { peekCandles } from "@/lib/candleCache";
+import { readTokenNav } from "@/lib/tokenNav";
 import { usePresence } from "@/lib/usePresence";
 import WalletAvatar from "@/components/WalletAvatar";
 import { fillGaps } from "@/lib/candleFill";
@@ -153,6 +154,17 @@ export default function TokenChart({
   const [metric, setMetric] = useState<Metric>("mcap");
   const [style, setStyle] = useState<Style>("candles");
   const [status, setStatus] = useState<Status>("loading");
+  // The scanning loader stays on screen for at least half a second per token, even when the data is instant, so it is actually seen.
+  const [minHold, setMinHold] = useState(true);
+  useEffect(() => {
+    setMinHold(true);
+    const t = window.setTimeout(() => setMinHold(false), 500);
+    return () => window.clearTimeout(t);
+  }, [mint]);
+  const [tickerLabel, setTickerLabel] = useState("");
+  useEffect(() => {
+    try { const m = readTokenNav(mint); setTickerLabel(m?.keyword ? `$${m.keyword.slice(0, 7).toUpperCase()}` : ""); } catch { setTickerLabel(""); }
+  }, [mint]);
   const [candles, setCandles] = useState<ChartCandle[]>([]);
   const [source, setSource] = useState<string>("");
   const [stale, setStale] = useState(false);
@@ -1389,7 +1401,7 @@ export default function TokenChart({
       <div style={{ position: "relative", flex: 1, minHeight: 260 }}>
         <ChartToolRail active={activeTool} drawCount={drawings.length} selCount={selected.length} onPick={pickTool} onDelete={deleteDrawings} />
         <div className="wx-axis-grip" onPointerDown={axisDown} onPointerMove={axisMove} onPointerUp={axisUp} onPointerCancel={axisUp} aria-hidden="true" title="Drag up or down to stretch the candles" />
-        <div ref={hostRef} className={`wx-chart-host${status === "loading" ? " is-loading" : ""}`} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
+        <div ref={hostRef} className={`wx-chart-host${status === "loading" || minHold ? " is-loading" : ""}`} style={{ position: "absolute", inset: 0, cursor: measureMode || tool || selectMode || (measure && !measure.locked) ? "crosshair" : undefined, touchAction: tool || selectMode || measureMode || (measure && !measure.locked) ? "none" : undefined }} />
 
         {(tool || selectMode || measureMode || (measure && !measure.locked)) && (
           <div className="wx-tool-hint" role="status">
@@ -1636,13 +1648,13 @@ export default function TokenChart({
           </button>
         )}
 
-        {status === "loading" && (
+        {(status === "loading" || minHold) && (
           <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
             {/* the Wraith ghost scanning: its light sweeps over floating tags and locks onto one (like the Wraith banner) */}
             <div className="wx-scan">
               <div className="wx-scan-beam" />
-              {["$????", "$????", "$????", "$????", "$????", "$????"].map((t, i) => (
-                <span key={i} className={`wx-scan-tag t${i}`}>{t}</span>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <span key={i} className={`wx-scan-tag t${i}${i === 3 && tickerLabel ? " me" : ""}`}>{i === 3 && tickerLabel ? tickerLabel : "$????"}</span>
               ))}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="wx-scan-ghost" src="/logo.svg" alt="" />
