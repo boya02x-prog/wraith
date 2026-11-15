@@ -1218,3 +1218,25 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
   .wraith-dashboard .wx-chart-toolbar::-webkit-scrollbar { display: none !important; width: 0; height: 0; }
   .wraith-dashboard .wx-chart-toolbar > * { scroll-snap-align: start; }
 }
+
+/* Token icon in the header: the tap-to-enlarge wrapper became the "first child" that the phone layout squeezes to 44px, so the 48px icon inside
+   was squashed into an oval. The wrapper is the fixed square now and the icon always fills it. */
+.wx-token-pic { display: block; aspect-ratio: 1 / 1; flex: 0 0 auto !important; }
+.wx-token-pic > * { width: 100% !important; height: 100% !important; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+@media (max-width: 760px) { .wx-token-id > .wx-token-pic { width: 52px !important; height: 52px !important; flex: 0 0 52px !important; } }
+
+/* ───────── Smoother motion everywhere: compositor-only properties, one easing curve, no layout work during animation ───────── */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); }
+.wx-chart-toolbar > *, .wx-panel .dt, .wx-panel .wx-stats, .wx-panel .wx-safety, .wx-panel .la, .wx-panel .la-chip, .wx-panel .mn,
+.trader-card, .profile-stat-card, .pnlc, .profile-panel, .hc-card, .wx-sr { animation-timing-function: var(--ease-out) !important; backface-visibility: hidden; }
+@keyframes wx-rise { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes wx-from-right { from { opacity: 0; transform: translate3d(14px, 0, 0); } to { opacity: 1; transform: none; } }
+/* long lists: the browser skips drawing cards that are off screen, so scrolling stays at full frame rate */
+.wx-tcard, .sg-card, .hc-card, .trader-card, .hl-row, .tr-row { content-visibility: auto; contain-intrinsic-size: auto 150px; }
+/* taps: instant feedback, springy release */
+.wx-tcard, .sg-card, .hc-card, .trader-card, .wx-side-row, .hl-row, .tr-row, .la-row { transition: transform .22s var(--ease-out), border-color .2s ease, box-shadow .2s ease, background-color .15s ease; }
+.wx-tcard:active, .sg-card:active, .hc-card:active, .trader-card:active, .wx-side-row:active { transition-duration: .06s; }
+/* the bottom sheets and menus glide instead of snapping */
+.wx-sheet, .cm-menu, .pa-pop, .wx-cs-drop { transition-timing-function: var(--ease-out); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
