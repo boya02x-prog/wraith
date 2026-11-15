@@ -4,17 +4,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-interface Item { address: string; name: string; symbol: string; mcap: number; liquidity: number; volume24h: number; txns24h: number; createdAt: number | null; image: string | null }
+interface Links { twitter: string | null; website: string | null; telegram: string | null; holders: number | null; dev: string | null; organic: number | null }
+interface Item { links?: Links | null; address: string; name: string; symbol: string; mcap: number; liquidity: number; volume24h: number; txns24h: number; createdAt: number | null; image: string | null }
 const usd = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${n.toFixed(0)}`);
 const age = (t: number | null) => { if (!t) return "—"; const m = (Date.now() - t) / 60000; return m < 90 ? `${Math.max(1, Math.round(m))}m` : m < 2880 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
 
 export default function Lookalikes({ mint, name, symbol, mcap, createdAt, compact = false }: { mint: string; name: string; symbol: string; mcap: number | null; createdAt: number | null; compact?: boolean }) {
   const [items, setItems] = useState<Item[] | null>(null);
+  const [self, setSelf] = useState<Links | null>(null);
   useEffect(() => {
     let on = true;
     if (!name && !symbol) return;
     fetch(`/api/token-lookalikes?mint=${encodeURIComponent(mint)}&name=${encodeURIComponent(name)}&symbol=${encodeURIComponent(symbol)}`)
-      .then((r) => r.json()).then((d: { items?: Item[] }) => { if (on) setItems(d.items ?? []); }).catch(() => { if (on) setItems([]); });
+      .then((r) => r.json()).then((d: { items?: Item[]; self?: Links | null }) => { if (on) { setItems(d.items ?? []); setSelf(d.self ?? null); } }).catch(() => { if (on) setItems([]); });
     return () => { on = false; };
   }, [mint, name, symbol]);
   if (!items || items.length === 0) return null;
@@ -40,11 +42,23 @@ export default function Lookalikes({ mint, name, symbol, mcap, createdAt, compac
         {items.slice(0, 4).map((i) => (
           <Link key={i.address} href={`/app/token/${i.address}`} className="la-row">
             {i.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={i.image} alt="" /> : <span className="la-ph">{i.symbol[0]}</span>}
-            <span className="la-who"><b>{i.name || i.symbol}</b><small>${i.symbol} · {age(i.createdAt)} old</small></span>
+            <span className="la-who"><b>{i.name || i.symbol}</b><small>${i.symbol} · {age(i.createdAt)} old{i.links?.holders != null ? ` · ${i.links.holders.toLocaleString()} holders` : ""}</small><em className="la-links"><u className={i.links?.twitter ? "on" : ""}>X</u><u className={i.links?.website ? "on" : ""}>Web</u><u className={i.links?.telegram ? "on" : ""}>TG</u></em></span>
             <span className="la-val"><b>{usd(i.mcap)}</b><small>vol {usd(i.volume24h)}</small></span>
           </Link>
         ))}
       </div>
+      {(() => {
+        const handle = (u: string | null | undefined) => (u ? (u.match(/(?:x|twitter)\.com\/([^/?#]+)/i)?.[1] ?? "").toLowerCase() : "");
+        const mine = handle(self?.twitter);
+        const sameX = mine ? items.filter((i) => handle(i.links?.twitter) === mine).length : 0;
+        const linked = [self?.twitter, ...items.map((i) => i.links?.twitter)].filter(Boolean).length;
+        const tips: string[] = [];
+        if (self && !self.twitter && !self.website && items.some((i) => i.links?.twitter || i.links?.website)) tips.push("This one has no X or website linked, but a lookalike does.");
+        if (self?.twitter && /\/status\//.test(self.twitter)) tips.push("The creator linked a specific X post to this token.");
+        if (sameX > 0) tips.push(`${sameX} lookalike${sameX > 1 ? "s link" : " links"} the same X account.`);
+        if (linked === 0) tips.push("None of them link an X account or website.");
+        return tips.length ? <ul className="la-tips">{tips.map((t) => <li key={t}>{t}</li>)}</ul> : null;
+      })()}
       <p className="la-note">Same or near-identical name. Bigger or older does not prove it is the original: check the creator and socials before you buy.</p>
     </section>
   );

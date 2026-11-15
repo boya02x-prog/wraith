@@ -63,7 +63,19 @@ export async function GET(req: NextRequest) {
       createdAt: p.pairCreatedAt ?? null,
       image: p.info?.imageUrl ?? null,
     })).filter((x) => x.liquidity >= 500 || x.mcap >= 3000).sort((a, b) => b.mcap - a.mcap).slice(0, 6);
-    const body = { items };
+    // who stands behind each one: linked X post / website / Telegram, holder count, dev wallet (Jupiter's token info, one batch call)
+    type Info = { id?: string; twitter?: string; website?: string; telegram?: string; holderCount?: number; dev?: string; organicScore?: number; isVerified?: boolean; firstPool?: { createdAt?: string } };
+    const ids = [mint, ...items.map((i) => i.address)].join(",");
+    const infoMap = new Map<string, Info>();
+    try {
+      const r = await fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${ids}`, { signal: AbortSignal.timeout(7000), headers: { Accept: "application/json" } });
+      if (r.ok) for (const t of (await r.json()) as Info[]) if (t.id) infoMap.set(t.id, t);
+    } catch { /* socials are a bonus: the list still works without them */ }
+    const pick = (a: string) => {
+      const t = infoMap.get(a);
+      return t ? { twitter: t.twitter ?? null, website: t.website ?? null, telegram: t.telegram ?? null, holders: t.holderCount ?? null, dev: t.dev ?? null, organic: t.organicScore ?? null } : null;
+    };
+    const body = { items: items.map((i) => ({ ...i, links: pick(i.address) })), self: pick(mint) };
     cache.set(key, { at: Date.now(), body });
     if (cache.size > 300) cache.delete(cache.keys().next().value as string);
     return NextResponse.json(body);
