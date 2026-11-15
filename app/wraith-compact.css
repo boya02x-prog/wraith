@@ -1206,3 +1206,15 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .hc-head { padding: 4px 2px 14px; } .hc-head strong { font-size: 20px; letter-spacing: -.01em; }
 .hc-filters button { border-radius: 999px !important; padding: 6px 14px !important; font-size: 12.5px !important; }
 .hc-side section { border-radius: 16px !important; border: 1px solid rgba(255, 255, 255, .075) !important; background: var(--surface) !important; }
+
+/* Phone chart toolbar (timeframes + tools): always visible just above Buy/Sell while the chart is on screen, never hidden under the bottom bar,
+   no scrollbar track, and a soft fade on the right edge that shows it scrolls sideways */
+@media (max-width: 760px) {
+  .wraith-dashboard .wx-chart-toolbar {
+    position: sticky; bottom: 0; z-index: 6; background: var(--bg, #050506);
+    scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%); mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+  }
+  .wraith-dashboard .wx-chart-toolbar::-webkit-scrollbar { display: none !important; width: 0; height: 0; }
+  .wraith-dashboard .wx-chart-toolbar > * { scroll-snap-align: start; }
+}
