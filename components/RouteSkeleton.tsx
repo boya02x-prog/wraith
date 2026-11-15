@@ -4,11 +4,18 @@
 import { usePathname } from "next/navigation";
 import PageSkeleton from "@/components/PageSkeleton";
 import TokenSkeleton from "@/components/TokenSkeleton";
+import Header from "@/components/HeaderSlot";
 
 export default function RouteSkeleton() {
   const path = usePathname() ?? "";
   const tok = path.match(/^\/app\/token\/([^/?#]+)/);
-  if (tok) return <TokenSkeleton address={decodeURIComponent(tok[1])} />;
+  // same wrapper classes and header slot as the real token page, so the placeholder has the SAME layout (flat price bar, chart height)
+  if (tok) return (
+    <div className="wraith-dashboard wraith-token-page wx-page">
+      <Header />
+      <div className="wx-mobile-body"><TokenSkeleton address={decodeURIComponent(tok[1])} /></div>
+    </div>
+  );
   if (path.startsWith("/app/traders") || path.startsWith("/app/u/")) return <PageSkeleton kind="traders" />;
   if (path.startsWith("/app/profile")) return <PageSkeleton kind="profile" />;
   if (path.startsWith("/app/quests")) return <PageSkeleton kind="quests" />;

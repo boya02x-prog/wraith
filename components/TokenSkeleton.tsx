@@ -2,6 +2,7 @@
 // The token page the instant a token is tapped: name, icon and market cap come from what the list already knew, and every other
 // block is a same-size placeholder. The real panel (a big chunk) swaps in without anything moving. Same class names as the real
 // header and price block, so the layout cannot jump when the data lands.
+import { useEffect } from "react";
 import { TokenIcon } from "@/components/TokenIcon";
 import { readTokenNav } from "@/lib/tokenNav";
 
@@ -9,6 +10,8 @@ const usd = (n: number | undefined | null) => (n == null ? "" : n >= 1e6 ? `$${(
 
 export default function TokenSkeleton({ address }: { address: string }) {
   const m = readTokenNav(address);
+  // a new token always starts at the top (the old page's scroll position used to carry over and show the placeholder half-way down)
+  useEffect(() => { try { window.scrollTo(0, 0); document.querySelectorAll(".wx-mobile-body, .wx-center").forEach((e) => { (e as HTMLElement).scrollTop = 0; }); } catch { /* ignore */ } }, [address]);
   return (
     <div className="wx-panel" aria-busy="true" aria-label="Loading token">
       <header className="wx-token-head">
