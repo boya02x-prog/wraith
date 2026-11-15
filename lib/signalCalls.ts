@@ -60,6 +60,28 @@ async function col() {
 }
 
 /** Live market caps straight from DexScreener (batched, <= 30 mints). */
+
+/** Largest rise the REAL candles show since a call: highest price after the call divided by the price at the call (Jupiter's chart data,
+ *  the same source as the chart on the token page). Used to check a claimed 10x+ peak: the market-cap feed can return a wrong number for
+ *  a thin or wrong pool (LOS was "recorded" at 14M market cap and a 396x win while its chart peaked near 2.7x). null = could not check. */
+export async function chartRise(mint: string, fromMs: number): Promise<number | null> {
+  try {
+    const r = await fetch(`https://datapi.jup.ag/v2/charts/${mint}?interval=15_MINUTE&to=${Date.now()}&candles=300&type=price&quote=usd`, { signal: AbortSignal.timeout(8000), headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { candles?: { time: number; high: number; close: number }[] };
+    const cs = (j.candles ?? []).filter((c) => c.high > 0);
+    if (cs.length < 3) return null;
+    const t0 = fromMs / 1000;
+    // the chart only reaches back about 3 days: a call older than that has no price at the call to compare against
+    if (cs[0].time > t0 + 1800) return null;
+    const at = cs.find((c) => c.time + 900 > t0);
+    if (!at) return null;
+    const base = at.close > 0 ? at.close : at.high;
+    const hi = Math.max(...cs.filter((c) => c.time + 900 > t0).map((c) => c.high));
+    return base > 0 ? hi / base : null;
+  } catch { return null; }
+}
+
 export async function liveMcaps(items: ({ address: string; chain?: string } | string)[]): Promise<Map<string, number>> {
   const norm = items.map((i) => (typeof i === "string" ? { address: i, chain: undefined } : i));
   const evmItems = norm.filter((i) => i.chain && i.chain !== "solana").map((i) => ({ address: i.address, chain: i.chain as string }));
@@ -200,7 +222,7 @@ export async function refreshCalls(force = false) {
       }) : [];
       await Promise.all(goneOps);
       await Promise.all(
-        [...live.entries()].map(([address, mcap]) => {
+        [...live.entries()].map(async ([address, mcap]) => {
           if (!(mcap > 0) || !Number.isFinite(mcap)) return undefined;
           const d = prior.get(address);
           const prev = d?.lastMcap && d.lastMcap > 0 ? d.lastMcap : d?.spottedMcap ?? 0;
@@ -210,6 +232,14 @@ export async function refreshCalls(force = false) {
           if (jump > 25 || jump < 1 / 25) {
             const confirmed = d?.pendingMcap && Math.abs(mcap / d.pendingMcap - 1) < 0.3;
             if (!confirmed) return c.updateOne({ address }, { $set: { pendingMcap: mcap, lastCheck: now } }).catch(() => undefined);
+          }
+          // A big new peak is checked against the real candles before it is kept forever: the feed can return a wrong market cap for
+          // a thin pool, and one wrong number was becoming a "396x win" notification.
+          const smc = (d as { spottedMcap?: number } | undefined)?.spottedMcap ?? 0;
+          const oldPeak = (d as { peakMcap?: number } | undefined)?.peakMcap ?? smc;
+          if (smc > 0 && mcap >= smc * 10 && mcap > oldPeak * 1.5) {
+            const rise = await chartRise(address, (d as { spottedAt?: number } | undefined)?.spottedAt ?? now - 24 * 3600e3);
+            if (rise !== null && rise < (mcap / smc) * 0.35) return c.updateOne({ address }, { $set: { lastCheck: now, badTick: mcap } }).catch(() => undefined);
           }
           // Path, not only the end points: WHEN it first doubled and WHEN it first lost half. "Doubled before losing half" is the
           // question a trader actually cares about, and it is learnable from these timestamps (peak/last alone cannot tell the order).

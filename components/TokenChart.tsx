@@ -1638,15 +1638,18 @@ export default function TokenChart({
 
         {status === "loading" && (
           <div className="wx-chart-overlay wx-cskel" aria-busy="true" aria-label="Loading chart">
-            {/* a line that draws itself across the chart, with a glowing head: no text, no fake candles */}
-            <svg className="wx-cskel-svg" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="wxcl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgb(var(--accent-rgb))" stopOpacity=".28" /><stop offset="1" stopColor="rgb(var(--accent-rgb))" stopOpacity="0" /></linearGradient>
-              </defs>
-              <path className="wx-cskel-area" d="M0 150 C30 140 50 170 85 150 S130 90 165 110 S215 170 250 120 S300 60 335 80 S380 50 400 40 L400 220 L0 220 Z" fill="url(#wxcl)" />
-              <path className="wx-cskel-line" d="M0 150 C30 140 50 170 85 150 S130 90 165 110 S215 170 250 120 S300 60 335 80 S380 50 400 40" fill="none" stroke="rgb(var(--accent-rgb))" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" pathLength="1" />
-            </svg>
-            <i className="wx-cskel-dot" />
+            {/* candles that build themselves left to right, green and red, like a chart being drawn live: no text */}
+            <div className="wx-cskel-bars">
+              {Array.from({ length: 30 }, (_, i) => {
+                const mid = 52 - i * 0.9 + Math.sin(i * 0.55) * 14 + Math.sin(i * 1.7) * 6;
+                const body = 7 + ((i * 53) % 15);
+                const up = Math.sin(i * 2.3 + 1) > -0.25;
+                return (
+                  <i key={i} className={up ? "u" : "d"} style={{ ["--y" as string]: `${mid}%`, ["--h" as string]: `${body}%`, ["--w" as string]: `${body * 0.9 + 6}%`, ["--d" as string]: `${i * 38}ms` }} />
+                );
+              })}
+            </div>
+            <div className="wx-cskel-grid" />
           </div>
         )}
         {status === "empty" && (
