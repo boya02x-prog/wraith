@@ -52,16 +52,16 @@ const unb64u = (s: string) => {
 };
 
 /** A signed session for this Privy user. null when the server has no secret to sign with (then the old 1-hour cookie is used). */
-export async function signSession(userId: string, now = Date.now()): Promise<string | null> {
+export async function signSession(userId: string, now = Date.now(), owner = false): Promise<string | null> {
   const k = key();
   if (!k || !userId) return null;
-  const body = b64u(enc.encode(JSON.stringify({ u: userId, e: Math.floor(now / 1000) + SESSION_DAYS * 86_400 })));
+  const body = b64u(enc.encode(JSON.stringify({ u: userId, e: Math.floor(now / 1000) + SESSION_DAYS * 86_400, ...(owner ? { o: 1 } : {}) })));
   const sig = await crypto.subtle.sign("HMAC", await k, enc.encode(PREFIX + body));
   return `${PREFIX}${body}.${b64u(new Uint8Array(sig))}`;
 }
 
 /** Who a session cookie belongs to, or null if it is not one of ours, was edited, or has run out. */
-export async function readSession(token: string | null | undefined, now = Date.now()): Promise<{ userId: string; exp: number } | null> {
+export async function readSession(token: string | null | undefined, now = Date.now()): Promise<{ userId: string; exp: number; owner: boolean } | null> {
   if (!token || !token.startsWith(PREFIX)) return null;
   const k = key();
   if (!k) return null;
@@ -71,9 +71,9 @@ export async function readSession(token: string | null | undefined, now = Date.n
   try {
     const ok = await crypto.subtle.verify("HMAC", await k, unb64u(token.slice(dot + 1)), enc.encode(PREFIX + body));
     if (!ok) return null;
-    const p = JSON.parse(dec.decode(unb64u(body))) as { u?: unknown; e?: unknown };
+    const p = JSON.parse(dec.decode(unb64u(body))) as { u?: unknown; e?: unknown; o?: unknown };
     if (typeof p.u !== "string" || !p.u || typeof p.e !== "number" || p.e * 1000 <= now) return null;
-    return { userId: p.u, exp: p.e };
+    return { userId: p.u, exp: p.e, owner: p.o === 1 };
   } catch {
     return null;
   }

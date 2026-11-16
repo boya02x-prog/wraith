@@ -20,11 +20,15 @@ const PRIVY_SESSION_COOKIE = "wraith_privy_session";
  * (lib/appSession.ts); one written before that existed holds a raw Privy token and is honoured until it runs out.
  */
 async function sessionUser(token: string | undefined): Promise<string | null> {
+  return (await sessionInfo(token))?.userId ?? null;
+}
+async function sessionInfo(token: string | undefined): Promise<{ userId: string; owner: boolean } | null> {
   if (!token) return null;
   const own = await readSession(token);
-  if (own) return own.userId;
+  if (own) return { userId: own.userId, owner: own.owner };
   if (isOwnSessionFormat(token)) return null; // ours, but edited or expired
-  return (await verifyPrivyAccessToken(token))?.userId ?? null;
+  const raw = (await verifyPrivyAccessToken(token))?.userId;
+  return raw ? { userId: raw, owner: false } : null;
 }
 
 async function route(request: NextRequest) {
@@ -73,15 +77,15 @@ const allowedIds = () => new Set((process.env.WRAITH_ALLOWED_USERS ?? "").split(
 const PRIVATE_OPEN_PREFIXES = ["/api/auth/", "/api/cron/", "/api/telegram/bot", "/api/telegram/setup", "/_next/", "/.well-known/"];
 const PRIVATE_OPEN_PATHS = new Set(["/login", "/privacy", "/terms", "/favicon.ico", "/manifest.webmanifest", "/sw.js", "/offline.html"]);
 const NO_INDEX = "noindex, nofollow, noarchive";
-const PRIVATE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="${NO_INDEX}"><title>Private</title><style>html,body{height:100%;margin:0;background:#0c0c0d;color:#ededee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px}h1{font-size:20px;margin:0 0 8px}p{margin:0;color:#a1a1a6;font-size:14px;line-height:1.5}</style></head><body><main><h1>This site is private right now</h1><p>Check back soon.</p></main></body></html>`;
+const PRIVATE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="${NO_INDEX}"><title>Wraith - under construction</title><style>html,body{height:100%;margin:0;background:#050506;color:#ededee;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}body{display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(60% 45% at 50% 42%,rgba(255,122,48,.12),transparent 70%),#050506}img{width:64px;height:auto;filter:drop-shadow(0 0 18px rgba(255,122,48,.7));animation:f 2.4s ease-in-out infinite}h1{font-size:22px;margin:18px 0 8px;letter-spacing:.02em}p{margin:0;color:#a1a1a6;font-size:14px;line-height:1.6;max-width:320px}.t{display:inline-block;margin-top:18px;padding:6px 12px;border:1px solid rgba(255,122,48,.4);border-radius:999px;color:#ffb48a;font:700 11px/1 ui-monospace,monospace;letter-spacing:.12em}@keyframes f{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@media(prefers-reduced-motion:reduce){img{animation:none}}</style></head><body><main><img src="/logo.svg" alt=""><h1>Wraith is under construction</h1><p>We are building something big. The scanner is running and working hard in the background. Come back soon.</p><span class="t">COMING SOON</span></main></body></html>`;
 
 async function privateGate(request: NextRequest): Promise<NextResponse | null> {
   const { pathname, search } = request.nextUrl;
   if (pathname === "/robots.txt") return new NextResponse(["User-agent: *", "Disallow: /", ""].join("\n"), { headers: { "content-type": "text/plain; charset=utf-8", "x-robots-tag": NO_INDEX } });
   if (PRIVATE_OPEN_PATHS.has(pathname) || PRIVATE_OPEN_PREFIXES.some((p) => pathname.startsWith(p))) return null;
-  const userId = await sessionUser(request.cookies.get(PRIVY_SESSION_COOKIE)?.value);
-  const claims = userId ? { userId } : null;
-  if (claims && allowedIds().has(claims.userId)) return null; // you, or someone you listed
+  const info = await sessionInfo(request.cookies.get(PRIVY_SESSION_COOKIE)?.value);
+  const claims = info ? { userId: info.userId } : null;
+  if (info && (info.owner || allowedIds().has(info.userId))) return null; // the owner (admin email), or someone you listed
   const headers = { "x-robots-tag": NO_INDEX, "cache-control": "no-store" };
   const isApi = pathname.startsWith("/api/");
   if (!claims) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrivySession, PRIVY_SESSION_COOKIE } from "@/lib/privyAuth";
+import { getPrivyClient } from "@/lib/privyServer";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { SESSION_DAYS, signSession } from "@/lib/appSession";
 
@@ -8,11 +9,21 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   // Private mode (see proxy.ts): this endpoint stays reachable so the sign-in page can work, but a stranger who signs in with Google
   // must not get a Wraith account created for them, so only the listed accounts go any further.
+  let ownerLogin = false;
   if (process.env.WRAITH_PRIVATE === "1") {
     const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
     const claims = bearer ? await verifyPrivyAccessToken(bearer) : null;
     const allowed = (process.env.WRAITH_ALLOWED_USERS ?? "").split(",").map((v) => v.trim()).filter(Boolean);
-    if (!claims || !allowed.includes(claims.userId)) {
+    // the owner gets in by sign-in email (Privy verified it): QUESTS_ADMIN_EMAILS or WRAITH_ALLOWED_EMAILS
+    if (claims && !allowed.includes(claims.userId)) {
+      try {
+        const pu = await getPrivyClient()?.getUser(claims.userId);
+        const mail = (pu?.email?.address ?? pu?.google?.email ?? "").toLowerCase();
+        const owners = `${process.env.QUESTS_ADMIN_EMAILS ?? ""},${process.env.WRAITH_ALLOWED_EMAILS ?? ""}`.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+        if (mail && owners.includes(mail)) ownerLogin = true;
+      } catch { /* not the owner */ }
+    }
+    if (!claims || (!ownerLogin && !allowed.includes(claims.userId))) {
       // the id comes from the caller's own signed token, so showing it back to them reveals nothing; it lets the sign-in screen
       // display it, so you can copy exactly that account's id into the allowed list
       return NextResponse.json({ error: "Private", ...(claims ? { yourId: claims.userId } : {}) }, { status: 403 });
@@ -28,7 +39,7 @@ export async function POST(request: NextRequest) {
   // See lib/appSession.ts for what that session can and cannot do.
   const bearer = getBearerToken(request);
   const claims = await verifyPrivyAccessToken(bearer);
-  const own = claims ? await signSession(claims.userId) : null;
+  const own = claims ? await signSession(claims.userId, Date.now(), ownerLogin) : null;
   const response = NextResponse.json({ ok: true, user: session.user });
   response.cookies.set(PRIVY_SESSION_COOKIE, own ?? bearer, {
     httpOnly: true,
