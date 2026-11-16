@@ -1225,7 +1225,7 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 
 /* Token icon in the header: the tap-to-enlarge wrapper became the "first child" that the phone layout squeezes to 44px, so the 48px icon inside
    was squashed into an oval. The wrapper is the fixed square now and the icon always fills it. */
-.wx-token-pic { display: block; aspect-ratio: 1 / 1; flex: 0 0 auto !important; }
+.wx-token-pic { display: block; aspect-ratio: 1 / 1; width: 52px !important; height: 52px !important; flex: 0 0 52px !important; overflow: hidden; }
 .wx-token-pic > * { width: 100% !important; height: 100% !important; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 @media (max-width: 760px) { .wx-token-id > .wx-token-pic { width: 52px !important; height: 52px !important; flex: 0 0 52px !important; } }
 
