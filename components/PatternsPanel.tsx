@@ -217,12 +217,12 @@ export default function PatternsPanel({ signals, onOpen }: { signals: Sig[]; onO
               const good = p.lift !== null && p.lift >= 1.15;
               const bad = p.lift !== null && p.lift <= 0.85;
               return (
-                <div key={p.id} className="pt-item">
+                <div key={p.id} className={`pt-item${p.trap ? " trap" : ""}${open === p.id ? " open" : ""}`}>
                   <button type="button" className="pt-row" role="row" onClick={() => setOpen(open === p.id ? null : p.id)} aria-expanded={open === p.id}>
                     <span className="pt-name"><span className="pt-title">{p.trap ? <ShieldAlert size={14} /> : null}<span>{p.label}</span></span><em>{p.hint}</em></span>
                     <span>{p.calls.toLocaleString()}</span>
                     <span>{p.rate === null ? <i className="mut" title="Needs 15 or more finished calls before a hit rate means anything">too few</i> : pct(p.rate)}</span>
-                    <span className={good ? "up" : bad ? "down" : ""}>{p.lift === null ? "n/a" : `${p.lift.toFixed(2)}×`}</span>
+                    <span className={`pt-pill ${good ? "up" : bad ? "down" : ""}`}>{p.lift === null ? "n/a" : `${p.lift.toFixed(2)}×`}</span>
                     <span className={n ? "now" : "mut"}>{n || "–"}</span>
                   </button>
                   {open === p.id && (

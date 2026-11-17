@@ -1058,7 +1058,7 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .la-list { display: grid; gap: 4px; }
 .la-row { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 12px; text-decoration: none; color: inherit; transition: background .12s; }
 .la-row:hover { background: rgba(255, 255, 255, .05); }
-.la-row img, .la-ph { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: rgba(var(--accent-rgb), .2); display: grid; place-items: center; font-weight: 800; }
+.la-row > img, .la-ph { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: rgba(var(--accent-rgb), .2); display: grid; place-items: center; font-weight: 800; }
 .la-who, .la-val { display: grid; gap: 2px; min-width: 0; } .la-val { text-align: right; }
 .la-who b, .la-val b { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .la-who small, .la-val small { font-size: 11.5px; color: var(--text-muted); }
@@ -1252,7 +1252,8 @@ html { scroll-behavior: smooth; }
 .la-who small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .la-links { display: inline-flex !important; align-items: center; gap: 6px; margin-top: 3px !important; color: var(--text-muted); }
 .la-links u { display: none; }
-.la-row img, .la-ph { width: 40px; height: 40px; }
+.la-row > img, .la-ph { width: 40px; height: 40px; flex-shrink: 0; }
+.la-links img, .la-links svg { width: 14px !important; height: 14px !important; max-width: 14px; border-radius: 3px; background: none !important; image-rendering: auto; }
 .mn-rows { min-width: 0; }
 .mn-row { min-width: 0; max-width: 100%; box-sizing: border-box; padding: 11px 12px; gap: 10px; }
 .mn-row i { flex: 0 0 22px; display: grid; place-items: center; color: var(--text); }
@@ -1274,3 +1275,23 @@ html { scroll-behavior: smooth; }
 .wx-scan-tag.me { right: 34%; top: 44%; font-size: 10.5px; padding: 3px 8px; color: #ffb48a; border-color: rgba(var(--accent-rgb), .75); background: rgba(var(--accent-rgb), .14); box-shadow: 0 0 14px rgba(var(--accent-rgb), .4); animation: wx-scan-me 2.4s ease-in-out infinite; animation-delay: .5s; }
 @keyframes wx-scan-me { 0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(var(--accent-rgb), .25); } 40%, 60% { transform: scale(1.12); box-shadow: 0 0 20px rgba(var(--accent-rgb), .7); } }
 @media (prefers-reduced-motion: reduce) { .wx-scan-tag.me { animation: none; } }
+
+/* ── Desktop: the lookalikes pill sits between the market cap and the change cells instead of floating over them ── */
+@media (min-width: 761px) {
+  .wx-pricebar .la-chip { position: static; order: 1; align-self: center; margin: 0 auto 0 4px; }
+  .wx-pricebar .wx-changes { order: 2; }
+}
+/* ── Patterns table: one rounded card per pattern, pills for the numbers, red edge on traps ── */
+.pt-table { border: 0; border-radius: 0; overflow: visible; display: grid; gap: 8px; background: none; }
+.pt-row.head { background: none; padding: 0 18px 2px; border: 0; }
+.pt-item { border: 1px solid rgba(255, 255, 255, .06); border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #111113, #0a0a0b); transition: border-color .2s ease; }
+.pt-item + .pt-item { border-top: 1px solid rgba(255, 255, 255, .06); }
+.pt-item:hover, .pt-item.open { border-color: rgba(var(--accent-rgb), .35); }
+.pt-item.trap { box-shadow: inset 3px 0 0 rgba(255, 90, 90, .55); }
+.pt-item .pt-row { padding: 14px 18px; }
+.pt-item .pt-row:hover { background: none; }
+.pt-name { font-size: 14px; } .pt-name em { margin-top: 2px; line-height: 1.35; }
+.pt-pill { padding: 3px 10px; border-radius: 999px; background: rgba(255, 255, 255, .05); font-weight: 700; }
+.pt-pill.up { background: rgba(55, 213, 138, .14); } .pt-pill.down { background: rgba(255, 90, 90, .14); }
+.pt-row .now { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 8px; border-radius: 999px; background: rgba(var(--accent-rgb), .14); }
+.pt-row .now.mut { background: none; }

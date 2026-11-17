@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       image: p.info?.imageUrl ?? null,
     })).filter((x) => (x.liquidity >= 500 || x.mcap >= 3000) && !(x.mcap > 5e6 && x.liquidity < x.mcap / 200)).sort((a, b) => b.mcap - a.mcap).slice(0, 6);
     // who stands behind each one: linked X post / website / Telegram, holder count, dev wallet (Jupiter's token info, one batch call)
-    type Info = { id?: string; twitter?: string; website?: string; telegram?: string; holderCount?: number; dev?: string; organicScore?: number; isVerified?: boolean; firstPool?: { createdAt?: string } };
+    type Info = { id?: string; icon?: string; twitter?: string; website?: string; telegram?: string; holderCount?: number; dev?: string; organicScore?: number; isVerified?: boolean; firstPool?: { createdAt?: string } };
     const ids = [mint, ...items.map((i) => i.address)].join(",");
     const infoMap = new Map<string, Info>();
     try {
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       const h = infoMap.get(i.address)?.holderCount;
       return !(h != null && h < 100 && i.mcap > 1e6);
     });
-    const body = { items: sane.map((i) => ({ ...i, links: pick(i.address) })), self: pick(mint) };
+    const body = { items: sane.map((i) => ({ ...i, image: i.image ?? infoMap.get(i.address)?.icon ?? null, links: pick(i.address) })), self: pick(mint) };
     cache.set(key, { at: Date.now(), body });
     if (cache.size > 300) cache.delete(cache.keys().next().value as string);
     return NextResponse.json(body);
