@@ -63,7 +63,9 @@ async function nativeVerify(reason: string): Promise<boolean> {
   const p = nativeBio();
   if (!p) return false;
   try {
-    await p.authenticate({ reason, cancelTitle: "Use PIN", allowDeviceCredential: true, androidTitle: "Unlock Wraith", androidSubtitle: reason });
+    // The phone's own box shows three lines: title, subtitle and description. They all used to say "Unlock Wraith". Now: a title, a short reason, and the
+    // system adds "Touch the fingerprint sensor" itself.
+    await p.authenticate({ reason, cancelTitle: "Use PIN", allowDeviceCredential: true, androidTitle: "Unlock Wraith", androidSubtitle: "Your wallet stays private" });
     return true;
   } catch { return false; }
 }
@@ -137,7 +139,7 @@ export function biometricVerify(): Promise<boolean> {
 async function biometricVerifyOnce(): Promise<boolean> {
   const s = load();
   if (!s?.on) return false;
-  if (s.id === "native") return nativeVerify("Unlock Wraith");
+  if (s.id === "native") return nativeVerify("Confirm it's you to open the app");
   // The page asks the phone for the fingerprint before React loads (see layout), so the prompt is already up.
   const w = window as unknown as { __wxBio?: Promise<Credential | null> };
   const early = w.__wxBio;
