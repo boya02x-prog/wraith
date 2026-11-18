@@ -32,6 +32,8 @@ interface Signal {
   risks: string[];
   patterns?: string[];
   odds?: number;
+  /** the model's chance (%) that this call collapses below 20% of its price; absent until the collapse model is active */
+  rugRisk?: number;
 }
 
 type Filter = "all" | "hot" | "fresh" | "volume" | "safe";
@@ -137,6 +139,11 @@ function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; sho
         <div><small>Age</small><b>{t.createdAt ? fmtAge(t.createdAt) : "—"}</b></div>
       </div>
       <div className="sg-tags">
+        {s.rugRisk !== undefined && (
+          <span className={`sg-tag sg-collapse ${s.rugRisk >= 60 ? "high" : s.rugRisk >= 40 ? "mid" : "low"}`} title="The model's chance that this token collapses to a fifth of its price or less. Tested on calls it had never seen: the riskiest fifth collapsed about 85% of the time, the safest fifth about 1%.">
+            Collapse risk {s.rugRisk}% · {s.rugRisk >= 60 ? "high" : s.rugRisk >= 40 ? "elevated" : "lower"}
+          </span>
+        )}
         <span className="sg-tag sg-risklevel" title={riskLevel(s.risks.length).hint} style={{ color: riskLevel(s.risks.length).color, borderColor: riskLevel(s.risks.length).color }}>● {riskLevel(s.risks.length).label}</span>
         {s.tags.map((x) => <span key={x} className="sg-tag">{x}</span>)}
         {s.risks.map((x) => <span key={x} className="sg-tag risk">{x}</span>)}

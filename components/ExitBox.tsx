@@ -28,6 +28,9 @@ export default function ExitBox({ mint, symbol, on, setOn, prefs, setPrefs, allo
         <span>Auto-exit (TP / SL / trail)</span>
         <span style={{ color: on ? "#37d58a" : "var(--text-muted)", fontSize: 10 }}>{on ? "ON" : "OFF"}</span>
       </button>
+      {!on && (
+        <p className="wx-td-warn" role="note">Auto-exit is off: nothing will sell for you if the price drops. Turn it on to set a take-profit and a stop-loss.</p>
+      )}
       {on && (
         <>
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
