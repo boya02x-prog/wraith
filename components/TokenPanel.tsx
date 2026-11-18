@@ -22,7 +22,7 @@ import Lookalikes from "@/components/Lookalikes";
 import Mentions from "@/components/Mentions";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
 import ChainLogo from "@/components/ChainLogo";
-import { launchpadOf } from "@/lib/launchpad";
+import LaunchpadIcon from "@/components/LaunchpadIcon";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
 import { readTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
@@ -669,7 +669,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
             <div className="wx-token-name">
               <h1>{symbol}</h1>
               <span className="wx-net-logo" title="Solana"><ChainLogo chain="solana" size={20} /></span>
-              {launchpadOf(mint) && <span className="wx-badge launch" title="Where this token was launched">{launchpadOf(mint)}</span>}
+              <LaunchpadIcon address={mint} size={20} />
               {snap?.onCurve && <span className="wx-badge accent">Bonding curve</span>}
               {snap?.graduated && <span className="wx-badge">Graduated</span>}
               {snap?.dexId && !snap.onCurve && <span className="wx-badge muted">{snap.dexId}</span>}

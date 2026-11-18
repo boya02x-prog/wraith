@@ -1383,3 +1383,6 @@ html { scroll-behavior: smooth; }
 /* the network is shown as its logo only: plain, in the theme, a little bigger (the name is in the tooltip) */
 .wx-net-logo { display: inline-grid; place-items: center; flex: none; line-height: 0; opacity: .95; filter: saturate(.9); }
 .wx-net-logo svg, .wx-net-logo img { display: block; }
+
+.wx-lp-logo { display: inline-grid; place-items: center; flex: none; line-height: 0; }
+.wx-lp-initial { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 6px; background: rgba(var(--accent-rgb), .16); color: var(--accent-text); font-weight: 800; }
