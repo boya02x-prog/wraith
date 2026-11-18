@@ -1347,3 +1347,10 @@ html { scroll-behavior: smooth; }
 /* route skeleton: phones show one column, desktop shows the three-column workspace */
 .rs-desk { display: none; } .rs-mob { display: block; }
 @media (min-width: 900px) { .rs-desk { display: flex; } .rs-mob { display: none; } }
+
+/* phones: the bottom bar already has Market / Scanner / Wins / Intel / Traders, so the same row at the top is hidden */
+@media (max-width: 767px) { .wx-subnav { display: none !important; } }
+/* phones: a vertical swipe that starts on the chart scrolls the PAGE (sideways swipes still move the chart). While a drawing tool is on, the chart keeps the touch. */
+@media (max-width: 899px) {
+  .wx-chart-host:not([style*="touch-action: none"]), .wx-chart-host:not([style*="touch-action: none"]) * { touch-action: pan-y pinch-zoom !important; }
+}
