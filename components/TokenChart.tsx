@@ -1536,7 +1536,13 @@ export default function TokenChart({
                 const left = right ? spotRect.right + gap : Math.max(8, spotRect.left - gap - W);
                 return (
                   <div style={{ position: "fixed", left, top: 12, bottom: 12, width: W, display: "flex", alignItems: "center", zIndex: 1300, pointerEvents: "none" }}>
-                    <div style={{ maxHeight: "100%", width: "100%", overflowY: "auto", overscrollBehavior: "contain", pointerEvents: spotPinRef.current ? "auto" : "none", borderRadius: 14, scrollbarWidth: "thin" }}>{spotCard}</div>
+                    <div
+                      onMouseEnter={() => { if (spotCloseRef.current) { clearTimeout(spotCloseRef.current); spotCloseRef.current = null; } }}
+                      onMouseLeave={() => { if (spotPinRef.current) return; if (spotCloseRef.current) clearTimeout(spotCloseRef.current); spotCloseRef.current = setTimeout(() => setSpotHover(false), 250); }}
+                      onWheel={(e) => e.stopPropagation()}
+                      className="wx-spot-scroll"
+                      style={{ maxHeight: "100%", width: "100%", overflowY: "auto", overscrollBehavior: "contain", pointerEvents: "auto", borderRadius: 14, scrollbarWidth: "thin", paddingBottom: 2 }}
+                    >{spotCard}</div>
                   </div>
                 );
               })(),
