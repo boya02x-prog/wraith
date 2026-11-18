@@ -2,7 +2,7 @@
 // Recent swaps for a token (last ~50 on its deepest pool) from GeckoTerminal.
 // Feeds the "Swaps" tab + live trade tape on the token page.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { edge } from "@/lib/edge";
 import { SOLANA_MINT_RE } from "@/lib/market";
 import { arr, GECKO, GECKO_HEADERS, getJson, getSolUsd, num, obj, resolvePool } from "@/lib/marketProviders";
@@ -122,6 +122,16 @@ export async function GET(req: NextRequest) {
 
   const hit = cache.get(mint);
   if (hit && Date.now() - hit.ts < CACHE_MS) return edge(NextResponse.json({ trades: hit.trades }), 4, 15);
+
+  // Stale-while-revalidate: trades up to 10 minutes old are returned at once and ONE refresh runs after the response.
+  if (hit && Date.now() - hit.ts < 10 * 60_000) {
+    if (!inflight.has(mint)) {
+      const bg = load(mint).then((t) => { if (t) cache.set(mint, { trades: t, ts: Date.now() }); return t; }).catch(() => null).finally(() => inflight.delete(mint));
+      inflight.set(mint, bg);
+      after(() => bg);
+    }
+    return edge(NextResponse.json({ trades: hit.trades }), 3, 15);
+  }
 
   let job = inflight.get(mint);
   if (!job) {

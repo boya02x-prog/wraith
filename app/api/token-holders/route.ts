@@ -1,6 +1,6 @@
 // GET /api/token-holders?mint= → top 20 holder wallets (owner-resolved, one RPC round trip each) + concentration.
 // Server side so the browser never hammers a public RPC with 20+ calls (that is why the tab said "unavailable").
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { edge } from "@/lib/edge";
 import { SOLANA_MINT_RE } from "@/lib/market";
 
@@ -45,24 +45,16 @@ async function jupiterHolders(mint: string) {
   } catch { return null; }
 }
 
-export async function GET(req: NextRequest) {
-  const mint = req.nextUrl.searchParams.get("mint") ?? "";
-  if (!SOLANA_MINT_RE.test(mint)) return NextResponse.json({ error: "Invalid mint" }, { status: 400 });
-  const hit = cache.get(mint);
-  if (hit && Date.now() - hit.ts < 30_000) return edge(NextResponse.json(hit.body), 15, 60);
-
+async function compute(mint: string): Promise<object | null> {
   const fast = await jupiterHolders(mint);
-  if (fast) { cache.set(mint, { ts: Date.now(), body: fast }); return edge(NextResponse.json(fast), 15, 60); }
+  if (fast) { cache.set(mint, { ts: Date.now(), body: fast }); return fast as object; }
 
   type Largest = { value: { address: string; amount: string; decimals: number; uiAmount: number | null }[] };
   const [largest, supply] = await Promise.all([
     rpc<Largest>("getTokenLargestAccounts", [mint, { commitment: "confirmed" }]),
     rpc<{ value: { amount: string; decimals: number; uiAmount: number | null } }>("getTokenSupply", [mint, { commitment: "confirmed" }]),
   ]);
-  if (!largest || !supply) {
-    if (hit) return NextResponse.json({ ...(hit.body as object), stale: true });
-    return NextResponse.json({ holders: [], error: "RPC busy" }, { status: 502 });
-  }
+  if (!largest || !supply) return null;
   const accts = largest.value.slice(0, 20);
   const infos = await rpc<{ value: ({ data?: { parsed?: { info?: { owner?: string } } } } | null)[] }>("getMultipleAccounts", [accts.map((a) => a.address), { encoding: "jsonParsed" }]);
   const total = supply.value.uiAmount ?? Number(supply.value.amount) / 10 ** supply.value.decimals;
@@ -74,5 +66,27 @@ export async function GET(req: NextRequest) {
   const holders = [...agg.entries()].map(([wallet, quantity]) => ({ wallet, quantity, share: total > 0 ? (quantity / total) * 100 : 0 })).sort((a, b) => b.quantity - a.quantity);
   const body = { holders, top10: holders.slice(0, 10).reduce((s, h) => s + h.share, 0), total };
   cache.set(mint, { ts: Date.now(), body });
-  return edge(NextResponse.json(body), 15, 60);
+  return body as object;
+}
+
+const holdersInflight = new Map<string, Promise<object | null>>();
+
+export async function GET(req: NextRequest) {
+  const mint = req.nextUrl.searchParams.get("mint") ?? "";
+  if (!SOLANA_MINT_RE.test(mint)) return NextResponse.json({ error: "Invalid mint" }, { status: 400 });
+  const hit = cache.get(mint);
+  if (hit && Date.now() - hit.ts < 30_000) return edge(NextResponse.json(hit.body), 15, 60);
+  // Stale-while-revalidate: a holder list up to 10 minutes old is returned at once, and ONE refresh runs after the response.
+  if (hit && Date.now() - hit.ts < 10 * 60_000) {
+    if (!holdersInflight.has(mint)) {
+      const bg = compute(mint).catch(() => null).finally(() => holdersInflight.delete(mint));
+      holdersInflight.set(mint, bg);
+      after(() => bg);
+    }
+    return edge(NextResponse.json(hit.body), 5, 30);
+  }
+  const fresh = await compute(mint);
+  if (fresh) return edge(NextResponse.json(fresh), 15, 60);
+  if (hit) return NextResponse.json({ ...(hit.body as object), stale: true });
+  return NextResponse.json({ holders: [], error: "RPC busy" }, { status: 502 });
 }

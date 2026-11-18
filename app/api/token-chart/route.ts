@@ -15,7 +15,7 @@
 //   4. gaps are forward-filled and the series is extended to "now"
 //   5. last good series is served (marked stale) if every provider fails
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { edge } from "@/lib/edge";
 import { Connection } from "@solana/web3.js";
 import { fromPumpFunOnChain } from "@/lib/onchain-pumpfun";
@@ -490,6 +490,7 @@ export async function GET(req: NextRequest) {
         .catch(() => null)
         .finally(() => inflight.delete(key));
       inflight.set(key, bg);
+      after(() => bg); // keeps the refresh alive on Vercel after the answer has been sent
     }
     return NextResponse.json({ candles: hit.candles, source: hit.source, ...(Date.now() - hit.ts > 120_000 ? { stale: true } : {}), intervalSec: tf.sec, updatedAt: hit.ts });
   }
