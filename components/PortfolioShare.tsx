@@ -1,7 +1,7 @@
 "use client";
 // "Share my portfolio": a sheet with a picture card (avatar, value, change over 24h / 7d / 30d, the realized-profit curve, three stat boxes and
 // the invite code), drawn on a canvas so the same drawing is the preview, the shared PNG, the copied image and the recorded video.
-// The background can be YOUR photo or a short video clip of a trade or your account (picked from the device, never uploaded anywhere).
+// Nothing has to be picked: the card builds itself. The background can OPTIONALLY be your own photo or a short video clip (picked from the device, never uploaded anywhere).
 // Numbers come from the profile page (real wallet + cash + closed trades); nothing is made up here. With no closed trades
 // in the range the curve is a flat line, the same as the figure above it.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -268,7 +268,7 @@ export default function PortfolioShare({
         </div>
         <div className="ps-opts">
           <input ref={fileRef} type="file" accept="image/*,video/*" hidden onChange={(e) => { void pickBg(e.target.files?.[0]); e.target.value = ""; }} />
-          <button type="button" className="ps-ref on" onClick={() => fileRef.current?.click()}><ImagePlus size={16} /> {bg ? "Change photo / video" : "Add a photo or video"}</button>
+          <button type="button" className="ps-ref on" onClick={() => fileRef.current?.click()}><ImagePlus size={16} /> {bg ? "Change background" : "Optional: your own photo or video background"}</button>
           {bg && <button type="button" className="ps-ref" onClick={() => { if (bgUrl.current) { URL.revokeObjectURL(bgUrl.current); bgUrl.current = null; } setBg(null); }}><Trash2 size={16} /> Remove</button>}
         </div>
         <div className="ps-play">
