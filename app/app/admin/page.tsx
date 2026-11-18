@@ -70,6 +70,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [armed, setArmed] = useState(false);
   const [siteArmed, setSiteArmed] = useState(false);
+  const [undoArmed, setUndoArmed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async () => {
@@ -123,6 +124,23 @@ export default function AdminPage() {
     [a[i], a[j]] = [a[j], a[i]];
     return { ...f, roadmap: a };
   });
+
+  // Takes a (test) launch back to the pre-launch state: tiers off, free beta on, holders room closed, no auto-launch, no date, OMEN back to "soon".
+  // The token address is left as it is (clear it in step 1 if it was only a test). It does not touch site access.
+  function undoLaunch() {
+    if (!form) return;
+    if (!undoArmed) { setUndoArmed(true); setTimeout(() => setUndoArmed(false), 6000); return; }
+    setUndoArmed(false);
+    void save({
+      ...form,
+      tiersLive: false,
+      featuresFree: true,
+      vipRoomOpen: false,
+      autoLaunch: false,
+      omenLaunchAt: "",
+      roadmap: form.roadmap.map((r) => (r.id === "omen" ? { ...r, status: "soon", date: "" } : r)),
+    });
+  }
 
   function launchNow() {
     if (!form) return;
@@ -275,6 +293,11 @@ export default function AdminPage() {
               <Rocket size={15} /> {preview.tiersLive ? "Already launched" : armed ? "Tap again to confirm" : "Launch OMEN now"}
             </button>
             <span className="q-note">Does four things at once: turns tiers on, ends the free beta, opens the holders room and marks OMEN as LIVE on the roadmap.</span>
+            {preview.tiersLive && (
+              <button type="button" className={`q-btn is-ghost ad-undo${undoArmed ? " is-armed" : ""}`} onClick={undoLaunch} disabled={saving}>
+                {undoArmed ? "Tap again to confirm" : "Undo launch (it was a test)"}
+              </button>
+            )}
           </div>
         </div>
       </section>

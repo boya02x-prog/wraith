@@ -126,3 +126,5 @@
 /* the section nav floats under the top bar, so every admin section is one tap away from anywhere on the page */
 .ad-nav { position: sticky; top: calc(var(--wx-header-h, 62px) + 8px); z-index: 40; box-shadow: 0 10px 30px rgba(0, 0, 0, .55); }
 .ad-card { scroll-margin-top: 130px; }
+
+.ad-undo { margin-top: 8px; } .ad-undo.is-armed { border-color: rgba(255, 138, 115, .6); color: #ff8a73; }
