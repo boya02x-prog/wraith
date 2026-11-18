@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrivySession, PRIVY_SESSION_COOKIE } from "@/lib/privyAuth";
 import { getPrivyClient } from "@/lib/privyServer";
+import { isSitePrivate } from "@/lib/siteAccess";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { SESSION_DAYS, signSession } from "@/lib/appSession";
 
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   // Private mode (see proxy.ts): this endpoint stays reachable so the sign-in page can work, but a stranger who signs in with Google
   // must not get a Wraith account created for them, so only the listed accounts go any further.
   let ownerLogin = false;
-  if (process.env.WRAITH_PRIVATE === "1") {
+  if (await isSitePrivate()) {
     const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
     const claims = bearer ? await verifyPrivyAccessToken(bearer) : null;
     const allowed = (process.env.WRAITH_ALLOWED_USERS ?? "").split(",").map((v) => v.trim()).filter(Boolean);

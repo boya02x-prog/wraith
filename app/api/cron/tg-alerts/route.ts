@@ -3,6 +3,7 @@
 //   1. new HOT/WATCH signals  2. win milestones (2x, 3x, 5x, 10x…) on every tracked call.
 // Auth: Vercel cron sends "Authorization: Bearer $CRON_SECRET"; external cron can use ?key=$CRON_SECRET.
 // Free option if your host only runs daily crons: ping this URL every minute from cron-job.org.
+import { isSitePrivate } from "@/lib/siteAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { callGet } from "@/lib/internalCall";
 import { getDb } from "@/lib/mongoClient";
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
       phonePush: fcmConfigured() ? "ok (Firebase key loaded)" : "NOT WORKING: FIREBASE_SERVICE_ACCOUNT is missing or not valid JSON",
       phonesLinked: phones,
       webPush: process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? "set" : "not set",
-      privateMode: process.env.WRAITH_PRIVATE === "1" ? "on" : "off",
+      privateMode: (await isSitePrivate()) ? "on" : "off",
       // vetting lookups: how many Helius calls today's allowance has released so far, how many were spent, how many were wanted
       vettingBudget: await intelBudgetStatus(),
       lastAlertRun: lastRun,

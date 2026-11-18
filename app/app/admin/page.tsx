@@ -66,6 +66,7 @@ export default function AdminPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [armed, setArmed] = useState(false);
+  const [siteArmed, setSiteArmed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async () => {
@@ -200,6 +201,7 @@ export default function AdminPage() {
       </section>
 
       <nav className="ad-nav" aria-label="Admin sections">
+        <a href="#access"><ShieldCheck size={14} /> Site access</a>
         <a href="#launch"><Rocket size={14} /> Launch</a>
         <a href="#tools"><ToggleRight size={14} /> Tools</a>
         <a href="#airdrop"><Gift size={14} /> Airdrop</a>
@@ -207,6 +209,22 @@ export default function AdminPage() {
         <Link href="/app/quests/admin"><Bug size={14} /> Bug reports{st?.pendingBugs ? <b>{st.pendingBugs}</b> : null}</Link>
         <Link href="/app/quests"><ExternalLink size={14} /> Quests page</Link>
       </nav>
+
+      <section className={`q-card ad-card ad-access${form.siteOpen ? " is-open" : ""}`} id="access">
+        <h2><ShieldCheck size={16} /> Site access</h2>
+        <p className="ad-lead">{form.siteOpen
+          ? "The site is OPEN: anyone can see it and sign up."
+          : "The site is PRIVATE: everyone except you sees the \"Wraith is under construction\" page. Only your admin account gets in."}</p>
+        <button type="button" className={`q-btn is-solid ad-launch-btn${siteArmed ? " is-armed" : ""}`} disabled={saving}
+          onClick={() => {
+            if (!siteArmed) { setSiteArmed(true); setTimeout(() => setSiteArmed(false), 6000); return; }
+            setSiteArmed(false);
+            void save({ ...(data?.stored ?? form), siteOpen: !form.siteOpen });
+          }}>
+          {siteArmed ? "Tap again to confirm" : form.siteOpen ? "Make the site private" : "Open the site to everyone"}
+        </button>
+        <small>Takes effect within about 10 seconds. No redeploy. Telegram alerts and the scanner keep running either way.</small>
+      </section>
 
       <section className="q-card ad-card" id="launch">
         <h2><Rocket size={16} /> Launch OMEN</h2>

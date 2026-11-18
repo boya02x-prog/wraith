@@ -1,5 +1,6 @@
 // Server side of launch control: cached read, admin write, and the tier helpers every gate uses.
 import { getDb } from "@/lib/mongoClient";
+import { setSitePrivateCache } from "@/lib/siteAccess";
 import { effectiveTier } from "@/lib/effectiveTier";
 import { WRAITH_MINT, type TierKey } from "@/lib/tiers";
 import { DEFAULT_SETTINGS, MINT_RE, normalizeSettings, resolveSettings, type LaunchSettings } from "@/lib/launchSettings";
@@ -11,6 +12,7 @@ let cache: { v: LaunchSettings; at: number } | null = null;
 function envDefaults(): LaunchSettings {
   return {
     ...DEFAULT_SETTINGS,
+    siteOpen: process.env.WRAITH_PRIVATE !== "1", // until the admin saves it, the old variable decides
     omenMint: MINT_RE.test(WRAITH_MINT) ? WRAITH_MINT : "",
     claimOpen: process.env.NEXT_PUBLIC_AIRDROP_FINAL === "1",
   };
@@ -42,6 +44,7 @@ export async function saveLaunchSettings(input: unknown, by: string): Promise<La
   next.updatedBy = by;
   await (await getDb()).collection<{ _id: string }>("app_settings").updateOne({ _id: "launch" }, { $set: next }, { upsert: true });
   cache = { v: next, at: Date.now() };
+  setSitePrivateCache(!next.siteOpen);
   return next;
 }
 

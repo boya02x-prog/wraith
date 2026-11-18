@@ -5,6 +5,8 @@ export type RoadmapStatus = "soon" | "live";
 export interface RoadmapItem { id: string; title: string; body: string; status: RoadmapStatus; date: string }
 
 export interface LaunchSettings {
+  /** The site is open to everyone. OFF = everyone except the owner sees the "under construction" page. */
+  siteOpen: boolean;
   /** Pre-launch beta: every signed-in user gets every tool (signals, auto-sell, Telegram alerts, AI score, hot wallet). Fees stay normal. */
   featuresFree: boolean;
   /** OMEN holdings decide tiers, fee discounts and the gas boost. Needs omenMint. */
@@ -39,6 +41,7 @@ export const DEFAULT_ROADMAP: RoadmapItem[] = [
 ];
 
 export const DEFAULT_SETTINGS: LaunchSettings = {
+  siteOpen: true,
   featuresFree: true,
   tiersLive: false,
   omenMint: "",
@@ -82,6 +85,7 @@ export function normalizeSettings(raw: unknown, base: LaunchSettings = DEFAULT_S
   const mint = str(r.omenMint ?? base.omenMint, 64);
   const road = Array.isArray(r.roadmap) ? r.roadmap : base.roadmap;
   return {
+    siteOpen: bool(r.siteOpen, base.siteOpen),
     featuresFree: bool(r.featuresFree, base.featuresFree),
     tiersLive: bool(r.tiersLive, base.tiersLive),
     omenMint: MINT_RE.test(mint) ? mint : "",

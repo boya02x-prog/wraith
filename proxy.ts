@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { isOwnSessionFormat, readSession } from "@/lib/appSession";
+import { isSitePrivate } from "@/lib/siteAccess";
 
 const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms"]);
 const PUBLIC_API_PATHS = new Set(["/api/native-prices", "/api/landing", "/api/banner", "/api/settings"]);
@@ -72,7 +73,7 @@ async function route(request: NextRequest) {
 // separated, e.g. did:privy:abc123) can get past the sign-in page. Left reachable on purpose: the sign-in page and its endpoints (or
 // nobody could ever log in), the cron jobs and the Telegram bot (they carry their own secrets), the privacy and terms pages (Google
 // sign-in needs them public) and the app's icon and service-worker files. Off by default; remove the variable to open the site again.
-const privateOn = () => process.env.WRAITH_PRIVATE === "1";
+const privateOn = () => isSitePrivate();
 const allowedIds = () => new Set((process.env.WRAITH_ALLOWED_USERS ?? "").split(",").map((v) => v.trim()).filter(Boolean));
 const PRIVATE_OPEN_PREFIXES = ["/api/auth/", "/api/cron/", "/api/telegram/bot", "/api/telegram/setup", "/api/banner", "/_next/", "/.well-known/"];
 const PRIVATE_OPEN_PATHS = new Set(["/login", "/privacy", "/terms", "/favicon.ico", "/manifest.webmanifest", "/sw.js", "/offline.html"]);
@@ -104,7 +105,7 @@ async function privateGate(request: NextRequest): Promise<NextResponse | null> {
 }
 
 export async function proxy(request: NextRequest) {
-  if (!privateOn()) return route(request);
+  if (!(await privateOn())) return route(request);
   const blocked = await privateGate(request);
   if (blocked) return blocked;
   const res = await route(request);
