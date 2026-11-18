@@ -103,3 +103,14 @@
 .ad-details summary:hover { background: rgba(var(--accent-rgb), .1); }
 .ad-details summary:focus-visible { box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .6); }
 .ad-sw-text em { display: block; }
+
+/* Users card */
+.ad-online { color: #37d58a !important; }
+.ad-search { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); color: inherit; font: inherit; font-size: 14px; }
+.ad-users { display: grid; gap: 6px; max-height: 520px; overflow-y: auto; overscroll-behavior: contain; }
+.ad-user { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); }
+.ad-dot { width: 9px; height: 9px; border-radius: 50%; background: #4a4a4f; } .ad-dot.on { background: #37d58a; box-shadow: 0 0 8px rgba(55,213,138,.7); }
+.ad-user-who { display: grid; min-width: 0; } .ad-user-who b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ad-user-who small, .ad-user-seen small { font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-user-tier { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--accent-text); }
+.ad-user-seen { display: grid; text-align: right; font-size: 12.5px; font-weight: 700; }
+@media (max-width: 560px) { .ad-user { grid-template-columns: 12px minmax(0, 1fr) auto; } .ad-user-tier { display: none; } }
