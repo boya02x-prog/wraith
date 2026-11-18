@@ -9,7 +9,7 @@
 // If both fail we serve the last good snapshot (marked stale) instead of an
 // empty board.
 
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { edge } from "@/lib/edge";
 import { cleanSym, cleanName } from "@/lib/cleanText";
 function scrub<T extends { symbol?: string; name?: string }>(t: T[]): T[] { return t.map((x) => ({ ...x, symbol: cleanSym(x.symbol), name: cleanName(x.name) })); }
@@ -145,6 +145,20 @@ export async function GET(req: NextRequest) {
   const hit = cache.get(category);
   if (hit && Date.now() - hit.ts < CACHE_MS) {
     return edge(NextResponse.json({ tokens: scrub(hit.tokens), category, source: hit.source, updatedAt: hit.ts, stale: false }), 15, 120);
+  }
+
+  // Stale-while-revalidate: a list up to STALE_MS old is returned at once, and ONE rebuild runs after the response. Only a server with no
+  // list at all yet (its very first request) has to wait for the providers.
+  if (hit && Date.now() - hit.ts < STALE_MS) {
+    if (!inflight.has(category)) {
+      const bg = build(category)
+        .then((fresh) => { if (fresh) cache.set(category, fresh); })
+        .catch((e) => console.error("[market] background build threw", e))
+        .finally(() => inflight.delete(category));
+      inflight.set(category, bg.then(() => null));
+      after(() => bg);
+    }
+    return edge(NextResponse.json({ tokens: scrub(hit.tokens), category, source: hit.source, updatedAt: hit.ts, stale: true }), 5, 60);
   }
 
   let job = inflight.get(category);

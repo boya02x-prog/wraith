@@ -1,5 +1,5 @@
 // GET /api/tape → Wraith's own live tape: top signals, recent winners, and the 7-day call record. 20s cache.
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { edge } from "@/lib/edge";
 import { getDb } from "@/lib/mongoClient";
 import type { SignalCall } from "@/lib/signalCalls";
@@ -7,14 +7,28 @@ import type { Signal } from "@/app/api/signals/route";
 import { callGet } from "@/lib/internalCall";
 
 let cache: { ts: number; body: unknown } | null = null;
+let building: Promise<unknown> | null = null;
+const FRESH_MS = 20_000;
+const KEEP_MS = 10 * 60_000; // an answer up to 10 minutes old is still better than making a visitor wait 5-12 seconds
 
 export async function GET(req: NextRequest) {
-  if (cache && Date.now() - cache.ts < 20_000) return edge(NextResponse.json(cache.body), 20, 60);
+  // Stale-while-revalidate: the bar answers instantly from the last result; ONE rebuild runs in the background when it is older than 20 s.
+  if (cache && Date.now() - cache.ts < KEEP_MS) {
+    if (Date.now() - cache.ts >= FRESH_MS && !building) {
+      building = build(req.nextUrl.origin).catch(() => undefined).finally(() => { building = null; });
+      after(() => building ?? undefined);
+    }
+    return edge(NextResponse.json(cache.body), 20, 60);
+  }
+  const body = await build(req.nextUrl.origin);
+  return edge(NextResponse.json(body), 20, 60);
+}
 
+async function build(origin: string): Promise<unknown> {
   let signals: Signal[] = [];
   try {
     // in-process: a server-side fetch to our own URL has no session cookie and gets a 401 from the sign-in gate
-    signals = (await callGet<{ signals?: Signal[] }>(() => import("@/app/api/signals/route"), `${req.nextUrl.origin}/api/signals`, 20_000)).signals ?? [];
+    signals = (await callGet<{ signals?: Signal[] }>(() => import("@/app/api/signals/route"), `${origin}/api/signals`, 20_000)).signals ?? [];
   } catch { /* tape still shows wins */ }
 
   let wins: { address: string; chain: string; symbol: string; x: number; mcap: number }[] = [];
@@ -38,5 +52,5 @@ export async function GET(req: NextRequest) {
     stats,
   };
   cache = { ts: Date.now(), body };
-  return edge(NextResponse.json(body), 20, 60);
+  return body;
 }
