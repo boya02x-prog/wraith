@@ -1,5 +1,6 @@
 "use client";
 
+import { useLaunchSettings } from "@/hooks/useLaunchSettings";
 import { QRCodeSVG } from "qrcode.react";
 import { cleanSym, cleanName } from "@/lib/cleanText";
 import { defaultAvatar } from "@/lib/defaultArt";
@@ -3053,6 +3054,7 @@ interface HeaderProps {
 export default function Header({ onSelectMeme }: HeaderProps) {
   const { data: session, status: sessionStatus, logout } = useWraithSession();
   const { tier, canUse } = useWraithTier();
+  const { settings: launchCfg } = useLaunchSettings();
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   // avatarReady = we know what the account's saved photo is (from this browser's last visit or from the server).
   // Until then the header shows a neutral placeholder instead of flashing the default ghost.
@@ -3556,12 +3558,14 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                 href="/app/profile"
                 onClick={() => setUserMenuOpen(false)}
               />
-              <ProfileMenuItem
-                icon={Gift}
-                label="Quests & airdrop"
-                href="/app/quests"
-                onClick={() => setUserMenuOpen(false)}
-              />
+              {launchCfg.showAirdrop && (
+                <ProfileMenuItem
+                  icon={Gift}
+                  label="Quests & airdrop"
+                  href="/app/quests"
+                  onClick={() => setUserMenuOpen(false)}
+                />
+              )}
               {isAdmin && (
                 <ProfileMenuItem
                   icon={Shield}

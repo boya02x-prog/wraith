@@ -5,11 +5,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Fuel, Gift, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Fuel, Gift, ListChecks, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert, Users } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import DateTimeField from "@/components/DateTimeField";
 import AdminUsers from "@/components/AdminUsers";
 import AdminGasWallets from "@/components/AdminGasWallets";
+import AdminChecklist from "@/components/AdminChecklist";
 import { refreshLaunchSettings } from "@/hooks/useLaunchSettings";
 import { LAUNCH_ITEMS, MINT_RE, resolveSettings, type LaunchSettings, type RoadmapItem } from "@/lib/launchSettings";
 import "../quests/quests.css";
@@ -17,7 +18,7 @@ import "./admin.css";
 
 type Stats = { users: number; telegram: number; questers: number; pendingBugs: number } | null;
 type Resp = { isAdmin: boolean; stored: LaunchSettings; live: LaunchSettings; stats: Stats };
-type BoolKey = "featuresFree" | "tiersLive" | "autoLaunch" | "vipRoomOpen" | "questsOpen" | "claimOpen";
+type BoolKey = "showAirdrop" | "featuresFree" | "tiersLive" | "autoLaunch" | "vipRoomOpen" | "questsOpen" | "claimOpen";
 type Sw = { key: BoolKey; title: string; on: string; off: string };
 
 const TOOL_SWITCHES: Sw[] = [
@@ -26,6 +27,7 @@ const TOOL_SWITCHES: Sw[] = [
   { key: "vipRoomOpen", title: "Private Telegram group for OMEN holders", on: "ON: the bot guards the door of your private holders group. Someone asks to join, and the bot lets them in only if their Wraith account holds enough OMEN (SPECTER tier or higher). Once an hour it removes anyone who sold. Until OMEN is launched nobody holds any, so nobody gets in. Leave this OFF before launch.", off: "OFF: the private group is closed. Anyone who asks to join gets a reply that it opens at launch. This is the right setting before launch." },
 ];
 const AIRDROP_SWITCHES: Sw[] = [
+  { key: "showAirdrop", title: "Show quests and the airdrop to users", on: "ON: users see the Quests & airdrop menu entry, the points card on their profile, the Quests page and the airdrop line on the landing page.", off: "OFF: all of that is hidden. Quests still run in the background if they are switched on below." },
   { key: "questsOpen", title: "Quests give points", on: "ON: tasks, trades, invites and X posts earn points.", off: "OFF: quests are paused. Nobody earns anything new; old points stay." },
   { key: "claimOpen", title: "Points are final, claim is open", on: "ON: the quests page shows each person's final OMEN amount and the claim section.", off: "OFF: the quests page shows an estimate and \"Claim after launch\"." },
 ];
@@ -203,6 +205,7 @@ export default function AdminPage() {
       </section>
 
       <nav className="ad-nav" aria-label="Admin sections">
+        <a href="#checklist"><ListChecks size={14} /> Checklist</a>
         <a href="#access"><ShieldCheck size={14} /> Site access</a>
         <a href="#users"><Users size={14} /> Users</a>
         <a href="#gas"><Fuel size={14} /> Gas wallets</a>
@@ -229,6 +232,8 @@ export default function AdminPage() {
         </button>
         <small>Takes effect within about 10 seconds. No redeploy. Telegram alerts and the scanner keep running either way.</small>
       </section>
+
+      <AdminChecklist settings={form} />
 
       <AdminUsers />
 

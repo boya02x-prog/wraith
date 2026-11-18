@@ -19,6 +19,8 @@ export interface LaunchSettings {
   autoLaunch: boolean;
   /** Holders-only Telegram room accepts members. */
   vipRoomOpen: boolean;
+  /** Users can SEE quests, points and the airdrop (menu entry, profile card, quests page, roadmap line). OFF = all of it is hidden. */
+  showAirdrop: boolean;
   /** Quests earn points (tasks, trades, invites, posts, bug reports). */
   questsOpen: boolean;
   /** Points are final and the airdrop claim button is live. */
@@ -48,6 +50,7 @@ export const DEFAULT_SETTINGS: LaunchSettings = {
   omenLaunchAt: "",
   autoLaunch: false,
   vipRoomOpen: false,
+  showAirdrop: false,
   questsOpen: true,
   claimOpen: false,
   claimAt: "",
@@ -92,6 +95,7 @@ export function normalizeSettings(raw: unknown, base: LaunchSettings = DEFAULT_S
     omenLaunchAt: "omenLaunchAt" in r ? iso(r.omenLaunchAt) : base.omenLaunchAt,
     autoLaunch: bool(r.autoLaunch, base.autoLaunch),
     vipRoomOpen: bool(r.vipRoomOpen, base.vipRoomOpen),
+    showAirdrop: bool(r.showAirdrop, base.showAirdrop),
     questsOpen: bool(r.questsOpen, base.questsOpen),
     claimOpen: bool(r.claimOpen, base.claimOpen),
     claimAt: "claimAt" in r ? iso(r.claimAt) : base.claimAt,

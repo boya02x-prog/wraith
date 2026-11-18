@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Gift } from "lucide-react";
+import { useLaunchSettings } from "@/hooks/useLaunchSettings";
 
 type Me = { points: number; rank: number | null; estimatedTokens: number; refActive: number };
 
 export default function QuestsCard() {
+  const { settings } = useLaunchSettings();
   const [me, setMe] = useState<Me | null>(null);
   const [tasksLeft, setTasksLeft] = useState(0);
   useEffect(() => {
@@ -21,7 +23,7 @@ export default function QuestsCard() {
       .catch(() => undefined);
     return () => { alive = false; };
   }, []);
-  if (!me) return null;
+  if (!me || !settings.showAirdrop) return null;
   const n = (v: number) => Math.round(v).toLocaleString("en-US");
   return (
     <section className="profile-panel" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", borderColor: "rgba(var(--accent-rgb), .35)" }}>

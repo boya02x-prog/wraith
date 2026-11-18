@@ -6,6 +6,7 @@ import { Bug, Check, Copy, Gift, Send, Trophy, Users, ShieldCheck } from "lucide
 import Header from "@/components/HeaderSlot";
 import { defaultAvatar } from "@/lib/defaultArt";
 import { swrRead, swrWrite } from "@/lib/swrCache";
+import { useLaunchSettings } from "@/hooks/useLaunchSettings";
 import "./quests.css";
 
 type Task = { id: string; title: string; points: number; verify: "auto"; doneAt: number | null };
@@ -70,7 +71,7 @@ function InviteCodeBox({ onDone }: { onDone: () => void }) {
   );
 }
 
-export default function QuestsPage() {
+function QuestsInner() {
   const [data, setData] = useState<Data | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<Record<string, Msg>>({});
@@ -347,4 +348,26 @@ export default function QuestsPage() {
       </div>
     </main>
   );
+}
+
+// Quests and the airdrop are hidden from users until the owner turns them on in the admin page (Quests and airdrop card).
+export default function QuestsPage() {
+  const { settings, ready } = useLaunchSettings();
+  if (!ready) return null;
+  if (!settings.showAirdrop) {
+    return (
+      <main className="wraith-dashboard profile-page">
+        <Header />
+        <div className="q-shell">
+          <section className="q-card ad-denied" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <Gift size={28} />
+            <h2>Quests are coming soon</h2>
+            <p className="q-note">Nothing to do here yet. Wraith will announce it when it opens.</p>
+            <Link className="q-btn is-ghost" href="/app">Back to the app</Link>
+          </section>
+        </div>
+      </main>
+    );
+  }
+  return <QuestsInner />;
 }

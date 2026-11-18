@@ -246,7 +246,7 @@ export default function Landing() {
               <p className="ws-lead">Dates land here first. Join the channel to hear the moment they move.</p>
             </Reveal>
             <div className="lp-soon">
-              {launch.roadmap.map((s, i) => (
+              {launch.roadmap.filter((s) => launch.showAirdrop || s.id !== "airdrop").map((s, i) => (
                 <Reveal key={s.id} delay={i * 0.06}>
                   <div className="lp-soon-card" style={s.status === "live" ? { borderStyle: "solid", borderColor: "rgba(255,123,61,.45)" } : undefined}>
                     <span className="lp-soonbadge">{s.status === "live" ? "LIVE" : s.date ? fmtDate(s.date).toUpperCase() : "SOON"}</span>
