@@ -448,15 +448,15 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
 
   return (
     <DockFrame>
-      <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+      <div className="wx-td" style={{ padding: 16 }}>
+        <div className="wx-td-tabs" style={{ display: "flex", gap: 6, marginBottom: 14 }}>
           {(["buy", "sell"] as const).map((tab) => (
-            <button key={tab} type="button" onClick={() => setMode(tab)} style={{ flex: 1, border: `1px solid ${mode === tab ? (tab === "buy" ? "#267454" : "#89463e") : "var(--border)"}`, background: mode === tab ? (tab === "buy" ? "#14241d" : "#261917") : "var(--surface)", color: mode === tab ? (tab === "buy" ? "#55cf91" : "#e58d80") : "var(--text-muted)", borderRadius: 9, padding: "11px 8px", textTransform: "capitalize", fontWeight: 750, cursor: "pointer" }}>{tab}</button>
+            <button key={tab} type="button" className={`wx-td-tab ${tab}${mode === tab ? " on" : ""}`} onClick={() => setMode(tab)} style={{ flex: 1, border: `1px solid ${mode === tab ? (tab === "buy" ? "#267454" : "#89463e") : "var(--border)"}`, background: mode === tab ? (tab === "buy" ? "#14241d" : "#261917") : "var(--surface)", color: mode === tab ? (tab === "buy" ? "#55cf91" : "#e58d80") : "var(--text-muted)", borderRadius: 9, padding: "11px 8px", textTransform: "capitalize", fontWeight: 750, cursor: "pointer" }}>{tab}</button>
           ))}
         </div>
 
         {/* One account, one Cash balance: no wallet address here. Deposits (USDC / USDT / USDG on any network) all show up as Cash. */}
-        <div title="One Cash balance for every network. Deposit USDC, USDT or USDG on any chain and it can buy any token on any chain." style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
+        <div className="wx-td-pay" title="One Cash balance for every network. Deposit USDC, USDT or USDG on any chain and it can buy any token on any chain." style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", marginBottom: 12, border: "1px solid var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11 }}>
           <Wallet size={14} color="var(--orange)" />
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>Paying from your <b style={{ color: "var(--text)" }}>Cash balance</b></span>
           <span style={{ color: embeddedWallet ? "#37d58a" : "#ffba55" }}>{embeddedWallet ? "READY" : "SETTING UP"}</span>
@@ -478,11 +478,11 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
               </div>
             )}
             <label style={{ display: "block", color: "var(--text-muted)", fontSize: 10, marginBottom: 6 }}>AMOUNT IN {displayCurrency}</label>
-            <input aria-label={`Buy amount in ${displayCurrency}`} inputMode="decimal" value={amountCash} onChange={(event) => setAmountCash(event.target.value)} style={{ width: "100%", height: 54, padding: "0 14px", color: "var(--text)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, outlineColor: "var(--orange)", fontSize: 20, fontWeight: 700, ...MONO }} />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
+            <input className="wx-td-amt" aria-label={`Buy amount in ${displayCurrency}`} inputMode="decimal" value={amountCash} onChange={(event) => setAmountCash(event.target.value)} style={{ width: "100%", height: 54, padding: "0 14px", color: "var(--text)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, outlineColor: "var(--orange)", fontSize: 20, fontWeight: 700, ...MONO }} />
+            <div className="wx-td-presets" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
               {CASH_PRESETS_USD.map((presetUsd) => {
                 const cashValue = currencyRate !== null ? presetUsd * currencyRate : 0;
-                return <button type="button" key={presetUsd} disabled={currencyRate === null} onClick={() => setAmountCash(cashValue.toFixed(2))} style={{ padding: "8px 2px", border: `1px solid ${Math.abs(Number(amountCash) - cashValue) < 0.005 ? "var(--orange)" : "var(--border)"}`, borderRadius: 8, color: Math.abs(Number(amountCash) - cashValue) < 0.005 ? "var(--orange-hot)" : "var(--text-muted)", background: "var(--surface)", cursor: "pointer", fontSize: 11 }}>{currencyRate !== null ? formatCurrency(cashValue, displayCurrency) : "—"}</button>;
+                return <button type="button" className="wx-td-preset" key={presetUsd} disabled={currencyRate === null} onClick={() => setAmountCash(cashValue.toFixed(2))} style={{ padding: "8px 2px", border: `1px solid ${Math.abs(Number(amountCash) - cashValue) < 0.005 ? "var(--orange)" : "var(--border)"}`, borderRadius: 8, color: Math.abs(Number(amountCash) - cashValue) < 0.005 ? "var(--orange-hot)" : "var(--text-muted)", background: "var(--surface)", cursor: "pointer", fontSize: 11 }}>{currencyRate !== null ? formatCurrency(cashValue, displayCurrency) : "—"}</button>;
               })}
             </div>
             <SizeHint balance={src ? src.balance * (currencyRate ?? 1) : null} stopPct={exitOn ? Number(exitPrefs.sl) || 0 : 0} risk={Number(exitPrefs.risk) || 1} setRisk={(r) => setExitPrefs((p) => ({ ...p, risk: String(r) }))} liquidity={marketSnapshot?.liquidity != null && currencyRate ? marketSnapshot.liquidity * currencyRate : null} symbol={symbol} fmt={(v) => formatCurrency(v, displayCurrency)} onUse={(v) => setAmountCash(v.toFixed(2))} />
@@ -492,13 +492,13 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
           <>
             <div style={{ color: "var(--text-muted)", fontSize: 10, marginBottom: 6 }}>TOKEN BALANCE</div>
             <div style={{ padding: "15px 14px", marginBottom: 8, border: "1px solid var(--border)", borderRadius: 10, background: "var(--surface)", fontSize: 18, fontWeight: 700 }}>{tokenBalance?.amount ?? "Loading..."}<span style={{ marginLeft: 7, color: "var(--text-muted)", fontSize: 11 }}>{symbol}</span>{tokenBalance && tokenUsd !== null && currencyRate !== null && <small style={{ display: "block", marginTop: 8, color: "var(--text-muted)", fontSize: 12, fontWeight: 500 }}>{formatCurrency(tokenBalance.quantity * tokenUsd * currencyRate, displayCurrency)}</small>}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-              {SELL_PRESETS.map((preset) => <button type="button" key={preset} onClick={() => setSellPercent(preset)} style={{ padding: "9px 4px", border: `1px solid ${sellPercent === preset ? "#a9564c" : "var(--border)"}`, borderRadius: 8, color: sellPercent === preset ? "#e58d80" : "var(--text-muted)", background: "var(--surface)", cursor: "pointer", fontSize: 11 }}>{preset === 100 ? "Max" : `${preset}%`}</button>)}
+            <div className="wx-td-presets" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+              {SELL_PRESETS.map((preset) => <button type="button" className="wx-td-preset" key={preset} onClick={() => setSellPercent(preset)} style={{ padding: "9px 4px", border: `1px solid ${sellPercent === preset ? "#a9564c" : "var(--border)"}`, borderRadius: 8, color: sellPercent === preset ? "#e58d80" : "var(--text-muted)", background: "var(--surface)", cursor: "pointer", fontSize: 11 }}>{preset === 100 ? "Max" : `${preset}%`}</button>)}
             </div>
           </>
         )}
 
-        <button type="button" onClick={() => { if (mode === "buy" && cash.loaded && !src) window.dispatchEvent(new Event("wraith:open-deposit")); else void trade(); }} disabled={tradeDisabled && !(mode === "buy" && cash.loaded && !src)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, marginTop: 14, border: 0, borderRadius: 10, color: "#fff", background: mode === "buy" ? "#d96d3c" : "#a95047", fontSize: 14, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: tradeDisabled && !(mode === "buy" && cash.loaded && !src) ? .68 : 1 }}>
+        <button type="button" className={`wx-td-cta ${mode}`} onClick={() => { if (mode === "buy" && cash.loaded && !src) window.dispatchEvent(new Event("wraith:open-deposit")); else void trade(); }} disabled={tradeDisabled && !(mode === "buy" && cash.loaded && !src)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", minHeight: 48, marginTop: 14, border: 0, borderRadius: 10, color: "#fff", background: mode === "buy" ? "#d96d3c" : "#a95047", fontSize: 14, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: tradeDisabled && !(mode === "buy" && cash.loaded && !src) ? .68 : 1 }}>
           {busy ? <LoaderCircle size={16} className="animate-spin" /> : null}
           {busy ? "Confirm in wallet…" : mode === "buy" && cash.loaded && !src ? "Deposit cash to buy" : `${mode === "buy" ? "Buy" : "Sell"} ${symbol}`}
         </button>
@@ -513,7 +513,7 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
           </div>
         )}
         {tradeDisabledReason && <p role="status" style={{ margin: "8px 2px 0", color: "var(--text-muted)", fontSize: 10, lineHeight: 1.5 }}>{tradeDisabledReason}</p>}
-        <p style={{ margin: "10px 2px 0", color: "var(--text-dim)", fontSize: 10, lineHeight: 1.55 }}>{FINE_PRINT}</p>
+        <p className="wx-td-fine" style={{ margin: "10px 2px 0", color: "var(--text-dim)", fontSize: 10, lineHeight: 1.55 }}>{FINE_PRINT}</p>
       </div>
 
       <PositionBlock

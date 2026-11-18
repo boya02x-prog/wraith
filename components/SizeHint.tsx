@@ -13,7 +13,7 @@ export default function SizeHint({ balance, stopPct, risk, setRisk, liquidity, s
 }) {
   if (balance === null || !(balance > 0)) {
     return (
-      <div style={{ marginTop: 10, padding: "9px 12px", border: "1px dashed var(--border)", borderRadius: 10, color: "var(--text-dim)", fontSize: 10, lineHeight: 1.5 }}>
+      <div className="wx-td-note" style={{ marginTop: 10, padding: "9px 12px", border: "1px dashed var(--border)", borderRadius: 10, color: "var(--text-dim)", fontSize: 10, lineHeight: 1.5 }}>
         <span style={{ ...MONO, letterSpacing: ".06em", fontSize: 9 }}>POSITION SIZE</span><br />
         Once you have cash here, Wraith suggests a size from your stop-loss, for example 1% risk with a 30% stop is 3.3% of your balance.
       </div>
@@ -21,7 +21,7 @@ export default function SizeHint({ balance, stopPct, risk, setRisk, liquidity, s
   }
   const s = suggestSize({ balance, riskPct: risk, stopPct, liquidity: liquidity ?? undefined });
   return (
-    <div style={{ marginTop: 10, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 10, background: "var(--surface)" }}>
+    <div className="wx-td-note on" style={{ marginTop: 10, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 10, background: "var(--surface)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <span style={{ color: "var(--text-muted)", fontSize: 9, letterSpacing: ".06em", ...MONO }}>POSITION SIZE · RISK PER TRADE</span>
         <div style={{ display: "flex", gap: 4 }}>

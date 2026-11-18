@@ -23,7 +23,7 @@ export default function ExitBox({ mint, symbol, on, setOn, prefs, setPrefs, allo
     return <a href="/#omen" style={{ display: "block", marginTop: 12, padding: "10px 12px", border: "1px dashed var(--border)", borderRadius: 10, color: "var(--text-muted)", fontSize: 11, textDecoration: "none" }}>🔒 Auto TP / SL / trailing stop unlocks at SHADE (250K OMEN)</a>;
   }
   return (
-    <div style={{ marginTop: 12, padding: 12, border: `1px solid ${on ? "var(--orange)" : "var(--border)"}`, borderRadius: 10 }}>
+    <div className={`wx-td-exit${on ? " on" : ""}`} style={{ marginTop: 12, padding: 12, border: `1px solid ${on ? "var(--orange)" : "var(--border)"}`, borderRadius: 10 }}>
       <button type="button" onClick={() => setOn(!on)} style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", background: "none", border: 0, padding: 0, color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
         <span>Auto-exit (TP / SL / trail)</span>
         <span style={{ color: on ? "#37d58a" : "var(--text-muted)", fontSize: 10 }}>{on ? "ON" : "OFF"}</span>
