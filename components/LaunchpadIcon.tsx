@@ -9,14 +9,14 @@ const FILE: Record<string, string> = { "pump.fun": "pumpfun", LetsBonk: "bonk", 
 
 export default function LaunchpadIcon({ address, chain, size = 18 }: { address: string | null | undefined; chain?: string | null; size?: number }) {
   const name = launchpadOf(address, chain);
-  const [step, setStep] = useState(0); // 0 = try .svg, 1 = try .png, 2 = built-in mark
+  const [step, setStep] = useState(0); // 0 = try .png, 1 = try .svg, 2 = built-in mark
   if (!name) return null;
   const key = FILE[name];
   return (
     <span className="wx-lp-logo" title={`Launched on ${name}`} aria-label={`Launched on ${name}`} style={{ width: size, height: size }}>
       {step < 2 && key ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`/launchpads/${key}.${step === 0 ? "svg" : "png"}`} alt="" width={size} height={size} onError={() => setStep((s) => s + 1)} style={{ width: size, height: size, objectFit: "contain", borderRadius: 5 }} />
+        <img src={`/launchpads/${key}.${step === 0 ? "png" : "svg"}`} alt="" width={size} height={size} onError={() => setStep((s) => s + 1)} style={{ width: size, height: size, objectFit: "contain", borderRadius: 5 }} />
       ) : name === "pump.fun" ? (
         <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
           <g transform="rotate(-45 12 12)">
