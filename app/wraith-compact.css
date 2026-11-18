@@ -1312,3 +1312,5 @@ html { scroll-behavior: smooth; }
 
 .wx-st-stats > span.low { color: #ff8a73; } .wx-st-stats > span.low svg { color: #ff8a73; }
 @media (max-width: 1100px) { .wx-st-stats > span:nth-child(2) { display: inline-flex; } }
+
+.wx-st-stats > span[data-tip]:hover::after { white-space: normal; width: max-content; max-width: 300px; line-height: 1.4; }

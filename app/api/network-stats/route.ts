@@ -6,6 +6,9 @@ import { getLaunchSettings } from "@/lib/launchSettingsServer";
 import { MINT_RE } from "@/lib/launchSettings";
 import bs58 from "bs58";
 import { Keypair } from "@solana/web3.js";
+import { createPublicClient, http, formatEther, parseEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { VIEM_CHAINS, rpcFor } from "@/lib/cashTokens";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +39,28 @@ async function gasWallet(): Promise<{ sol: number; topups: number } | null> {
   return null;
 }
 
+// amount sent per top-up on each chain: the same defaults as /api/gas-drip (GAS_DRIP_<CHAIN> overrides)
+const EVM_DRIP: Record<string, string> = { base: "0.00003", ethereum: "0.0004", bsc: "0.0002", monad: "0.2", robinhood: "0.00003" };
+
+/** Native-token balance of the EVM gas wallet (GAS_TREASURY_KEY) on every chain Wraith tops up, and how many top-ups that covers. */
+async function evmWallet(): Promise<{ chain: string; symbol: string; bal: number; topups: number }[] | null> {
+  const key = process.env.GAS_TREASURY_KEY;
+  if (!key) return null;
+  let address: `0x${string}`;
+  try { address = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as `0x${string}`).address; } catch { return null; }
+  const out = await Promise.all(Object.keys(EVM_DRIP).map(async (name) => {
+    const chain = VIEM_CHAINS[name]; const rpc = chain ? rpcFor(chain) : null;
+    if (!chain || !rpc) return null;
+    try {
+      const wei = await createPublicClient({ chain, transport: http(rpc, { timeout: 4000 }) }).getBalance({ address });
+      const drip = parseEther(process.env[`GAS_DRIP_${name.toUpperCase()}`] ?? EVM_DRIP[name]);
+      return { chain: name, symbol: chain.nativeCurrency.symbol, bal: Number(formatEther(wei)), topups: drip > BigInt(0) ? Number(wei / drip) : 0 };
+    } catch { return null; }
+  }));
+  const rows = out.filter((x): x is NonNullable<typeof x> => !!x);
+  return rows.length ? rows : null;
+}
+
 async function omen(): Promise<{ mcap: number; price: number } | null> {
   try {
     const mint = (await getLaunchSettings()).omenMint;
@@ -51,8 +76,8 @@ async function omen(): Promise<{ mcap: number; price: number } | null> {
 
 export async function GET() {
   if (cache && Date.now() - cache.at < 20_000) return NextResponse.json(cache.body);
-  const [o, g, m] = await Promise.all([online(), gasWallet(), omen()]);
-  const body = { online: o, gas: g, omen: m };
+  const [o, g, e, m] = await Promise.all([online(), gasWallet(), evmWallet(), omen()]);
+  const body = { online: o, gas: g, evm: e, omen: m };
   cache = { at: Date.now(), body };
   return NextResponse.json(body, { headers: { "cache-control": "private, max-age=10" } });
 }
