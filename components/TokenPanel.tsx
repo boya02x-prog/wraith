@@ -668,7 +668,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           <div style={{ minWidth: 0 }}>
             <div className="wx-token-name">
               <h1>{symbol}</h1>
-              <span className="wx-badge net"><ChainLogo chain="solana" size={12} /> Solana</span>
+              <span className="wx-net-logo" title="Solana"><ChainLogo chain="solana" size={20} /></span>
               {launchpadOf(mint) && <span className="wx-badge launch" title="Where this token was launched">{launchpadOf(mint)}</span>}
               {snap?.onCurve && <span className="wx-badge accent">Bonding curve</span>}
               {snap?.graduated && <span className="wx-badge">Graduated</span>}

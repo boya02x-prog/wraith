@@ -311,9 +311,27 @@ async function build(origin: string): Promise<Built> {
   return { signals, records };
 }
 
+const STALE_KEEP_MS = 10 * 60_000;
+
 export async function GET(req: NextRequest) {
+  const internal = req.headers.get("x-wraith-internal") === "1";
   if (cache && Date.now() - cache.ts < CACHE_MS) {
     return edge(NextResponse.json({ signals: cache.signals, updatedAt: cache.ts }), 10, 60);
+  }
+  // Stale-while-revalidate for people: a board up to 10 minutes old is returned AT ONCE and one rebuild runs after the response, so the
+  // scanner never makes a visitor wait for the slow scoring pass. Server jobs (Telegram cron, tape) still wait for a fresh build below.
+  if (cache && !internal && Date.now() - cache.ts < STALE_KEEP_MS) {
+    if (!inflight) {
+      const job = build(req.nextUrl.origin).finally(() => { inflight = null; });
+      inflight = job;
+      after(async () => {
+        try {
+          const built = await job;
+          if (built.signals.length) { cache = { ts: Date.now(), ...built }; await persistOnce(built); }
+        } catch { /* keep serving the last good board */ }
+      });
+    }
+    return edge(NextResponse.json({ signals: cache.signals, updatedAt: cache.ts }), 5, 60);
   }
   if (!inflight) {
     inflight = build(req.nextUrl.origin).finally(() => { inflight = null; });
@@ -326,7 +344,7 @@ export async function GET(req: NextRequest) {
     // finish (serverless does not drop them) but the response no longer waits for the database: a slow or far-away
     // Atlas used to add its latency to every single scanner poll.
     // Server jobs (Telegram cron, tape) call this in-process and want the new calls in the database before they read it.
-    if (req.headers.get("x-wraith-internal") === "1") await persistOnce(built);
+    if (internal) await persistOnce(built);
     else after(() => persistOnce(built));
     return edge(NextResponse.json({ signals: cache.signals, updatedAt: cache.ts }), 10, 60);
   } catch {

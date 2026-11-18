@@ -1379,3 +1379,7 @@ html { scroll-behavior: smooth; }
 
 .sg-filters .sg-weak { margin-left: auto; color: var(--text-muted); border-style: dashed; }
 .sg-filters .sg-weak.on { color: var(--accent-text); }
+
+/* the network is shown as its logo only: plain, in the theme, a little bigger (the name is in the tooltip) */
+.wx-net-logo { display: inline-grid; place-items: center; flex: none; line-height: 0; opacity: .95; filter: saturate(.9); }
+.wx-net-logo svg, .wx-net-logo img { display: block; }

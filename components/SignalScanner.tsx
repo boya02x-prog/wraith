@@ -125,7 +125,7 @@ function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; sho
         <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={44} chain={t.chain ?? "solana"} />
         <div className="sg-id">
           <strong>{t.symbol}</strong>
-          <span><ChainLogo chain={t.chain ?? "solana"} size={13} /> <b className="sg-net">{chainName(t.chain)}</b>{launchpadOf(t.address, t.chain) ? <em className="sg-lp">{launchpadOf(t.address, t.chain)}</em> : null}<i className="sg-nm">{t.name && t.name !== t.symbol ? t.name : t.dex ?? ""}</i></span>
+          <span><span className="wx-net-logo" title={chainName(t.chain)}><ChainLogo chain={t.chain ?? "solana"} size={17} /></span>{launchpadOf(t.address, t.chain) ? <em className="sg-lp">{launchpadOf(t.address, t.chain)}</em> : null}<i className="sg-nm">{t.name && t.name !== t.symbol ? t.name : t.dex ?? ""}</i></span>
         </div>
         <div className="sg-ring-wrap">
           <ScoreRing score={s.score} tier={s.tier} locked={!showScore} />
