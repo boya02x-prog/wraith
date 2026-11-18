@@ -15,6 +15,7 @@ import { SOLANA_MINT_RE } from "@/lib/market";
 import { chainOf, EVM_ADDR_RE } from "@/lib/chains";
 import { TokenIcon } from "@/components/TokenIcon";
 import SheetBoundary from "@/components/SheetBoundary";
+import TokenPageSkeleton from "@/components/TokenPageSkeleton";
 import TokenSkeleton from "@/components/TokenSkeleton";
 
 import Header from "@/components/HeaderSlot";
@@ -216,7 +217,7 @@ export default function TokenPage() {
     return (
       <div className="wraith-dashboard wraith-token-page wx-page">
         <Header onSelectMeme={go} />
-        <div className="wx-mobile-body"><TokenSkeleton address={address} /></div>
+        <TokenPageSkeleton address={address} />
       </div>
     );
   }

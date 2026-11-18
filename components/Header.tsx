@@ -3125,7 +3125,16 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   // same rule as every other tool: open to everyone while the free beta is on, otherwise by OMEN tier. It used to look at the tier
   // only, so during the beta the row stayed locked ("SPECTER TIER REQUIRED") and an already linked account could not even disconnect.
   const canUseTelegram = canUse("telegram_alerts") || TELEGRAM_TIERS.includes(tier?.key ?? "");
-  const canUsePaper = canUse("paper_trading");
+  // Trading (paper) mode is switched off: Wraith is live only. The menu entry is hidden, and anyone who still had it turned on is put back on live.
+  const canUsePaper = false;
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("wraith_paper_mode_v1") === "true") {
+        localStorage.setItem("wraith_paper_mode_v1", "false");
+        window.dispatchEvent(new Event("wraith:paper-mode-sync"));
+      }
+    } catch { /* storage blocked: nothing to reset */ }
+  }, []);
 
   useEffect(() => {
     const savedCurrency = localStorage.getItem("wraith_display_currency_v1");

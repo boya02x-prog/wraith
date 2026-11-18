@@ -1343,3 +1343,7 @@ html { scroll-behavior: smooth; }
 .wx-td-cta:hover:not(:disabled) { filter: brightness(1.07); }
 .wx-td-fine { opacity: .75; }
 @media (prefers-reduced-motion: reduce) { .wx-td-tab, .wx-td-preset, .wx-td-cta, .wx-td-amt, .wx-td-exit { transition: none !important; } }
+
+/* route skeleton: phones show one column, desktop shows the three-column workspace */
+.rs-desk { display: none; } .rs-mob { display: block; }
+@media (min-width: 900px) { .rs-desk { display: flex; } .rs-mob { display: none; } }

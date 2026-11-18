@@ -3,7 +3,7 @@
 // draw the market-list skeleton for EVERY screen, so tapping a token flashed a list of grey cards before the token page appeared.
 import { usePathname } from "next/navigation";
 import PageSkeleton from "@/components/PageSkeleton";
-import TokenSkeleton from "@/components/TokenSkeleton";
+import TokenPageSkeleton from "@/components/TokenPageSkeleton";
 import Header from "@/components/HeaderSlot";
 
 export default function RouteSkeleton() {
@@ -13,7 +13,7 @@ export default function RouteSkeleton() {
   if (tok) return (
     <div className="wraith-dashboard wraith-token-page wx-page">
       <Header />
-      <div className="wx-mobile-body"><TokenSkeleton address={decodeURIComponent(tok[1])} /></div>
+      <TokenPageSkeleton address={decodeURIComponent(tok[1])} />
     </div>
   );
   if (path.startsWith("/app/traders") || path.startsWith("/app/u/")) return <PageSkeleton kind="traders" />;

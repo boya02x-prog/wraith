@@ -2675,7 +2675,7 @@ export default function PaperTrader({
   const [dbLoaded, setDbLoaded] = useState(false);
 
   // ── PAPER MODE STATE ──
-  const canUsePaper = canUse("paper_trading");
+  const canUsePaper = false; // trading (paper) mode is switched off: live only
   const [orderMode, setOrderMode] = useState<"market" | "limit" | "advanced">(
     "market",
   );
