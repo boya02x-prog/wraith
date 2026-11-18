@@ -42,9 +42,14 @@ export async function saveLaunchSettings(input: unknown, by: string): Promise<La
   const next = normalizeSettings(input, current);
   next.updatedAt = new Date().toISOString();
   next.updatedBy = by;
-  await (await getDb()).collection<{ _id: string }>("app_settings").updateOne({ _id: "launch" }, { $set: next }, { upsert: true });
+  // Site access (open / private) changes ONLY when the request explicitly carries it (the "Site access" button). Any other save, for example
+  // from a local copy whose environment has no WRAITH_PRIVATE, must never write its own default over the live setting.
+  const explicitSite = !!input && typeof input === "object" && typeof (input as Record<string, unknown>).siteOpen === "boolean";
+  const { siteOpen: _site, ...rest } = next;
+  void _site;
+  await (await getDb()).collection<{ _id: string }>("app_settings").updateOne({ _id: "launch" }, { $set: explicitSite ? next : rest }, { upsert: true });
   cache = { v: next, at: Date.now() };
-  setSitePrivateCache(!next.siteOpen);
+  if (explicitSite) setSitePrivateCache(!next.siteOpen);
   return next;
 }
 

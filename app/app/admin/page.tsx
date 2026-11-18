@@ -5,10 +5,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Fuel, Gift, ListChecks, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Fuel, Gift, ListChecks, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import DateTimeField from "@/components/DateTimeField";
-import AdminUsers from "@/components/AdminUsers";
 import AdminGasWallets from "@/components/AdminGasWallets";
 import AdminChecklist from "@/components/AdminChecklist";
 import { refreshLaunchSettings } from "@/hooks/useLaunchSettings";
@@ -98,10 +97,13 @@ export default function AdminPage() {
   }, [dirty]);
   const preview = form ? resolveSettings(form, now) : null;
 
-  async function save(next: LaunchSettings) {
+  async function save(next: LaunchSettings, opts?: { site?: boolean }) {
     setSaving(true); setMsg(null);
     try {
-      const r = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+      // only the Site access button may change open / private: every other save leaves it exactly as it is
+      const { siteOpen: _s, ...withoutSite } = next;
+      void _s;
+      const r = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(opts?.site ? next : withoutSite) });
       const j = (await r.json()) as { ok: boolean; message?: string; warn?: string | null; stored: LaunchSettings; live: LaunchSettings };
       if (!j.ok) { setMsg({ ok: false, text: j.message ?? "Could not save." }); return; }
       setData((d) => (d ? { ...d, stored: j.stored, live: j.live } : d));
@@ -207,7 +209,6 @@ export default function AdminPage() {
       <nav className="ad-nav" aria-label="Admin sections">
         <a href="#checklist"><ListChecks size={14} /> Checklist</a>
         <a href="#access"><ShieldCheck size={14} /> Site access</a>
-        <a href="#users"><Users size={14} /> Users</a>
         <a href="#gas"><Fuel size={14} /> Gas wallets</a>
         <a href="#launch"><Rocket size={14} /> Launch</a>
         <a href="#tools"><ToggleRight size={14} /> Tools</a>
@@ -226,7 +227,7 @@ export default function AdminPage() {
           onClick={() => {
             if (!siteArmed) { setSiteArmed(true); setTimeout(() => setSiteArmed(false), 6000); return; }
             setSiteArmed(false);
-            void save({ ...(data?.stored ?? form), siteOpen: !form.siteOpen });
+            void save({ ...(data?.stored ?? form), siteOpen: !form.siteOpen }, { site: true });
           }}>
           {siteArmed ? "Tap again to confirm" : form.siteOpen ? "Make the site private" : "Open the site to everyone"}
         </button>
@@ -234,8 +235,6 @@ export default function AdminPage() {
       </section>
 
       <AdminChecklist settings={form} />
-
-      <AdminUsers />
 
       <AdminGasWallets />
 
