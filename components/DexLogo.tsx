@@ -19,12 +19,11 @@ export default function DexLogo({ dex, size = 20 }: { dex: string | null | undef
       src={`https://dd.dexscreener.com/ds-data/dexes/${id}.png`}
       alt={pretty(dex)}
       title={pretty(dex)}
-      width={size}
       height={size}
       loading="lazy"
       decoding="async"
       onError={() => setBad(true)}
-      style={{ width: size, height: size }}
+      style={{ height: size, width: "auto", maxWidth: size * 3.2 }}
     />
   );
 }

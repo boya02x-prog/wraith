@@ -1,14 +1,23 @@
 "use client";
 // The launchpad a token came from, shown as a small logo only (the name is the tooltip), next to the network logo.
-// pump.fun is drawn as its capsule; the others get a plain rounded badge with their initial until their real marks are added.
+// A real logo file in /public/launchpads (pumpfun, bonk, bags, boop as .svg or .png) is used automatically. Without one, pump.fun
+// is drawn as its capsule and the others get a plain rounded badge with their initial. A missing file never shows a broken image.
+import { useState } from "react";
 import { launchpadOf } from "@/lib/launchpad";
+
+const FILE: Record<string, string> = { "pump.fun": "pumpfun", LetsBonk: "bonk", Bags: "bags", "boop.fun": "boop" };
 
 export default function LaunchpadIcon({ address, chain, size = 18 }: { address: string | null | undefined; chain?: string | null; size?: number }) {
   const name = launchpadOf(address, chain);
+  const [step, setStep] = useState(0); // 0 = try .svg, 1 = try .png, 2 = built-in mark
   if (!name) return null;
+  const key = FILE[name];
   return (
     <span className="wx-lp-logo" title={`Launched on ${name}`} aria-label={`Launched on ${name}`} style={{ width: size, height: size }}>
-      {name === "pump.fun" ? (
+      {step < 2 && key ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={`/launchpads/${key}.${step === 0 ? "svg" : "png"}`} alt="" width={size} height={size} onError={() => setStep((s) => s + 1)} style={{ width: size, height: size, objectFit: "contain", borderRadius: 5 }} />
+      ) : name === "pump.fun" ? (
         <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
           <g transform="rotate(-45 12 12)">
             <rect x="3.5" y="7.5" width="17" height="9" rx="4.5" fill="#f4f4f5" />
