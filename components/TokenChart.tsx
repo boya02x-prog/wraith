@@ -1529,12 +1529,16 @@ export default function TokenChart({
                     </div>
                   );
                 }
-                const cx = Math.min(vw - 200, Math.max(200, spotRect.left + spotRect.width / 2));
-                const above = spotRect.top > vh / 2;
-                const pos = above
-                  ? { bottom: vh - spotRect.top + 8, maxHeight: Math.max(160, spotRect.top - 16) }
-                  : { top: spotRect.bottom + 8, maxHeight: Math.max(160, vh - spotRect.bottom - 16) };
-                return <div style={{ position: "fixed", left: cx, transform: "translateX(-50%)", zIndex: 1300, overflowY: "auto", pointerEvents: "none", ...pos }}>{spotCard}</div>;
+                // Desktop: the card sits beside the marker (right if there is room, else left), centred in the window height, and can use all
+                // of it, so no part is ever cut off. Pinned (clicked) it can be scrolled.
+                const W = 316, gap = 16;
+                const right = spotRect.right + gap + W <= vw - 8;
+                const left = right ? spotRect.right + gap : Math.max(8, spotRect.left - gap - W);
+                return (
+                  <div style={{ position: "fixed", left, top: 12, bottom: 12, width: W, display: "flex", alignItems: "center", zIndex: 1300, pointerEvents: "none" }}>
+                    <div style={{ maxHeight: "100%", width: "100%", overflowY: "auto", overscrollBehavior: "contain", pointerEvents: spotPinRef.current ? "auto" : "none", borderRadius: 14, scrollbarWidth: "thin" }}>{spotCard}</div>
+                  </div>
+                );
               })(),
               document.body,
             )}
