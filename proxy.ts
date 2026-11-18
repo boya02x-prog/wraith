@@ -106,6 +106,16 @@ async function privateGate(request: NextRequest): Promise<NextResponse | null> {
 
 export async function proxy(request: NextRequest) {
   if (!(await privateOn())) return route(request);
+  // Private mode and a session that is not marked as the owner (for example one made before this mark existed): do NOT bounce /login to
+  // /app (that would show the construction page forever). Let the sign-in page load, so signing in again refreshes the session and marks it.
+  if (request.nextUrl.pathname === "/login") {
+    const info = await sessionInfo(request.cookies.get(PRIVY_SESSION_COOKIE)?.value);
+    if (info && !info.owner && !allowedIds().has(info.userId)) {
+      const res = NextResponse.next();
+      res.headers.set("x-robots-tag", NO_INDEX);
+      return res;
+    }
+  }
   const blocked = await privateGate(request);
   if (blocked) return blocked;
   const res = await route(request);

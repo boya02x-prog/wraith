@@ -7,27 +7,39 @@ import { SESSION_DAYS, signSession } from "@/lib/appSession";
 
 export const dynamic = "force-dynamic";
 
+const ownerCache = new Map<string, { at: number; v: boolean }>();
+async function isOwnerAccount(userId: string): Promise<boolean> {
+  const hit = ownerCache.get(userId);
+  if (hit && Date.now() - hit.at < 600_000) return hit.v;
+  const owners = `${process.env.QUESTS_ADMIN_EMAILS ?? ""},${process.env.WRAITH_ALLOWED_EMAILS ?? ""}`.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
+  let v = false;
+  if (owners.length) {
+    try {
+      const pu = await getPrivyClient()?.getUser(userId);
+      const mail = (pu?.email?.address ?? pu?.google?.email ?? "").toLowerCase();
+      v = !!mail && owners.includes(mail);
+    } catch { return false; /* do not cache a failed lookup */ }
+  }
+  ownerCache.set(userId, { at: Date.now(), v });
+  return v;
+}
+
 export async function POST(request: NextRequest) {
   // Private mode (see proxy.ts): this endpoint stays reachable so the sign-in page can work, but a stranger who signs in with Google
   // must not get a Wraith account created for them, so only the listed accounts go any further.
+  const bearer0 = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const claims0 = bearer0 ? await verifyPrivyAccessToken(bearer0) : null;
+  const allowed = (process.env.WRAITH_ALLOWED_USERS ?? "").split(",").map((v) => v.trim()).filter(Boolean);
+  // Is this the owner? Decided by the sign-in email (Privy verified it): QUESTS_ADMIN_EMAILS or WRAITH_ALLOWED_EMAILS. It is worked out on
+  // EVERY sign-in, not only while the site is private, so a session made while the site was open already carries the owner mark and
+  // switching to private later cannot lock the owner out. The answer is remembered for 10 minutes per account.
   let ownerLogin = false;
+  if (claims0) ownerLogin = await isOwnerAccount(claims0.userId);
   if (await isSitePrivate()) {
-    const bearer = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
-    const claims = bearer ? await verifyPrivyAccessToken(bearer) : null;
-    const allowed = (process.env.WRAITH_ALLOWED_USERS ?? "").split(",").map((v) => v.trim()).filter(Boolean);
-    // the owner gets in by sign-in email (Privy verified it): QUESTS_ADMIN_EMAILS or WRAITH_ALLOWED_EMAILS
-    if (claims && !allowed.includes(claims.userId)) {
-      try {
-        const pu = await getPrivyClient()?.getUser(claims.userId);
-        const mail = (pu?.email?.address ?? pu?.google?.email ?? "").toLowerCase();
-        const owners = `${process.env.QUESTS_ADMIN_EMAILS ?? ""},${process.env.WRAITH_ALLOWED_EMAILS ?? ""}`.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean);
-        if (mail && owners.includes(mail)) ownerLogin = true;
-      } catch { /* not the owner */ }
-    }
-    if (!claims || (!ownerLogin && !allowed.includes(claims.userId))) {
+    if (!claims0 || (!ownerLogin && !allowed.includes(claims0.userId))) {
       // the id comes from the caller's own signed token, so showing it back to them reveals nothing; it lets the sign-in screen
       // display it, so you can copy exactly that account's id into the allowed list
-      return NextResponse.json({ error: "Private", ...(claims ? { yourId: claims.userId } : {}) }, { status: 403 });
+      return NextResponse.json({ error: "Private", ...(claims0 ? { yourId: claims0.userId } : {}) }, { status: 403 });
     }
   }
   const session = await getPrivySession(request);
