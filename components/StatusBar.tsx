@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { visibleInterval } from "@/lib/visibleInterval";
 import { useRouter } from "next/navigation";
+import { Coins, Fuel, Users } from "lucide-react";
 import ChainLogo from "@/components/ChainLogo";
 import { changeColor, fmtPct, fmtUsd } from "@/lib/market";
 
@@ -10,12 +11,31 @@ interface Sig { address: string; chain: string; symbol: string; score: number; t
 interface Win { address: string; chain: string; symbol: string; x: number; mcap: number }
 interface Tape { signals: Sig[]; wins: Win[]; stats: { calls: number; hit2: number; rate: number } }
 
+interface Net { online: number | null; feeSol: number | null; omen: { mcap: number; price: number } | null }
+const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
+/** 0.0000052 -> 0.0₅52 (small numbers with the zero count as a subscript, like trading terminals) */
+function tiny(n: number) {
+  if (n >= 0.001) return n.toFixed(4);
+  const zeros = Math.floor(-Math.log10(n)); // 0.0000052 -> 5 zeros after the point
+  const digits = Math.round(n * 10 ** (zeros + 2)).toString().slice(0, 2);
+  const sub = String(zeros).split("").map((d) => "₀₁₂₃₄₅₆₇₈₉"[Number(d)]).join("");
+  return `0.0${sub}${digits}`;
+}
+
 const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL || "https://t.me/wraithportal";
 
 export default function StatusBar() {
   const router = useRouter();
   const [tape, setTape] = useState<Tape | null>(null);
   const [ok, setOk] = useState(true);
+  const [net, setNet] = useState<Net | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetch("/api/network-stats").then((r) => (r.ok ? r.json() : null)).then((d: Net | null) => { if (alive && d) setNet(d); }).catch(() => undefined);
+    void load();
+    const t = visibleInterval(() => void load(), 30_000);
+    return () => { alive = false; window.clearInterval(t); };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -68,6 +88,11 @@ export default function StatusBar() {
   return (
     <footer className="wx-statusbar wx-tape" aria-label="Wraith live tape">
       <span className={`wx-tp-live${ok ? "" : " bad"}`}><i />LIVE</span>
+      <span className="wx-st-stats" aria-label="Network stats">
+        <span title="People with Wraith open right now"><Users size={14} />{net?.online != null ? compact(net.online) : "–"}</span>
+        <span title="What a swap costs in network fees right now (SOL)"><Fuel size={14} />{net?.feeSol != null ? tiny(net.feeSol) : "–"}</span>
+        <span title={net?.omen ? "OMEN market cap" : "OMEN is not launched yet"}><Coins size={14} />{net?.omen ? `$${compact(net.omen.mcap)}` : "OMEN soon"}</span>
+      </span>
       {tape?.stats && tape.stats.calls > 0 && (
         <span className="wx-tp-record" title="Calls from the last 7 days that reached 2x or more">
           <b>{tape.stats.rate}%</b> hit 2x <small>· {tape.stats.hit2}/{tape.stats.calls} calls 7d</small>
