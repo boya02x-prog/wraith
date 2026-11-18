@@ -40,7 +40,7 @@ const display = localFont({
 
 const SITE = "https://www.wraith.farm";
 const TITLE = "Wraith: trade every chain from one cash balance";
-const DESC = "Multi-chain token scanner and trading platform. Find tokens with real upside across Solana, Base, Ethereum, BNB Chain, Monad, Arc and Robinhood Chain, with safety scores, Telegram alerts and paper trading.";
+const DESC = "Multi-chain token scanner and trading platform. Scan new tokens across Solana, Base, Ethereum, BNB Chain, Monad, Arc and Robinhood Chain, with collapse warnings, safety scores and Telegram alerts. Research, not financial advice.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

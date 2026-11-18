@@ -287,7 +287,7 @@ async function build(origin: string): Promise<Built> {
         sg.risks = [msg, ...sg.risks.filter((r) => r !== msg)].slice(0, 3);
       } else if (n.rugRisk >= RUG_WARN) {
         sg.score = Math.round(clamp(sg.score - 6, 0, 100));
-        if (sg.tier === "HOT" && n.rugRisk >= RUG_WARN + 10) sg.tier = "WATCH";
+        if (sg.tier === "HOT") sg.tier = "WATCH"; // HOT needs a LOW collapse risk (under RUG_WARN): it used to allow up to RUG_WARN + 10
         const msg = `Elevated collapse risk (${n.rugRisk}%)`;
         sg.risks = [...sg.risks.filter((r) => r !== msg), msg].slice(0, 3);
       }

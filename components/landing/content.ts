@@ -6,7 +6,7 @@ export const HERO = {
   eyebrow: "Seven networks · one balance",
   title: ["See it first.", "Buy it from", "any chain."],
   accent: 2, // index of the line shown in the accent colour
-  sub: "Wraith scans new tokens on Solana, Base, Ethereum, BNB Chain, Monad, Arc and Robinhood Chain, scores their upside and safety, and lets you buy with the stablecoins you already hold.",
+  sub: "Wraith scans new tokens on Solana, Base, Ethereum, BNB Chain, Monad, Arc and Robinhood Chain, scores their momentum, warns you when a token looks likely to collapse, and lets you buy with the stablecoins you already hold.",
   note: "Sign in with Google · wallets created for you · not financial advice",
 };
 

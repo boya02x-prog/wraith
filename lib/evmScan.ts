@@ -80,6 +80,13 @@ function parseGeckoPools(payload: unknown, chainKey: string): Candidate[] {
   return out;
 }
 
+// GeckoTerminal's free tier is shared and slow (one list every ~5 s gets through the limiter, the rest are dropped with "queue full").
+// The old version asked for all 10 lists (5 chains x trending/new) at once, so only ~2 ever succeeded: Ethereum, Base and Robinhood looked
+// almost empty next to Solana. Now each scan refreshes only the two STALEST lists, and every list keeps its last answer, so all 10 are
+// covered within a few minutes and the candidates of the whole set are used on every scan.
+const GECKO_JOB_FRESH_MS = 150_000;
+const GECKO_JOB_KEEP_MS = 25 * 60_000;
+const geckoJobs = new Map<string, { at: number; list: Candidate[] }>();
 async function geckoFeeds(): Promise<Candidate[]> {
   const jobs: { chain: string; url: string }[] = [];
   for (const c of Object.values(CHAINS)) {
@@ -87,12 +94,21 @@ async function geckoFeeds(): Promise<Candidate[]> {
     jobs.push({ chain: c.key, url: `${base}/trending_pools?include=base_token&duration=1h` });
     jobs.push({ chain: c.key, url: `${base}/new_pools?include=base_token` });
   }
-  const res = await Promise.allSettled(jobs.map((j) => getJson(j.url, GECKO_HEADERS, 9000)));
+  const now = Date.now();
+  const due = jobs
+    .filter((j) => now - (geckoJobs.get(j.url)?.at ?? 0) > GECKO_JOB_FRESH_MS)
+    .sort((x, y) => (geckoJobs.get(x.url)?.at ?? 0) - (geckoJobs.get(y.url)?.at ?? 0))
+    .slice(0, 2);
+  await Promise.allSettled(due.map(async (j) => {
+    try {
+      const v = await getJson(j.url, GECKO_HEADERS, 9000);
+      geckoJobs.set(j.url, { at: Date.now(), list: parseGeckoPools(v, j.chain) });
+    } catch (e) {
+      console.warn("[scanner] evm gecko", j.url.split("/networks/")[1]?.split("?")[0], "failed:", e instanceof Error ? e.message : e);
+    }
+  }));
   const out: Candidate[] = [];
-  res.forEach((r, i) => {
-    if (r.status === "fulfilled") out.push(...parseGeckoPools(r.value, jobs[i].chain));
-    else console.warn("[scanner] evm gecko", jobs[i].url.split("/networks/")[1]?.split("?")[0], "failed:", r.reason instanceof Error ? r.reason.message : r.reason);
-  });
+  for (const [url, v] of geckoJobs) { if (Date.now() - v.at > GECKO_JOB_KEEP_MS) geckoJobs.delete(url); else out.push(...v.list); }
   return out;
 }
 
