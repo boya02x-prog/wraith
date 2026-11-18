@@ -88,11 +88,6 @@ export default function StatusBar() {
   return (
     <footer className="wx-statusbar wx-tape" aria-label="Wraith live tape">
       <span className={`wx-tp-live${ok ? "" : " bad"}`}><i />LIVE</span>
-      <span className="wx-st-stats" aria-label="Network stats">
-        <span title="People with Wraith open right now"><Users size={14} />{net?.online != null ? compact(net.online) : "–"}</span>
-        <span title="What a swap costs in network fees right now (SOL)"><Fuel size={14} />{net?.feeSol != null ? tiny(net.feeSol) : "–"}</span>
-        <span title={net?.omen ? "OMEN market cap" : "OMEN is not launched yet"}><Coins size={14} />{net?.omen ? `$${compact(net.omen.mcap)}` : "OMEN soon"}</span>
-      </span>
       {tape?.stats && tape.stats.calls > 0 && (
         <span className="wx-tp-record" title="Calls from the last 7 days that reached 2x or more">
           <b>{tape.stats.rate}%</b> hit 2x <small>· {tape.stats.hit2}/{tape.stats.calls} calls 7d</small>
@@ -111,6 +106,11 @@ export default function StatusBar() {
           <span className="wx-tp-empty">{ok ? "Scanning every chain…" : "Tape delayed"}</span>
         )}
       </div>
+      <span className="wx-st-stats" aria-label="Network stats">
+        <span data-tip="People with Wraith open right now"><Users size={14} />{net?.online != null ? compact(net.online) : "–"}</span>
+        <span data-tip="Network fee for a swap right now, in SOL"><Fuel size={14} />{net?.feeSol != null ? tiny(net.feeSol) : "–"}</span>
+        <span data-tip={net?.omen ? "OMEN market cap" : "OMEN is not launched yet"}><Coins size={14} />{net?.omen ? `$${compact(net.omen.mcap)}` : "OMEN soon"}</span>
+      </span>
       <a className="wx-tp-tg" href={TG_URL} target="_blank" rel="noopener noreferrer" aria-label="Wraith Portal on Telegram" title="Join the Wraith Portal on Telegram">
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#27a7e7" /><path fill="#fff" d="M17.9 7.3 15.600 17c-.2.700-.6.800-1.200.5l-3.300-2.400-1.600 1.500c-.2.200-.3.300-.7.300l.3-3.400 6.100-5.500c.3-.2-.1-.4-.4-.2l-7.500 4.700-3.200-1c-.7-.2-.7-.7.100-1l12.600-4.800c.600-.2 1.100.1.900 1z" /></svg>
         <span>Portal</span>

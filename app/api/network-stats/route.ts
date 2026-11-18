@@ -15,10 +15,10 @@ async function online(): Promise<number | null> {
 
 /** What one ordinary swap costs in fees right now, in SOL: the 5,000-lamport base fee plus the middle priority fee for ~200k compute units. */
 async function feeSol(): Promise<number | null> {
-  const urls = [process.env.SOLANA_RPC_URL, process.env.NEXT_PUBLIC_SOLANA_RPC, "https://solana-rpc.publicnode.com"].filter((u): u is string => !!u);
+  const urls = [process.env.SOLANA_RPC_URL, process.env.NEXT_PUBLIC_SOLANA_RPC, "https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"].filter((u): u is string => !!u);
   for (const u of urls) {
     try {
-      const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(4000), body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPrioritizationFees", params: [] }) });
+      const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(3500), body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPrioritizationFees", params: [] }) });
       if (!r.ok) continue;
       const j = (await r.json()) as { result?: { prioritizationFee: number }[] };
       const fees = (j.result ?? []).map((x) => x.prioritizationFee).filter((n) => n > 0).sort((a, b) => a - b);

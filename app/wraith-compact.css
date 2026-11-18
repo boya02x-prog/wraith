@@ -1304,3 +1304,8 @@ html { scroll-behavior: smooth; }
 .wx-st-stats > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .wx-st-stats svg { color: #8f9bb3; }
 @media (max-width: 1100px) { .wx-st-stats > span:nth-child(2) { display: none; } }
+
+/* the stats now sit on the right, next to Portal; hover tips open upward (the bar is at the bottom of the window) */
+.wx-st-stats { border-right: 0 !important; padding-right: 0 !important; padding-left: 10px; border-left: 1px solid var(--border); margin-left: auto; }
+.wx-st-stats > span { position: relative; cursor: default; }
+.wx-st-stats > span[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 10px); right: 0; padding: 6px 10px; border-radius: 8px; background: #17171a; border: 1px solid rgba(255,255,255,.12); color: #e8e8ea; font-size: 11.5px; font-weight: 600; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,.6); z-index: 50; pointer-events: none; }
