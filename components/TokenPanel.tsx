@@ -23,6 +23,7 @@ import Mentions from "@/components/Mentions";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
 import ChainLogo from "@/components/ChainLogo";
 import LaunchpadIcon from "@/components/LaunchpadIcon";
+import DexLogo from "@/components/DexLogo";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
 import { readTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
@@ -672,7 +673,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
               <LaunchpadIcon address={mint} size={20} />
               {snap?.onCurve && <span className="wx-badge accent">Bonding curve</span>}
               {snap?.graduated && <span className="wx-badge">Graduated</span>}
-              {snap?.dexId && !snap.onCurve && <span className="wx-badge muted">{snap.dexId}</span>}
+              {!snap?.onCurve && <DexLogo dex={snap?.dexId} />}
               {snap?.stale && <span className="wx-badge muted wx-stale">delayed</span>}
             </div>
             <div className="wx-token-sub">

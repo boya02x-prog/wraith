@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Bookmark, Check, Copy, ExternalLink, Globe, Link2, Send } from "lucide-react";
 import TokenChart from "@/components/TokenChart";
+import DexLogo from "@/components/DexLogo";
 import ChainLogo from "@/components/ChainLogo";
 import EvmBuyPanel from "@/components/EvmBuyPanel";
 import EvmDetailTabs from "@/components/EvmDetailTabs";
@@ -40,11 +41,8 @@ interface Snap {
 interface Trade { id: string; ts: number; side: "buy" | "sell"; usd: number; tokens?: number; mcap?: number | null; wallet: string; tx: string }
 
 function ChainBadge({ chain }: { chain: ChainInfo }) {
-  return (
-    <span className="wx-badge" style={{ display: "inline-flex", alignItems: "center", gap: 5, color: chain.color, borderColor: `${chain.color}55`, background: `${chain.color}18` }}>
-      <ChainLogo chain={chain.key} size={14} />{chain.name}
-    </span>
-  );
+  // the network as its logo only (the name is the tooltip), plain and in the theme
+  return <span className="wx-net-logo" title={chain.name}><ChainLogo chain={chain.key} size={20} /></span>;
 }
 
 export default function EvmTokenView({ address, sidebar }: { address: string; sidebar?: ReactNode }) {
@@ -188,7 +186,7 @@ export default function EvmTokenView({ address, sidebar }: { address: string; si
                 <div className="wx-token-name">
                   <h1>{snap.symbol}</h1>
                   <ChainBadge chain={chain} />
-                  {snap.dex && <span className="wx-badge muted">{snap.dex}</span>}
+                  <DexLogo dex={snap.dex} />
                 </div>
                 <div className="wx-token-sub">
                   <span>{snap.name}</span>
