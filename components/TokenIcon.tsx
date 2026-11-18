@@ -10,10 +10,12 @@ const MONO = { fontFamily: "var(--font-mono), 'IBM Plex Mono', monospace" };
 function buildCandidates(
   dexImageUrl?: string,
   resolvedPumpUrl?: string | null,
+  dexCdnUrl?: string | null,
 ) {
   const list: string[] = [];
-  if (dexImageUrl) list.push(dexImageUrl);
+  if (dexImageUrl && !/missing\.png/i.test(dexImageUrl)) list.push(dexImageUrl);
   if (resolvedPumpUrl) list.push(resolvedPumpUrl);
+  if (dexCdnUrl) list.push(dexCdnUrl);
   return list;
 }
 
@@ -24,11 +26,14 @@ export function TokenIcon({
   imageUrl,
   symbol,
   size = 34,
+  chain,
 }: {
   contractAddress?: string;
   imageUrl?: string;
   symbol: string;
   size?: number;
+  /** network of the token ("ethereum", "base", "bsc"...): lets EVM tokens without a logo in the pool list get one from DexScreener */
+  chain?: string;
 }) {
   // DexScreener image is passed in directly (imageUrl). If missing, we
   // resolve pump.fun's image_uri ourselves and cache it globally so this
@@ -53,9 +58,10 @@ export function TokenIcon({
     };
   }, [contractAddress, pumpImage]);
 
+  const dexCdn = contractAddress ? `https://dd.dexscreener.com/ds-data/tokens/${contractAddress.startsWith("0x") ? chain || "" : "solana"}/${contractAddress}.png` : null;
   const candidates = useMemo(
-    () => buildCandidates(imageUrl, pumpUrl),
-    [imageUrl, pumpUrl],
+    () => buildCandidates(imageUrl, pumpUrl, dexCdn && !dexCdn.includes("/tokens//") ? dexCdn : null),
+    [imageUrl, pumpUrl, dexCdn],
   );
   const sourceKey = `${contractAddress || ""}:${imageUrl || ""}`;
   const [failedSource, setFailedSource] = useState<{

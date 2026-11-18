@@ -21,6 +21,8 @@ import PriceAlertButton from "@/components/PriceAlertButton";
 import Lookalikes from "@/components/Lookalikes";
 import Mentions from "@/components/Mentions";
 import { TokenDetailTabs, type AnalysisEntry, type IntelLink, type TradeRow } from "@/components/TokenDetailTabs";
+import ChainLogo from "@/components/ChainLogo";
+import { launchpadOf } from "@/lib/launchpad";
 import { TokenIcon } from "@/components/TokenIcon";
 import SpotCard from "@/components/SpotCard";
 import { readTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
@@ -666,6 +668,8 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           <div style={{ minWidth: 0 }}>
             <div className="wx-token-name">
               <h1>{symbol}</h1>
+              <span className="wx-badge net"><ChainLogo chain="solana" size={12} /> Solana</span>
+              {launchpadOf(mint) && <span className="wx-badge launch" title="Where this token was launched">{launchpadOf(mint)}</span>}
               {snap?.onCurve && <span className="wx-badge accent">Bonding curve</span>}
               {snap?.graduated && <span className="wx-badge">Graduated</span>}
               {snap?.dexId && !snap.onCurve && <span className="wx-badge muted">{snap.dexId}</span>}

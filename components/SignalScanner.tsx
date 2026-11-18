@@ -14,6 +14,7 @@ import type { MemeTrend } from "@/app/app/page";
 import { changeColor, fmtAge, fmtPct, fmtUsd, type MarketToken } from "@/lib/market";
 import { toMeme } from "@/lib/tokenMeme";
 import { TokenIcon } from "@/components/TokenIcon";
+import { launchpadOf } from "@/lib/launchpad";
 import { UpdatedAgo } from "@/components/UpdatedAgo";
 import ChainLogo from "@/components/ChainLogo";
 import { CHAINS } from "@/lib/chains";
@@ -121,10 +122,10 @@ function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; sho
   return (
     <div className="sg-card" data-tier={s.tier} data-dir={(t.change.h1 ?? 0) >= 0 ? "up" : "down"} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
       <div className="sg-card-top">
-        <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={44} />
+        <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={44} chain={t.chain ?? "solana"} />
         <div className="sg-id">
           <strong>{t.symbol}</strong>
-          <span><ChainLogo chain={t.chain ?? "solana"} size={13} /> {t.name && t.name !== t.symbol ? t.name : t.dex ?? chainName(t.chain)}</span>
+          <span><ChainLogo chain={t.chain ?? "solana"} size={13} /> <b className="sg-net">{chainName(t.chain)}</b>{launchpadOf(t.address, t.chain) ? <em className="sg-lp">{launchpadOf(t.address, t.chain)}</em> : null}<i className="sg-nm">{t.name && t.name !== t.symbol ? t.name : t.dex ?? ""}</i></span>
         </div>
         <div className="sg-ring-wrap">
           <ScoreRing score={s.score} tier={s.tier} locked={!showScore} />
@@ -157,7 +158,7 @@ function ListRowBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; 
   return (
     <div className="wx-trow sg-trow" role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
       <span className="wx-trow-id">
-        <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={32} />
+        <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={32} chain={t.chain ?? "solana"} />
         <span>
           <strong>{t.symbol}</strong>
           <small><ChainLogo chain={t.chain ?? "solana"} size={12} /> {s.tags[0] ?? (t.name && t.name !== t.symbol ? t.name : chainName(t.chain))}</small>
@@ -177,7 +178,7 @@ function RailRowBase({ s, onOpen }: { s: Signal; onOpen: () => void }) {
   const t = s.token;
   return (
     <button type="button" className="sg-rail-row" onClick={onOpen}>
-      <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={34} />
+      <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={34} chain={t.chain ?? "solana"} />
       <span className="mid">
         <strong>{t.symbol}</strong>
         <small><ChainLogo chain={t.chain ?? "solana"} size={12} /> {s.tags[0] ?? "Momentum"} · {fmtUsd(t.mcap)}</small>

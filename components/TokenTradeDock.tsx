@@ -15,6 +15,7 @@ import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
 import { formatCurrency, isDisplayCurrency, type DisplayCurrency } from "@/lib/currencies";
 import { useSandboxToken } from "@/lib/useSandboxTokens";
 import TestTradeDock from "@/components/TestTradeDock";
+import PositionShare, { type PositionCard } from "@/components/PositionShare";
 import { AboutBlock, DockFrame, FINE_PRINT, NO_CASH_NOTE, PositionBlock } from "@/components/DockParts";
 import ChainLogo from "@/components/ChainLogo";
 import { VIEM_CHAINS } from "@/lib/cashTokens";
@@ -125,6 +126,20 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
   const [currencyRate, setCurrencyRate] = useState<number | null>(1);
   const [tokenUsd, setTokenUsd] = useState<number | null>(null);
   const [marketSnapshot, setMarketSnapshot] = useState<MarketSnapshot | null>(null);
+  // the user's own latest trade of THIS token (entry market cap, size, time): what the "Share" card is built from
+  const [myTrade, setMyTrade] = useState<{ entryMcap: number; amountSol: number; ts: number } | null>(null);
+  const [posCard, setPosCard] = useState<PositionCard | null>(null);
+  useEffect(() => {
+    let on = true;
+    setMyTrade(null);
+    if (!mint) return;
+    fetch("/api/trades", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((j: { trades?: { mint?: string; entryMcap?: number; amountSol?: number; ts?: number; status?: string }[] } | null) => {
+      if (!on) return;
+      const mine = (j?.trades ?? []).filter((t) => t.mint === mint && (t.entryMcap ?? 0) > 0 && t.status !== "failed").sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0))[0];
+      if (mine) setMyTrade({ entryMcap: Number(mine.entryMcap), amountSol: Number(mine.amountSol ?? 0), ts: Number(mine.ts ?? Date.now()) });
+    }).catch(() => undefined);
+    return () => { on = false; };
+  }, [mint]);
   const [solUsd, setSolUsd] = useState<number | null>(null);
   const [cashBalance, setCashBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -521,7 +536,13 @@ function EmbeddedTradeDock({ meme, initialMode }: Props) {
         amountText={tokenBalance?.amount && tokenBalance.amount !== "0" ? tokenBalance.amount : null}
         valueText={tokenBalance && tokenUsd !== null && currencyRate !== null ? formatCurrency(tokenBalance.quantity * tokenUsd * currencyRate, displayCurrency) : null}
         onRefresh={() => void refreshTokenBalance()}
+        onShare={myTrade && marketSnapshot?.marketCap && tokenBalance?.amount && tokenBalance.amount !== "0" ? () => setPosCard({
+          symbol, mint, imageUrl: null, entryMcap: myTrade.entryMcap, endMcap: marketSnapshot.marketCap as number, closed: false,
+          invested: solUsd !== null && currencyRate !== null ? myTrade.amountSol * solUsd * currencyRate : null,
+          entryTs: myTrade.ts,
+        }) : undefined}
       />
+      {posCard && <PositionShare card={posCard} fmt={(n) => formatCurrency(n, displayCurrency)} onClose={() => setPosCard(null)} />}
 
       {marketSnapshot && (
         <AboutBlock

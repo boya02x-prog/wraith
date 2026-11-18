@@ -18,11 +18,12 @@ export function DockFrame({ children }: { children: ReactNode }) {
   );
 }
 
-export function PositionBlock({ symbol, valueText, amountText, onRefresh }: { symbol: string; valueText: string | null; amountText: string | null; onRefresh: () => void }) {
+export function PositionBlock({ symbol, valueText, amountText, onRefresh, onShare }: { symbol: string; valueText: string | null; amountText: string | null; onRefresh: () => void; onShare?: () => void }) {
   return (
     <div style={{ padding: "15px 16px", borderTop: "1px solid var(--border)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <strong style={{ fontSize: 13 }}>Your position</strong>
+        {onShare && <button type="button" onClick={onShare} title="Share this trade as a card" className="wx-pos-share">Share</button>}
         <button type="button" onClick={onRefresh} title="Refresh token balance" style={{ border: 0, background: "transparent", color: "var(--text-muted)", cursor: "pointer", fontSize: 11 }}>Refresh</button>
       </div>
       {amountText ? (

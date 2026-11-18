@@ -1365,3 +1365,14 @@ html { scroll-behavior: smooth; }
 /* share button on every trade row */
 .profile-trade-share { display: inline-grid; place-items: center; width: 34px; height: 34px; margin-left: 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .04); color: var(--text-muted); cursor: pointer; transition: background .15s ease, color .15s ease; }
 .profile-trade-share:hover { background: rgba(var(--accent-rgb), .14); color: var(--accent-text); }
+
+/* network and launchpad labels (scanner cards, token page) */
+.sg-id > span { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sg-net { font-weight: 700; color: var(--text); font-size: 12px; white-space: nowrap; }
+.sg-lp { font-style: normal; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(var(--accent-rgb), .14); color: var(--accent-text); white-space: nowrap; }
+.sg-nm { font-style: normal; color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wx-badge.net { display: inline-flex; align-items: center; gap: 5px; }
+.wx-badge.launch { background: rgba(var(--accent-rgb), .14); color: var(--accent-text); }
+.wx-pos-share { border: 1px solid rgba(255, 255, 255, .12) !important; border-radius: 8px !important; padding: 3px 10px !important; margin-right: 8px; color: var(--accent-text) !important; font-weight: 700; }
+/* the chart loader gets the faint radar rings of the landing hero */
+.wx-cskel::before { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 36% 50%, transparent 0 74px, rgba(255, 255, 255, .035) 75px 76px); -webkit-mask-image: radial-gradient(70% 90% at 36% 50%, #000, transparent 80%); mask-image: radial-gradient(70% 90% at 36% 50%, #000, transparent 80%); pointer-events: none; }
