@@ -1327,7 +1327,7 @@ html { scroll-behavior: smooth; }
 
 /* ───────── Trade panel: calm and clean. Flat dark surfaces, thin borders, rounded corners, one accent colour on the action button ───────── */
 .wx-td-tabs { padding: 3px; border-radius: 12px; background: #0a0a0b; border: 1px solid rgba(255, 255, 255, .06); gap: 3px !important; margin-bottom: 14px !important; }
-.wx-td-tab { height: 38px; border-radius: 9px !important; font-weight: 700 !important; transition: background-color .15s ease !important; }
+.wx-td-tab { display: flex !important; align-items: center !important; justify-content: center !important; padding: 0 !important; line-height: 1 !important; height: 38px; border-radius: 9px !important; font-weight: 700 !important; transition: background-color .15s ease !important; }
 .wx-td-pay { border-radius: 12px !important; padding: 11px 14px !important; background: #0d0d0f !important; border-color: rgba(255, 255, 255, .07) !important; }
 .wx-td-amt { height: 56px !important; border-radius: 12px !important; background: #0a0a0b !important; border-color: rgba(255, 255, 255, .08) !important; font-size: 22px !important; transition: border-color .15s ease; }
 .wx-td-amt:focus { outline: 0 !important; border-color: rgba(var(--accent-rgb), .6) !important; }
