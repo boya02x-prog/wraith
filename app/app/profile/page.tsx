@@ -45,6 +45,7 @@ import { decryptHotWalletKey } from "@/lib/hotWalletCrypto";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { useCashSources } from "@/lib/useCashSources";
 import PortfolioShare from "@/components/PortfolioShare";
+import PositionShare, { type PositionCard } from "@/components/PositionShare";
 import {
   DisplayCurrency,
   formatCurrency,
@@ -189,6 +190,7 @@ export default function ProfilePage() {
   const [tradeMode, setTradeMode] = useState<"ALL" | Trade["mode"]>("ALL");
   const cashHook = useCashSources();
   const [shareOpen, setShareOpen] = useState(false);
+  const [posCard, setPosCard] = useState<PositionCard | null>(null);
   const [posTab, setPosTab] = useState<"open" | "closed">("open");
   const fmtHoldUsd = (v: number) => (v < 0.01 ? "<$0.01" : v.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }));
   const [holdings, setHoldings] = useState<{ address: string; symbol: string; name: string; amount: number; priceUsd: number; valueUsd: number; imageUrl?: string; native?: boolean }[]>([]);
@@ -1258,6 +1260,9 @@ export default function ProfilePage() {
           onClose={() => setShareOpen(false)}
         />
       )}
+      {posCard && (
+        <PositionShare card={posCard} fmt={(n) => formatCurrency(n, profile.displayCurrency)} onClose={() => setPosCard(null)} />
+      )}
       {viewerSrc && <PhotoViewer src={viewerSrc} onClose={() => setViewerSrc(null)} />}
       {PRIVY_WALLETS_ENABLED && <XLinkBridge apiRef={xLinkApi} onLinked={() => void syncXFromPrivy()} onError={onXLinkError} />}
       <div className="profile-shell">
@@ -1611,6 +1616,26 @@ export default function ProfilePage() {
                           : `${pnl > 0 ? "+" : ""}${pnl.toFixed(1)}%`}
                       </span>
                       <time>{formatDate(trade.ts)}</time>
+                      {trade.entryMcap > 0 && (trade.exitMcap || trade.status === "filled" || trade.status === "open" || trade.currentPnlPct !== undefined || trade.pnlPct !== undefined) && (
+                        <button
+                          type="button"
+                          className="profile-trade-share"
+                          aria-label={`Share your ${trade.symbol} trade`}
+                          title="Share this trade"
+                          onClick={() => {
+                            const closed = !!trade.exitMcap;
+                            const pct = trade.pnlPct ?? trade.currentPnlPct ?? 0;
+                            const end = trade.exitMcap ?? trade.entryMcap * (1 + pct / 100);
+                            setPosCard({
+                              symbol: trade.symbol, mint: trade.mint, imageUrl: trade.imageUrl, entryMcap: trade.entryMcap, endMcap: end, closed,
+                              invested: solUsd !== null && fxRate !== null ? trade.amountSol * solUsd * fxRate : null,
+                              entryTs: trade.ts, exitTs: null,
+                            });
+                          }}
+                        >
+                          <Share2 size={15} />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

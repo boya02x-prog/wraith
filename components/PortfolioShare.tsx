@@ -1,15 +1,14 @@
 "use client";
 // "Share my portfolio": a sheet with a picture card (avatar, value, change over 24h / 7d / 30d, the realized-profit curve, three stat boxes and
 // the invite code), drawn on a canvas so the same drawing is the preview, the shared PNG, the copied image and the recorded video.
-// Nothing has to be picked: the card builds itself. The background can OPTIONALLY be your own photo or a short video clip (picked from the device, never uploaded anywhere).
+// Nothing has to be picked or uploaded: the card builds itself, and Save video records the same card with the curve drawing itself.
 // Numbers come from the profile page (real wallet + cash + closed trades); nothing is made up here. With no closed trades
 // in the range the curve is a flat line, the same as the figure above it.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Eye, EyeOff, ImagePlus, Link2, Share2, Trash2, X } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, Link2, Share2, X } from "lucide-react";
 
 export type ShareTrade = { ts: number; usd: number }; // realized profit (+) or loss (-) of one closed trade, in display currency
 type Range = "24h" | "7d" | "30d";
-type Bg = { kind: "image"; el: HTMLImageElement } | { kind: "video"; el: HTMLVideoElement };
 const SPAN: Record<Range, number> = { "24h": 86400e3, "7d": 7 * 86400e3, "30d": 30 * 86400e3 };
 const W = 1080, H = 1260;
 
@@ -21,17 +20,6 @@ const loadImg = (src: string) => new Promise<HTMLImageElement | null>((res) => {
   i.onerror = () => res(null);
   i.src = src;
 });
-
-/** Draws a photo or video frame so it fills the whole card (centered, cropped), like background-size: cover. */
-function cover(g: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVideoElement) {
-  const sw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
-  const sh = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
-  if (!sw || !sh) return false;
-  const k = Math.max(W / sw, H / sh);
-  const dw = sw * k, dh = sh * k;
-  g.drawImage(el, (W - dw) / 2, (H - dh) / 2, dw, dh);
-  return true;
-}
 
 export default function PortfolioShare({
   name, username, avatar, value, trades, fmt, onClose, followers, following, since,
@@ -53,20 +41,15 @@ export default function PortfolioShare({
   const [ref, setRef] = useState("");
   const [note, setNote] = useState("");
   const canvas = useRef<HTMLCanvasElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [prog, setProg] = useState(0);
-  const progRef = useRef(0);
   const [playKey, setPlayKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [imgs, setImgs] = useState<{ av: HTMLImageElement | null; ghost: HTMLImageElement | null }>({ av: null, ghost: null });
-  const [bg, setBg] = useState<Bg | null>(null);
-  const bgUrl = useRef<string | null>(null);
 
   useEffect(() => {
     fetch("/api/quests").then((r) => r.json()).then((d: { me?: { refCode?: string } }) => setRef(d.me?.refCode ?? "")).catch(() => undefined);
     void Promise.all([loadImg(avatar), loadImg("/logo.png")]).then(([av, ghost]) => setImgs({ av, ghost }));
   }, [avatar]);
-  useEffect(() => () => { if (bgUrl.current) URL.revokeObjectURL(bgUrl.current); }, []);
 
   // cumulative realized profit inside the range -> points for the curve, plus the numbers for the stat boxes
   const stats = useMemo(() => {
@@ -82,27 +65,20 @@ export default function PortfolioShare({
   }, [trades, range, value]);
 
   const draw = useCallback((c: HTMLCanvasElement, prog = 1) => {
+    prog = Math.min(1, Math.max(0, Number.isFinite(prog) ? prog : 1)); // the first animation frame can read slightly below 0
     const e = 1 - Math.pow(1 - Math.min(1, Math.max(0, prog)), 3); // ease-out: fast start, settles at the end
     const g = c.getContext("2d");
     if (!g) return;
     c.width = W; c.height = H;
     const accent = "#ff7b3d";
-    // background: your photo / video, or a deep dark base with a faint warm glow
+    // background: a deep dark base with a faint warm glow, a soft dot grid and the ghost watermark
     g.fillStyle = "#08080a"; g.fillRect(0, 0, W, H);
-    const hasBg = bg ? cover(g, bg.el) : false;
-    if (hasBg) {
-      // keep the picture, but dark enough that every number stays easy to read
-      g.fillStyle = "rgba(6,6,8,.52)"; g.fillRect(0, 0, W, H);
-      const v = g.createLinearGradient(0, 0, 0, H); v.addColorStop(0, "rgba(6,6,8,.55)"); v.addColorStop(.45, "rgba(6,6,8,.12)"); v.addColorStop(1, "rgba(6,6,8,.9)");
-      g.fillStyle = v; g.fillRect(0, 0, W, H);
-    } else {
-      const glow = g.createRadialGradient(W * 0.5, 0, 40, W * 0.5, 0, 900);
-      glow.addColorStop(0, "rgba(255,123,61,.13)"); glow.addColorStop(1, "rgba(255,123,61,0)");
-      g.fillStyle = glow; g.fillRect(0, 0, W, H);
-      g.fillStyle = "rgba(255,255,255,.03)";
-      for (let y = 18; y < H - 170; y += 26) for (let x = (y / 26) % 2 ? 18 : 31; x < W; x += 26) { g.beginPath(); g.arc(x, y, 1.5, 0, 7); g.fill(); }
-      if (imgs.ghost) { g.globalAlpha = 0.06; const gw = 620; g.drawImage(imgs.ghost, W - gw + 120, 120, gw, gw * (imgs.ghost.height / imgs.ghost.width)); g.globalAlpha = 1; }
-    }
+    const glow = g.createRadialGradient(W * 0.5, 0, 40, W * 0.5, 0, 900);
+    glow.addColorStop(0, "rgba(255,123,61,.13)"); glow.addColorStop(1, "rgba(255,123,61,0)");
+    g.fillStyle = glow; g.fillRect(0, 0, W, H);
+    g.fillStyle = "rgba(255,255,255,.03)";
+    for (let y = 18; y < H - 170; y += 26) for (let x = (y / 26) % 2 ? 18 : 31; x < W; x += 26) { g.beginPath(); g.arc(x, y, 1.5, 0, 7); g.fill(); }
+    if (imgs.ghost) { g.globalAlpha = 0.06; const gw = 620; g.drawImage(imgs.ghost, W - gw + 120, 120, gw, gw * (imgs.ghost.height / imgs.ghost.width)); g.globalAlpha = 1; }
     // identity
     const ax = 88, ay = 88, ar = 58;
     g.save(); g.beginPath(); g.arc(ax + ar, ay + ar, ar, 0, 7); g.clip();
@@ -188,41 +164,17 @@ export default function PortfolioShare({
       g.fillStyle = accent; g.font = "800 50px monospace"; g.fillText(ref, W - 80, H - 34);
     } else { g.fillStyle = "rgba(255,255,255,.7)"; g.font = "700 32px sans-serif"; g.fillText("wraith.farm", W - 80, H - 46); }
     g.textAlign = "left";
-  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, bg, followers, following, since]);
+  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, followers, following, since]);
 
   // the journey: the curve draws itself and the numbers count up over 10 seconds (plays on open, Replay plays it again)
   useEffect(() => {
     let raf = 0; const t0 = performance.now();
-    const tick = (now: number) => { const p = Math.min(1, (now - t0) / 10000); progRef.current = p; setProg(p); if (p < 1) raf = requestAnimationFrame(tick); };
-    progRef.current = 0; setProg(0); raf = requestAnimationFrame(tick);
+    const tick = (now: number) => { const p = Math.min(1, (now - t0) / 10000); setProg(p); if (p < 1) raf = requestAnimationFrame(tick); };
+    setProg(0); raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [playKey, range]);
   useEffect(() => { if (canvas.current) draw(canvas.current, prog); }, [draw, prog]);
-  // a video background needs a fresh frame every tick, even after the journey has finished
-  useEffect(() => {
-    if (bg?.kind !== "video") return;
-    let raf = 0;
-    const loop = () => { if (canvas.current) draw(canvas.current, progRef.current); raf = requestAnimationFrame(loop); };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [bg, draw]);
-
   const flash = (m: string) => { setNote(m); window.setTimeout(() => setNote(""), 2200); };
-  const pickBg = async (f: File | undefined) => {
-    if (!f) return;
-    if (f.size > 60 * 1024 * 1024) { flash("That file is too big (60 MB max)"); return; }
-    if (bgUrl.current) URL.revokeObjectURL(bgUrl.current);
-    const url = URL.createObjectURL(f); bgUrl.current = url;
-    if (f.type.startsWith("video/")) {
-      const v = document.createElement("video");
-      v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
-      try { await v.play(); setBg({ kind: "video", el: v }); } catch { flash("Could not play that video"); }
-    } else if (f.type.startsWith("image/")) {
-      const i = await loadImg(url);
-      if (i) setBg({ kind: "image", el: i }); else flash("Could not open that photo");
-    } else flash("Pick a photo or a video");
-  };
-
   const toBlob = () => new Promise<Blob | null>((res) => { const c = document.createElement("canvas"); draw(c); try { c.toBlob((b) => res(b), "image/png"); } catch { res(null); } });
   const link = `https://www.wraith.farm/app/u/${encodeURIComponent(username ?? name)}`;
 
@@ -276,11 +228,6 @@ export default function PortfolioShare({
           <div className="ps-seg">{(["24h", "7d", "30d"] as Range[]).map((r) => <button key={r} type="button" className={range === r ? "on" : ""} onClick={() => setRange(r)}>{r}</button>)}</div>
           <div className="ps-seg"><button type="button" className={!asPct ? "on" : ""} onClick={() => setAsPct(false)}>$</button><button type="button" className={asPct ? "on" : ""} onClick={() => setAsPct(true)}>%</button></div>
           <button type="button" className={`ps-ref${showRef ? " on" : ""}`} onClick={() => setShowRef((v) => !v)} disabled={!ref}>{showRef ? <Eye size={16} /> : <EyeOff size={16} />} Ref code</button>
-        </div>
-        <div className="ps-opts">
-          <input ref={fileRef} type="file" accept="image/*,video/*" hidden onChange={(e) => { void pickBg(e.target.files?.[0]); e.target.value = ""; }} />
-          <button type="button" className="ps-ref on" onClick={() => fileRef.current?.click()}><ImagePlus size={16} /> {bg ? "Change background" : "Optional: your own photo or video background"}</button>
-          {bg && <button type="button" className="ps-ref" onClick={() => { if (bgUrl.current) { URL.revokeObjectURL(bgUrl.current); bgUrl.current = null; } setBg(null); }}><Trash2 size={16} /> Remove</button>}
         </div>
         <div className="ps-play">
           <button type="button" onClick={() => setPlayKey((k) => k + 1)}>▶ Replay journey</button>
