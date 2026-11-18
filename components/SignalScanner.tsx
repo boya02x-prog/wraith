@@ -250,6 +250,8 @@ export default function SignalScanner({
   const showScore = can("ai_score");
   const showRail = can("live_signals_view");
   const [filter, setFilter] = useState<Filter>("all");
+  // Weak setups (score under 50: the "Weak" and "Risky" bands) and tokens the collapse model rates high-risk are hidden by default.
+  const [showWeak, setShowWeak] = useState(false);
   const [railTab, setRailTab] = useState<RailTab>("top");
   const [chainFilter, setChainFilter] = useState<string>("all");
   // Patterns stays open for the visit, so opening a wallet or token from it and pressing Back returns here, not to the list.
@@ -271,8 +273,10 @@ export default function SignalScanner({
     return m;
   }, [signals]);
 
+  const isWeak = (s: Signal) => s.score < 50 || (s.rugRisk ?? 0) >= 60;
+  const weakCount = useMemo(() => byChain.filter(isWeak).length, [byChain]);
   const shown = useMemo(() => {
-    const signals = byChain;
+    const signals = showWeak ? byChain : byChain.filter((s) => !isWeak(s));
     switch (filter) {
       case "hot": return signals.filter((s) => s.tier === "HOT");
       case "fresh": return signals.filter((s) => s.tags.includes("Fresh") || s.tags.includes("New today"));
@@ -280,7 +284,7 @@ export default function SignalScanner({
       case "safe": return signals.filter((s) => s.risks.length === 0 && s.token.liquidity >= 15_000);
       default: return signals;
     }
-  }, [byChain, filter]);
+  }, [byChain, filter, showWeak]);
 
   const railList = useMemo(() => {
     const signals = byChain;
@@ -365,6 +369,11 @@ export default function SignalScanner({
                   {f.key === "hot" && <Flame size={12} />}{f.key === "fresh" && <Zap size={12} />}{f.label}
                 </button>
               ))}
+              {weakCount > 0 && (
+                <button type="button" className={`sg-weak${showWeak ? " on" : ""}`} onClick={() => setShowWeak((v) => !v)} title="Weak setups (score under 50) and tokens with a high collapse risk">
+                  {showWeak ? "Hide" : "Show"} {weakCount} weak
+                </button>
+              )}
             </div>
             <div className="sg-body">
               {loading && !signals.length ? (

@@ -1376,3 +1376,6 @@ html { scroll-behavior: smooth; }
 .wx-pos-share { border: 1px solid rgba(255, 255, 255, .12) !important; border-radius: 8px !important; padding: 3px 10px !important; margin-right: 8px; color: var(--accent-text) !important; font-weight: 700; }
 /* the chart loader gets the faint radar rings of the landing hero */
 .wx-cskel::before { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 36% 50%, transparent 0 74px, rgba(255, 255, 255, .035) 75px 76px); -webkit-mask-image: radial-gradient(70% 90% at 36% 50%, #000, transparent 80%); mask-image: radial-gradient(70% 90% at 36% 50%, #000, transparent 80%); pointer-events: none; }
+
+.sg-filters .sg-weak { margin-left: auto; color: var(--text-muted); border-style: dashed; }
+.sg-filters .sg-weak.on { color: var(--accent-text); }
