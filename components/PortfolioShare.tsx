@@ -34,7 +34,7 @@ function cover(g: CanvasRenderingContext2D, el: HTMLImageElement | HTMLVideoElem
 }
 
 export default function PortfolioShare({
-  name, username, avatar, value, trades, fmt, onClose,
+  name, username, avatar, value, trades, fmt, onClose, followers, following, since,
 }: {
   name: string;
   username: string | null;
@@ -43,6 +43,9 @@ export default function PortfolioShare({
   trades: ShareTrade[];
   fmt: (n: number) => string; // money formatter (already in the display currency)
   onClose: () => void;
+  followers?: number;
+  following?: number;
+  since?: number | null; // when the account was created (ms)
 }) {
   const [range, setRange] = useState<Range>("24h");
   const [asPct, setAsPct] = useState(false);
@@ -132,7 +135,15 @@ export default function PortfolioShare({
     // curve
     const cx = 80, cy = 548, cwid = W - 160, chei = 330;
     g.strokeStyle = "rgba(255,255,255,.07)"; g.lineWidth = 2;
-    for (let i = 0; i < 4; i++) { const y = cy + (chei / 3) * i; g.beginPath(); g.moveTo(cx, y); g.lineTo(cx + cwid, y); g.stroke(); }
+    if (stats.n > 0) for (let i = 0; i < 4; i++) { const y = cy + (chei / 3) * i; g.beginPath(); g.moveTo(cx, y); g.lineTo(cx + cwid, y); g.stroke(); }
+    if (stats.n === 0) {
+      // nothing closed yet: no flat line pretending to be a chart, just a calm note
+      g.strokeStyle = "rgba(255,255,255,.14)"; g.lineWidth = 3; g.setLineDash([2, 16]); g.lineCap = "round";
+      g.beginPath(); g.moveTo(cx, cy + chei / 2); g.lineTo(cx + cwid, cy + chei / 2); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "rgba(255,255,255,.6)"; g.font = "700 34px sans-serif"; g.textAlign = "center";
+      g.fillText("No closed trades in this range yet", W / 2, cy + chei / 2 - 22);
+      g.fillStyle = "rgba(255,255,255,.38)"; g.font = "600 26px sans-serif"; g.fillText("Your profit curve draws itself here", W / 2, cy + chei / 2 + 24); g.textAlign = "left";
+    } else {
     const pts = stats.pts.length > 1 ? stats.pts : [0, 0];
     const lo = Math.min(...pts), hi = Math.max(...pts), span = hi - lo || 1;
     const X = (i: number) => cx + (cwid * i) / (pts.length - 1);
@@ -149,14 +160,14 @@ export default function PortfolioShare({
     const pi = Math.min(pts.length - 1, Math.floor(Math.min(1, prog) * (pts.length - 1)));
     const ex = cx + cwid * Math.min(1, prog), ey = Y(pts[pi]);
     g.fillStyle = col; g.beginPath(); g.arc(ex, ey, 12, 0, 7); g.fill();
+    }
     // three stat boxes
     const bw = (cwid - 48) / 3, by = cy + chei + 36, bh = 128;
     const winRate = stats.n ? Math.round((stats.wins / stats.n) * 100) : null;
-    const boxes: [string, string][] = [
-      ["CLOSED TRADES", String(stats.n)],
-      ["WIN RATE", winRate !== null ? `${winRate}%` : "—"],
-      ["BEST TRADE", stats.best > 0 ? `+${fmt(stats.best)}` : "—"],
-    ];
+    const sinceTxt = since ? new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(since)) : "—";
+    const boxes: [string, string][] = stats.n > 0
+      ? [["CLOSED TRADES", String(stats.n)], ["WIN RATE", winRate !== null ? `${winRate}%` : "—"], ["BEST TRADE", stats.best > 0 ? `+${fmt(stats.best)}` : "—"]]
+      : [["FOLLOWERS", String(followers ?? 0)], ["FOLLOWING", String(following ?? 0)], ["MEMBER SINCE", sinceTxt]];
     boxes.forEach(([label, val], i) => {
       const bx = cx + i * (bw + 24);
       g.fillStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.roundRect(bx, by, bw, bh, 24); g.fill();
@@ -177,7 +188,7 @@ export default function PortfolioShare({
       g.fillStyle = accent; g.font = "800 50px monospace"; g.fillText(ref, W - 80, H - 34);
     } else { g.fillStyle = "rgba(255,255,255,.7)"; g.font = "700 32px sans-serif"; g.fillText("wraith.farm", W - 80, H - 46); }
     g.textAlign = "left";
-  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, bg]);
+  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, bg, followers, following, since]);
 
   // the journey: the curve draws itself and the numbers count up over 10 seconds (plays on open, Replay plays it again)
   useEffect(() => {

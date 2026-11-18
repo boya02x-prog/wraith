@@ -1252,6 +1252,9 @@ export default function ProfilePage() {
           value={portfolioValue}
           trades={solUsd !== null && fxRate !== null ? completedTrades.map((t) => ({ ts: t.ts, usd: t.amountSol * ((t.pnlPct ?? 0) / 100) * solUsd * fxRate })) : []}
           fmt={(n) => formatCurrency(n, profile.displayCurrency)}
+          followers={socialCounts.followers}
+          following={socialCounts.following}
+          since={accountCreatedAt ? new Date(accountCreatedAt).getTime() : null}
           onClose={() => setShareOpen(false)}
         />
       )}
