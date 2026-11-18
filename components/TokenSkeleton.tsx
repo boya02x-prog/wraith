@@ -2,14 +2,20 @@
 // The token page the instant a token is tapped: name, icon and market cap come from what the list already knew, and every other
 // block is a same-size placeholder. The real panel (a big chunk) swaps in without anything moving. Same class names as the real
 // header and price block, so the layout cannot jump when the data lands.
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { TokenIcon } from "@/components/TokenIcon";
 import { readTokenNav } from "@/lib/tokenNav";
 
 const usd = (n: number | undefined | null) => (n == null ? "" : n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(2)}K` : `$${n.toFixed(0)}`);
 
+// layout effect in the browser (runs before paint, so no flash), plain effect on the server (where it never runs)
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 export default function TokenSkeleton({ address }: { address: string }) {
-  const m = readTokenNav(address);
+  // What the list already knew about this token is saved in the browser, so it cannot be read while rendering: the server has none of it and the
+  // first browser render has to match the server's HTML (reading it here caused a "hydration failed" error). It is read right after the first render.
+  const [m, setM] = useState<ReturnType<typeof readTokenNav>>(null);
+  useIsoLayoutEffect(() => { setM(readTokenNav(address)); }, [address]);
   // a new token always starts at the top (the old page's scroll position used to carry over and show the placeholder half-way down)
   useEffect(() => { try { window.scrollTo(0, 0); document.querySelectorAll(".wx-mobile-body, .wx-center").forEach((e) => { (e as HTMLElement).scrollTop = 0; }); } catch { /* ignore */ } }, [address]);
   return (

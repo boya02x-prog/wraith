@@ -123,7 +123,18 @@ export function biometricReady(): boolean {
 }
 
 /** Ask the phone for fingerprint / face / screen lock. Resolves true when the owner is verified. */
-export async function biometricVerify(): Promise<boolean> {
+// One prompt at a time: the lock screen can be mounted more than once at the same moment (the shell, the header and the page each render it),
+// and every copy asks for the fingerprint when it appears, which showed "Unlock Wraith" three times in a row on phones. All callers that ask
+// while a prompt is up (or within a moment after it closed) now share that one prompt and its answer.
+let bioInflight: Promise<boolean> | null = null;
+export function biometricVerify(): Promise<boolean> {
+  if (bioInflight) return bioInflight;
+  const run = biometricVerifyOnce().finally(() => { window.setTimeout(() => { if (bioInflight === run) bioInflight = null; }, 600); });
+  bioInflight = run;
+  return run;
+}
+
+async function biometricVerifyOnce(): Promise<boolean> {
   const s = load();
   if (!s?.on) return false;
   if (s.id === "native") return nativeVerify("Unlock Wraith");
