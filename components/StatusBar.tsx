@@ -11,17 +11,8 @@ interface Sig { address: string; chain: string; symbol: string; score: number; t
 interface Win { address: string; chain: string; symbol: string; x: number; mcap: number }
 interface Tape { signals: Sig[]; wins: Win[]; stats: { calls: number; hit2: number; rate: number } }
 
-interface Net { online: number | null; feeSol: number | null; omen: { mcap: number; price: number } | null }
+interface Net { online: number | null; gas: { sol: number; topups: number } | null; omen: { mcap: number; price: number } | null }
 const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
-/** 0.0000052 -> 0.0₅52 (small numbers with the zero count as a subscript, like trading terminals) */
-function tiny(n: number) {
-  if (n >= 0.001) return n.toFixed(4);
-  const zeros = Math.floor(-Math.log10(n)); // 0.0000052 -> 5 zeros after the point
-  const digits = Math.round(n * 10 ** (zeros + 2)).toString().slice(0, 2);
-  const sub = String(zeros).split("").map((d) => "₀₁₂₃₄₅₆₇₈₉"[Number(d)]).join("");
-  return `0.0${sub}${digits}`;
-}
-
 const TG_URL = process.env.NEXT_PUBLIC_TELEGRAM_URL || "https://t.me/wraithportal";
 
 export default function StatusBar() {
@@ -108,7 +99,7 @@ export default function StatusBar() {
       </div>
       <span className="wx-st-stats" aria-label="Network stats">
         <span data-tip="People with Wraith open right now"><Users size={14} />{net?.online != null ? compact(net.online) : "–"}</span>
-        <span data-tip="Network fee for a swap right now, in SOL"><Fuel size={14} />{net?.feeSol != null ? tiny(net.feeSol) : "–"}</span>
+        <span className={net?.gas && net.gas.topups < 100 ? "low" : ""} data-tip={net?.gas ? `Wraith's gas wallet: pays network fees for users (about ${net.gas.topups.toLocaleString()} top-ups left)` : "Wraith's gas wallet balance"}><Fuel size={14} />{net?.gas ? `${net.gas.sol.toFixed(net.gas.sol >= 10 ? 1 : 2)} SOL` : "–"}</span>
         <span data-tip={net?.omen ? "OMEN market cap" : "OMEN is not launched yet"}><Coins size={14} />{net?.omen ? `$${compact(net.omen.mcap)}` : "OMEN soon"}</span>
       </span>
       <a className="wx-tp-tg" href={TG_URL} target="_blank" rel="noopener noreferrer" aria-label="Wraith Portal on Telegram" title="Join the Wraith Portal on Telegram">
