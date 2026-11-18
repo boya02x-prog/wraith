@@ -99,8 +99,8 @@ export default function StatusBar() {
       </div>
       <span className="wx-st-stats" aria-label="Network stats">
         <span data-tip="People with Wraith open right now"><Users size={14} />{net?.online != null ? compact(net.online) : "–"}</span>
-        <span className={net?.gas && net.gas.topups < 100 ? "low" : ""} data-tip={net?.gas ? `Solana gas wallet: about ${net.gas.topups.toLocaleString()} top-ups left` : "Solana gas wallet"}><Fuel size={14} />{net?.gas ? `${net.gas.sol.toFixed(net.gas.sol >= 10 ? 1 : 2)} SOL` : "–"}</span>
-        <span className={net?.evm?.some((c) => c.topups < 100) ? "low" : ""} data-tip={net?.evm ? `EVM gas wallet: ${net.evm.map((c) => `${c.chain} ${c.bal >= 1 ? c.bal.toFixed(2) : c.bal.toPrecision(2)} ${c.symbol}`).join(" · ")}` : "EVM gas wallet"}><Fuel size={14} />{net?.evm ? `EVM ${net.evm.filter((c) => c.topups >= 100).length}/${net.evm.length}` : "–"}</span>
+        <span className={net?.gas && net.gas.topups < 100 ? "low" : ""} data-tip={net?.gas ? `Wraith's Solana gas wallet. Pays new users' first fees. About ${net.gas.topups.toLocaleString()} top-ups left.` : "Wraith's Solana gas wallet"}><Fuel size={14} />{net?.gas ? `SOL ${net.gas.sol.toFixed(net.gas.sol >= 10 ? 1 : 2)}` : "SOL –"}</span>
+        <span className={net?.evm?.some((c) => c.topups < 100) ? "low" : ""} data-tip={net?.evm ? "Wraith's EVM gas wallet, per chain:\n" + net.evm.map((c) => `${c.chain}: ${c.bal >= 1 ? c.bal.toFixed(2) : c.bal.toFixed(5)} ${c.symbol} (~${c.topups} top-ups)`).join("\n") : "Wraith's EVM gas wallet"}><Fuel size={14} />{net?.evm ? `EVM ${net.evm.filter((c) => c.topups >= 100).length} of ${net.evm.length} chains funded` : "EVM –"}</span>
         <span data-tip={net?.omen ? "OMEN market cap" : "OMEN is not launched yet"}><Coins size={14} />{net?.omen ? `$${compact(net.omen.mcap)}` : "OMEN soon"}</span>
       </span>
       <a className="wx-tp-tg" href={TG_URL} target="_blank" rel="noopener noreferrer" aria-label="Wraith Portal on Telegram" title="Join the Wraith Portal on Telegram">

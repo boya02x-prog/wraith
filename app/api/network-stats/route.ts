@@ -4,11 +4,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongoClient";
 import { getLaunchSettings } from "@/lib/launchSettingsServer";
 import { MINT_RE } from "@/lib/launchSettings";
-import bs58 from "bs58";
-import { Keypair } from "@solana/web3.js";
-import { createPublicClient, http, formatEther, parseEther } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { VIEM_CHAINS, rpcFor } from "@/lib/cashTokens";
+import { evmGasWallet, solanaGasWallet } from "@/lib/gasWallets";
 
 export const dynamic = "force-dynamic";
 
@@ -16,49 +12,6 @@ let cache: { at: number; body: unknown } | null = null;
 
 async function online(): Promise<number | null> {
   try { return await (await getDb()).collection("users").countDocuments({ lastSeenAt: { $gte: new Date(Date.now() - 2 * 60_000) } }); } catch { return null; }
-}
-
-/** SOL left in the wallet Wraith uses to pay users' gas (GAS_TREASURY_SOL_KEY), and roughly how many top-ups that covers.
- *  Only the numbers leave the server: never the key, and not even the wallet address. */
-async function gasWallet(): Promise<{ sol: number; topups: number } | null> {
-  const key = process.env.GAS_TREASURY_SOL_KEY;
-  if (!key) return null;
-  let pub: string;
-  try { pub = Keypair.fromSecretKey(bs58.decode(key)).publicKey.toBase58(); } catch { return null; }
-  const urls = [process.env.SOLANA_RPC_URL, process.env.NEXT_PUBLIC_SOLANA_RPC, "https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"].filter((u): u is string => !!u);
-  for (const u of urls) {
-    try {
-      const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(3500), body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [pub, { commitment: "confirmed" }] }) });
-      if (!r.ok) continue;
-      const lamports = ((await r.json()) as { result?: { value?: number } }).result?.value;
-      if (typeof lamports !== "number") continue;
-      const drip = Number(process.env.GAS_DRIP_SOLANA_LAMPORTS ?? 4_000_000);
-      return { sol: lamports / 1e9, topups: Math.floor(lamports / drip) };
-    } catch { /* next endpoint */ }
-  }
-  return null;
-}
-
-// amount sent per top-up on each chain: the same defaults as /api/gas-drip (GAS_DRIP_<CHAIN> overrides)
-const EVM_DRIP: Record<string, string> = { base: "0.00003", ethereum: "0.0004", bsc: "0.0002", monad: "0.2", robinhood: "0.00003" };
-
-/** Native-token balance of the EVM gas wallet (GAS_TREASURY_KEY) on every chain Wraith tops up, and how many top-ups that covers. */
-async function evmWallet(): Promise<{ chain: string; symbol: string; bal: number; topups: number }[] | null> {
-  const key = process.env.GAS_TREASURY_KEY;
-  if (!key) return null;
-  let address: `0x${string}`;
-  try { address = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as `0x${string}`).address; } catch { return null; }
-  const out = await Promise.all(Object.keys(EVM_DRIP).map(async (name) => {
-    const chain = VIEM_CHAINS[name]; const rpc = chain ? rpcFor(chain) : null;
-    if (!chain || !rpc) return null;
-    try {
-      const wei = await createPublicClient({ chain, transport: http(rpc, { timeout: 4000 }) }).getBalance({ address });
-      const drip = parseEther(process.env[`GAS_DRIP_${name.toUpperCase()}`] ?? EVM_DRIP[name]);
-      return { chain: name, symbol: chain.nativeCurrency.symbol, bal: Number(formatEther(wei)), topups: drip > BigInt(0) ? Number(wei / drip) : 0 };
-    } catch { return null; }
-  }));
-  const rows = out.filter((x): x is NonNullable<typeof x> => !!x);
-  return rows.length ? rows : null;
 }
 
 async function omen(): Promise<{ mcap: number; price: number } | null> {
@@ -76,8 +29,9 @@ async function omen(): Promise<{ mcap: number; price: number } | null> {
 
 export async function GET() {
   if (cache && Date.now() - cache.at < 20_000) return NextResponse.json(cache.body);
-  const [o, g, e, m] = await Promise.all([online(), gasWallet(), evmWallet(), omen()]);
-  const body = { online: o, gas: g, evm: e, omen: m };
+  const [o, g, e, m] = await Promise.all([online(), solanaGasWallet(), evmGasWallet(), omen()]);
+  // balances only: the wallet addresses are shown on the admin page, not in this public-facing number strip
+  const body = { online: o, gas: g ? { sol: g.sol, topups: g.topups } : null, evm: e ? e.chains : null, omen: m };
   cache = { at: Date.now(), body };
   return NextResponse.json(body, { headers: { "cache-control": "private, max-age=10" } });
 }
