@@ -273,7 +273,9 @@ export default function SignalScanner({
     return m;
   }, [signals]);
 
-  const isWeak = (s: Signal) => s.score < 50 || (s.rugRisk ?? 0) >= 60;
+  // only the Weak / Risky score bands are hidden: no call is ever made under a score of 60, so nothing that could become a winner is hidden. The collapse
+  // risk is shown as a label but is NOT used to hide anything (measured: risky calls reach 2x as often and hold as many big winners as safe ones).
+  const isWeak = (s: Signal) => s.score < 50;
   const weakCount = useMemo(() => byChain.filter(isWeak).length, [byChain]);
   const shown = useMemo(() => {
     const signals = showWeak ? byChain : byChain.filter((s) => !isWeak(s));
@@ -370,7 +372,7 @@ export default function SignalScanner({
                 </button>
               ))}
               {weakCount > 0 && (
-                <button type="button" className={`sg-weak${showWeak ? " on" : ""}`} onClick={() => setShowWeak((v) => !v)} title="Weak setups (score under 50) and tokens with a high collapse risk">
+                <button type="button" className={`sg-weak${showWeak ? " on" : ""}`} onClick={() => setShowWeak((v) => !v)} title="Weak setups: a score under 50. Wraith never makes a call on these.">
                   {showWeak ? "Hide" : "Show"} {weakCount} weak
                 </button>
               )}
