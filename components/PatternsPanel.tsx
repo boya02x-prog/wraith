@@ -45,9 +45,12 @@ function LearningCurve({ h }: { h: NonNullable<Learning["history"]> }) {
   const first = pts[0], last = pts[pts.length - 1];
   const delta = (last.auc as number) - (first.auc as number);
   // retrains are tested on different later calls, so a swing under about 0.03 is noise, not the model getting smarter or dumber
-  const verdict = Math.abs(delta) < 0.03
-    ? "Flat. A move of 0.01 here is noise (every retrain is tested on different calls), not forgetting. It has plateaued."
-    : delta > 0 ? "Improving: the score on unseen calls went up." : "Slipping: the newest retrain scores lower on unseen calls. If it drops below 0.57 the model switches its score tilt off, so a weak retrain cannot hurt the calls.";
+  const lastAuc = last.auc as number;
+  const verdict = lastAuc < 0.53
+    ? "At chance. The earlier 0.57-0.58 was measured on call outcomes that have since been corrected, and on calls made after it was trained that model scored about 0.52. Honest result: no reliable pattern for picking 2x winners has been found, so this model changes NO scores. The collapse warning is a separate model and does hold up."
+    : Math.abs(delta) < 0.03
+      ? "Flat. A move of 0.01 here is noise (every retrain is tested on different calls), not forgetting. It has plateaued."
+      : delta > 0 ? "Improving: the score on unseen calls went up." : "Slipping: the newest retrain scores lower on unseen calls. A model that does not hold up on calls made after it was trained is switched off automatically, so it cannot hurt the calls.";
   return (
     <div className="pc-curve">
       <div className="pc-curve-head"><b>Is it learning?</b><span>{first.calls.toLocaleString()} → {last.calls.toLocaleString()} calls · score {(first.auc as number).toFixed(2)} → {(last.auc as number).toFixed(2)}</span></div>

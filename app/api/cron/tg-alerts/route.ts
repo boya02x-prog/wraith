@@ -4,7 +4,7 @@
 // Auth: Vercel cron sends "Authorization: Bearer $CRON_SECRET"; external cron can use ?key=$CRON_SECRET.
 // Free option if your host only runs daily crons: ping this URL every minute from cron-job.org.
 import { isSitePrivate } from "@/lib/siteAccess";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { callGet } from "@/lib/internalCall";
 import { getDb } from "@/lib/mongoClient";
 import { refreshCalls, type SignalCall } from "@/lib/signalCalls";
@@ -110,11 +110,28 @@ export async function GET(req: NextRequest) {
   }
   await state.updateOne({ _id: "cron" }, { $set: { at: new Date() } }, { upsert: true });
 
+  // Answer the pinger at once; the job runs after the response. ?wait=1 (or force=1, the manual test) waits and returns the job's result.
+  const job = runAlertJob(req.nextUrl.origin, first);
+  if (req.nextUrl.searchParams.get("wait") === "1" || req.nextUrl.searchParams.get("force") === "1") {
+    const r = await job;
+    return NextResponse.json(r.body, { status: r.status });
+  }
+  after(async () => { try { await job; } catch (e) { console.error("[tg alerts job]", e); } });
+  return NextResponse.json({ ok: true, started: true, first });
+}
+
+/**
+ * The real work of one alert run: score the market, refresh every call, send the Telegram and phone alerts. It takes 15-45 seconds, and cron-job.org
+ * gives up on any request that takes longer than 30 seconds and, after enough of those, switches the job OFF by itself. That is how the alerts kept
+ * stopping. So the route below answers at once and this runs afterwards (Vercel keeps the function alive for it).
+ */
+async function runAlertJob(origin: string, first: boolean): Promise<{ status: number; body: Record<string, unknown> }> {
+  const db = await getDb();
   let signals: Signal[] = [];
   try {
     // in-process: fetching our own /api/signals over HTTP has no session cookie, so the sign-in gate answered 401 and no
     // fresh-call alert could ever match the feed
-    signals = (await callGet<{ signals?: Signal[] }>(() => import("@/app/api/signals/route"), `${req.nextUrl.origin}/api/signals`, 40_000)).signals ?? [];
+    signals = (await callGet<{ signals?: Signal[] }>(() => import("@/app/api/signals/route"), `${origin}/api/signals`, 40_000)).signals ?? [];
   } catch { /* feed down: still do wins */ }
   await refreshCalls(true).catch(() => undefined);
 
@@ -135,7 +152,7 @@ export async function GET(req: NextRequest) {
       if (!first && !sig) continue; // feed missed it this run: don't burn the claim, retry next run
       if (!(await claim(`entry:${c.address}`))) continue;
       if (first || !sig) continue;
-      const r = await broadcast("signal", signalMessage(sig), { chain: c.chain ?? "solana", score: sig.score, markup: tokenKeyboard(c.address, c.chain ?? "solana"), imageUrl: bannerUrl(req.nextUrl.origin, { kind: "signal", sym: sig.token.symbol, now: sig.token.mcap, score: sig.score, tier: sig.tier, chain: c.chain ?? "solana", liq: sig.token.liquidity, h1: sig.token.change.h1 ?? undefined, vol: sig.token.volume.h1, img: sig.token.imageUrl }) });
+      const r = await broadcast("signal", signalMessage(sig), { chain: c.chain ?? "solana", score: sig.score, markup: tokenKeyboard(c.address, c.chain ?? "solana"), imageUrl: bannerUrl(origin, { kind: "signal", sym: sig.token.symbol, now: sig.token.mcap, score: sig.score, tier: sig.tier, chain: c.chain ?? "solana", liq: sig.token.liquidity, h1: sig.token.change.h1 ?? undefined, vol: sig.token.volume.h1, img: sig.token.imageUrl }) });
       out.entries++; out.sent += r.sent;
     }
 
@@ -146,7 +163,7 @@ export async function GET(req: NextRequest) {
       if (!m) continue;
       if (!(await claim(`win:${c.address}:${m}`))) continue;
       if (first) continue;
-      const r = await broadcast("win", winMessage(c, m), { teaser: winTeaser(c, m), chain: c.chain ?? "solana", markup: tokenKeyboard(c.address, c.chain ?? "solana"), imageUrl: bannerUrl(req.nextUrl.origin, { kind: "win", sym: c.symbol, x: c.lastMcap / c.spottedMcap, called: c.spottedMcap, now: c.lastMcap, peak: c.peakMcap, chain: c.chain ?? "solana" }) });
+      const r = await broadcast("win", winMessage(c, m), { teaser: winTeaser(c, m), chain: c.chain ?? "solana", markup: tokenKeyboard(c.address, c.chain ?? "solana"), imageUrl: bannerUrl(origin, { kind: "win", sym: c.symbol, x: c.lastMcap / c.spottedMcap, called: c.spottedMcap, now: c.lastMcap, peak: c.peakMcap, chain: c.chain ?? "solana" }) });
       out.wins++; out.sent += r.sent;
       await pushBroadcast({ ...winText({ symbol: c.symbol, milestone: m, x: c.lastMcap / c.spottedMcap, nowMcap: c.lastMcap }), url: `/app/token/${c.address}`, tag: `w:${c.address}:${m}` }, "signal").catch(() => 0);
     }
@@ -160,6 +177,6 @@ export async function GET(req: NextRequest) {
   // hourly: drop holders-room members who no longer hold the tier (it throttles itself)
   const sweep = await sweepGroupMembers().catch((e) => { console.error("[holders room sweep]", e); return null; });
   if (sweep && sweep.removed) console.log("[holders room]", JSON.stringify(sweep));
-  if (tgError) return NextResponse.json({ ok: false, error: "telegram step failed", first, ...out, push }, { status: 500 });
-  return NextResponse.json({ ok: true, first, ...out, push });
+  if (tgError) return { status: 500, body: { ok: false, error: "telegram step failed", first, ...out, push } };
+  return { status: 200, body: { ok: true, first, ...out, push } };
 }

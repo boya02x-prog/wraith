@@ -15,6 +15,7 @@ import { dexCandidates, jupiterCandidates, jupiterEnrich, pumpCandidates, type C
 import { callGet } from "@/lib/internalCall";
 import { annotateFeatures, patternLabel, type Annotated } from "@/lib/signalLearning";
 import { edge } from "@/lib/edge";
+import { kickAlerts } from "@/lib/alertKick";
 
 export type SignalTier = "HOT" | "WATCH";
 export interface Signal {
@@ -315,6 +316,7 @@ const STALE_KEEP_MS = 10 * 60_000;
 
 export async function GET(req: NextRequest) {
   const internal = req.headers.get("x-wraith-internal") === "1";
+  if (!internal) after(() => kickAlerts(req.nextUrl.origin)); // an open app wakes the alert job up if the outside pinger is down
   if (cache && Date.now() - cache.ts < CACHE_MS) {
     return edge(NextResponse.json({ signals: cache.signals, updatedAt: cache.ts }), 10, 60);
   }

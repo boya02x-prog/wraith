@@ -3,7 +3,7 @@
 // and annotates live signals with detected patterns (+ win odds once the model has proven itself on unseen calls).
 import { getDb } from "@/lib/mongoClient";
 import { contextAt, type CtxCall, type CtxPrior, withContext } from "@/lib/signalRegime";
-import { detectPatterns, PATTERNS, patternStats, predict, trainModel, type Features, type PatternStat, type SignalModel, type TrainRow } from "@/lib/signalModel";
+import { auc, detectPatterns, PATTERNS, patternStats, predict, trainModel, type Features, type PatternStat, type SignalModel, type TrainRow } from "@/lib/signalModel";
 
 const COLLECTION = "signal_model";
 const TARGET = 2; // "win" = reached 2x from the call price, the same definition as the public record
@@ -81,8 +81,23 @@ export async function retrainIfDue(force = false): Promise<void> {
       // (a data glitch or a bad week would otherwise switch the model off or make it worse until the next retrain).
       const curModel = cur?.model as SignalModel | undefined, curRug = cur?.rug as SignalModel | undefined;
       // ...and a challenger that scores clearly worse on unseen calls (more than 0.02 AUC) does not replace it either
-      const keepModel = !!curModel?.active && (!trained?.active || trained.holdout.auc < curModel.holdout.auc - 0.02);
-      const keepRug = !!curRug?.active && (!trainedRug?.active || trainedRug.holdout.auc < curRug.holdout.auc - 0.02);
+      // The live model also has to KEEP proving itself on calls made AFTER it was trained (outcomes as they stand today). Its own test score from the
+      // day it was trained is not enough: the Nov 12 win model scored 0.577 then and only 0.515 (a coin flip) on the 894 calls made after it, yet it
+      // stayed "Active", nudged scores and showed win odds. A live model that fails this check is dropped, and the retrain takes over.
+      const forward = (m: SignalModel | undefined, label: (r: { at: number; features: Features; win: boolean; last: number }) => boolean, minAgeMs: number): number | null => {
+        if (!m?.active || !m.trainedAt) return null;
+        const later = withCtx
+          .filter((d) => (d.spottedAt as number) > (m.trainedAt as number) && (d.spottedAt as number) < Date.now() - minAgeMs)
+          .map((d) => ({ at: d.spottedAt as number, features: d.features, win: Math.max(d.peakMcap, d.lastMcap) / d.spottedMcap >= TARGET, last: d.lastMcap / d.spottedMcap }));
+        if (later.length < 150) return null; // too few calls since it was trained to judge it yet
+        return auc(later.map((r) => predict(m, r.features)), later.map((r) => (label(r) ? 1 : 0)));
+      };
+      const champAuc = forward(curModel, (r) => r.win, MATURE_MS);
+      const rugChampAuc = forward(curRug, (r) => r.last <= RUG_LEVEL, RUG_MATURE_MS);
+      const champFailed = champAuc !== null && champAuc < 0.53;
+      const rugChampFailed = rugChampAuc !== null && rugChampAuc < 0.6;
+      const keepModel = !!curModel?.active && !champFailed && (!trained?.active || trained.holdout.auc < curModel.holdout.auc - 0.02);
+      const keepRug = !!curRug?.active && !rugChampFailed && (!trainedRug?.active || trainedRug.holdout.auc < curRug.holdout.auc - 0.02);
       const model = keepModel ? curModel! : trained;
       const rug = keepRug ? curRug! : trainedRug;
       await col.updateOne(
@@ -94,7 +109,7 @@ export async function retrainIfDue(force = false): Promise<void> {
       await db.collection("signal_model_history").insertOne({
         at: Date.now(), calls: rows.length, wins: rows.filter((r) => r.win).length,
         auc: trained?.holdout.auc ?? null, active: !!trained?.active, topQ: trained?.holdout.topQuartileRate ?? null, bottomQ: trained?.holdout.bottomQuartileRate ?? null,
-        rugAuc: trainedRug?.holdout.auc ?? null, rugActive: !!trainedRug?.active, keptOldModel: keepModel, keptOldRug: keepRug,
+        rugAuc: trainedRug?.holdout.auc ?? null, rugActive: !!trainedRug?.active, keptOldModel: keepModel, keptOldRug: keepRug, champAuc, rugChampAuc,
       }).catch(() => undefined);
       mem = null;
     } catch (e) {
