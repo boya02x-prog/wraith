@@ -22,7 +22,7 @@ const loadImg = (src: string) => new Promise<HTMLImageElement | null>((res) => {
 });
 
 export default function PortfolioShare({
-  name, username, avatar, value, trades, fmt, onClose, followers, following, since,
+  name, username, avatar, value, trades, fmt, onClose, followers, following, since, unrealized, volumeItems,
 }: {
   name: string;
   username: string | null;
@@ -34,6 +34,10 @@ export default function PortfolioShare({
   followers?: number;
   following?: number;
   since?: number | null; // when the account was created (ms)
+  /** profit or loss on positions still open right now, in display currency */
+  unrealized?: number | null;
+  /** every trade's size (open or closed) with its time, in display currency: the card sums the ones inside the chosen range */
+  volumeItems?: ShareTrade[];
 }) {
   const [range, setRange] = useState<Range>("24h");
   const [asPct, setAsPct] = useState(false);
@@ -61,8 +65,9 @@ export default function PortfolioShare({
     const start = value !== null ? value - acc : null;
     const wins = rows.filter((t) => t.usd > 0).length;
     const best = rows.reduce((m, t) => Math.max(m, t.usd), 0);
-    return { pts, change: acc, pct: start && start > 0 ? (acc / start) * 100 : null, n: rows.length, wins, best };
-  }, [trades, range, value]);
+    const volume = (volumeItems ?? []).filter((t) => t.ts >= now - SPAN[range]).reduce((a, t) => a + t.usd, 0);
+    return { pts, change: acc, pct: start && start > 0 ? (acc / start) * 100 : null, n: rows.length, wins, best, volume };
+  }, [trades, range, value, volumeItems]);
 
   const draw = useCallback((c: HTMLCanvasElement, prog = 1) => {
     prog = Math.min(1, Math.max(0, Number.isFinite(prog) ? prog : 1)); // the first animation frame can read slightly below 0
@@ -79,6 +84,13 @@ export default function PortfolioShare({
     g.fillStyle = "rgba(255,255,255,.03)";
     for (let y = 18; y < H - 170; y += 26) for (let x = (y / 26) % 2 ? 18 : 31; x < W; x += 26) { g.beginPath(); g.arc(x, y, 1.5, 0, 7); g.fill(); }
     if (imgs.ghost) { g.globalAlpha = 0.06; const gw = 620; g.drawImage(imgs.ghost, W - gw + 120, 120, gw, gw * (imgs.ghost.height / imgs.ghost.width)); g.globalAlpha = 1; }
+    // a soft glow behind the avatar in the colour of how it is going: green up, red down, warm orange when nothing has happened yet
+    const un = unrealized ?? 0;
+    const mood: "up" | "down" | "flat" = stats.change + un > 0 ? "up" : stats.change + un < 0 ? "down" : "flat";
+    const moodRgb = mood === "up" ? "55,213,138" : mood === "down" ? "255,93,77" : "255,123,61";
+    const halo = g.createRadialGradient(88 + 58, 88 + 58, 10, 88 + 58, 88 + 58, 520);
+    halo.addColorStop(0, `rgba(${moodRgb},.26)`); halo.addColorStop(.5, `rgba(${moodRgb},.08)`); halo.addColorStop(1, `rgba(${moodRgb},0)`);
+    g.fillStyle = halo; g.fillRect(0, 0, W, H);
     // identity
     const ax = 88, ay = 88, ar = 58;
     g.save(); g.beginPath(); g.arc(ax + ar, ay + ar, ar, 0, 7); g.clip();
@@ -95,6 +107,14 @@ export default function PortfolioShare({
     g.fillStyle = "rgba(255,255,255,.08)"; g.beginPath(); g.roundRect(W - 88 - 200, 104, 200, 52, 26); g.fill();
     g.strokeStyle = "rgba(255,255,255,.14)"; g.lineWidth = 2; g.stroke();
     g.fillStyle = "rgba(255,255,255,.85)"; g.font = "800 24px sans-serif"; g.textAlign = "center"; g.fillText("PORTFOLIO", W - 88 - 100, 138); g.textAlign = "left";
+    // status badge under the name
+    const pctNow = stats.pct;
+    const badge = mood === "flat" ? "READY WHEN YOU ARE" : mood === "up" ? (pctNow !== null && pctNow >= 50 ? "UP BIG" : "IN THE GREEN") : (pctNow !== null && pctNow <= -25 ? "ROUGH DAY" : "DOWN A BIT");
+    g.font = "800 26px sans-serif";
+    const bw0 = g.measureText(badge).width + 56;
+    g.fillStyle = `rgba(${moodRgb},.14)`; g.beginPath(); g.roundRect(88, 232, bw0, 52, 26); g.fill();
+    g.strokeStyle = `rgba(${moodRgb},.55)`; g.lineWidth = 2.5; g.stroke();
+    g.fillStyle = `rgb(${moodRgb})`; g.fillText(badge, 88 + 28, 267);
     // value + change
     g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 24;
     g.fillStyle = "#fff"; g.font = "800 148px sans-serif"; const startVal = value !== null ? value - stats.change : null;
@@ -141,15 +161,17 @@ export default function PortfolioShare({
     const bw = (cwid - 48) / 3, by = cy + chei + 36, bh = 128;
     const winRate = stats.n ? Math.round((stats.wins / stats.n) * 100) : null;
     const sinceTxt = since ? new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(since)) : "—";
-    const boxes: [string, string][] = stats.n > 0
-      ? [["CLOSED TRADES", String(stats.n)], ["WIN RATE", winRate !== null ? `${winRate}%` : "—"], ["BEST TRADE", stats.best > 0 ? `+${fmt(stats.best)}` : "—"]]
+    const signed = (n: number) => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
+    void winRate;
+    const boxes: [string, string, string?][] = stats.n > 0 || un !== 0 || stats.volume > 0
+      ? [["REALIZED", signed(stats.change), stats.change >= 0 ? "#37d58a" : "#ff5d4d"], ["UNREALIZED", signed(un), un >= 0 ? "#37d58a" : "#ff5d4d"], ["VOLUME", fmt(stats.volume)]]
       : [["FOLLOWERS", String(followers ?? 0)], ["FOLLOWING", String(following ?? 0)], ["MEMBER SINCE", sinceTxt]];
-    boxes.forEach(([label, val], i) => {
+    boxes.forEach(([label, val, tint], i) => {
       const bx = cx + i * (bw + 24);
       g.fillStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.roundRect(bx, by, bw, bh, 24); g.fill();
       g.strokeStyle = "rgba(255,255,255,.09)"; g.lineWidth = 2; g.stroke();
       g.fillStyle = "rgba(255,255,255,.5)"; g.font = "700 22px sans-serif"; g.fillText(label, bx + 26, by + 44);
-      g.fillStyle = "#fff"; g.font = "800 46px sans-serif"; g.fillText(val, bx + 26, by + 98, bw - 48);
+      g.fillStyle = tint ?? "#fff"; g.font = "800 44px sans-serif"; g.fillText(val, bx + 26, by + 98, bw - 48);
     });
     // footer: dark, with a thin warm line (no bright band)
     const fh = 150;
@@ -164,7 +186,7 @@ export default function PortfolioShare({
       g.fillStyle = accent; g.font = "800 50px monospace"; g.fillText(ref, W - 80, H - 34);
     } else { g.fillStyle = "rgba(255,255,255,.7)"; g.font = "700 32px sans-serif"; g.fillText("wraith.farm", W - 80, H - 46); }
     g.textAlign = "left";
-  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, followers, following, since]);
+  }, [imgs, name, username, value, stats, asPct, range, showRef, ref, fmt, followers, following, since, unrealized]);
 
   // the journey: the curve draws itself and the numbers count up over 10 seconds (plays on open, Replay plays it again)
   useEffect(() => {

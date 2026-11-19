@@ -1254,6 +1254,8 @@ export default function ProfilePage() {
           value={portfolioValue}
           trades={solUsd !== null && fxRate !== null ? completedTrades.map((t) => ({ ts: t.ts, usd: t.amountSol * ((t.pnlPct ?? 0) / 100) * solUsd * fxRate })) : []}
           fmt={(n) => formatCurrency(n, profile.displayCurrency)}
+          unrealized={solUsd !== null && fxRate !== null ? openPositionPnl * solUsd * fxRate : null}
+          volumeItems={solUsd !== null && fxRate !== null ? [...trades.filter((t) => t.status !== "failed"), ...positions.filter((p) => !trades.some((t) => t.id === p.id))].map((t) => ({ ts: t.ts, usd: t.amountSol * solUsd * fxRate })) : []}
           followers={socialCounts.followers}
           following={socialCounts.following}
           since={accountCreatedAt ? new Date(accountCreatedAt).getTime() : null}
