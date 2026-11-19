@@ -2,6 +2,7 @@
 
 import React from "react";
 import Panel from "./Panel";
+import { GhostMini } from "./GhostScene";
 
 export function ErrorMessage({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +27,7 @@ export function EmptyState({
       }}
     >
       <div style={{ textAlign: "center", color: "#8b8b8b" }}>
+        <div style={{ display: "grid", placeItems: "center", marginBottom: 6 }}><GhostMini size={40} /></div>
         <div style={{ fontWeight: 700, marginBottom: 6 }}>{title}</div>
         {subtitle && <div style={{ fontSize: 13 }}>{subtitle}</div>}
       </div>

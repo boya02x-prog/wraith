@@ -4,6 +4,7 @@
 // How Wraith's calls performed: every token the signal feed (or the old scanner)
 // flagged, with its market cap when spotted, now, and at its peak.
 
+import GhostScene from "@/components/GhostScene";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Trophy, Trash2 } from "lucide-react";
@@ -134,6 +135,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
 
   return (
     <section className="wb">
+      <GhostScene title="Wraith wins" subtitle={stats.n ? `${stats.twoX} of ${stats.n} tracked calls reached 2x` : "Every call Wraith makes is tracked here"} />
       <header className="wb-head">
         <div>
           <h2><Trophy size={16} /> Win tracker</h2>
