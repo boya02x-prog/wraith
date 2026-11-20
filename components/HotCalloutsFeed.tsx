@@ -4,7 +4,8 @@
 // Keeps the last good list when the connection drops, can be paused, and never reflows while you read.
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Flame, Heart, MessageCircle, Pause, Play, Repeat2, TrendingUp, WifiOff } from "lucide-react";
+import { ChevronRight, Flame, Heart, MessageCircle, Pause, Play, Repeat2, TrendingUp, WifiOff } from "lucide-react";
+import CallSpark from "@/components/CallSpark";
 import { TokenIcon } from "@/components/TokenIcon";
 import { useTokenMeta } from "@/lib/useTokenMeta";
 import { Thread } from "@/components/FollowingIntelSidebar";
@@ -168,12 +169,20 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
                     {long && <button type="button" className="hc-more" onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; })}>{expanded ? "Show less" : "Show more"}</button>}
                     {c.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.imageUrl} alt="" className="hc-media" loading="lazy" />}
                     {c.mint && (
-                      <button type="button" className="hc-token" onClick={() => openToken(c)}>
-                        <TokenIcon contractAddress={c.mint} imageUrl={m?.imageUrl} symbol={sym(c)} size={34} />
-                        <span className="hc-tk"><b>{sym(c)}</b><small>{m?.mcap ? `${usd(m.mcap)} now` : `${c.mint.slice(0, 4)}…${c.mint.slice(-4)}`}</small></span>
+                      <button type="button" className="hc-token" onClick={() => openToken(c)} aria-label={`Open ${sym(c)}`}>
+                        <span className="hc-token-top">
+                          <TokenIcon contractAddress={c.mint} imageUrl={m?.imageUrl} symbol={sym(c)} size={40} />
+                          <span className="hc-tk">
+                            <b>{sym(c)}</b>
+                            <small>{c.mcapAtPost ? `Called at ${usd(c.mcapAtPost)}` : `${c.mint.slice(0, 4)}…${c.mint.slice(-4)}`}{m?.mcap ? ` · now ${usd(m.mcap)}` : ""}</small>
+                          </span>
+                          {x !== null && <span className={`hc-mult ${x >= 1 ? "up" : "down"}`}>{x >= 10 ? x.toFixed(0) : x.toFixed(2)}x</span>}
+                          <ChevronRight size={18} className="hc-go" aria-hidden="true" />
+                        </span>
+                        <CallSpark mint={c.mint} since={c.createdAt} />
                         {c.position && (
                           <span className="hc-pos">
-                            <small>Entry {usd(c.position.entryMcap)}</small>
+                            <small>Their entry {usd(c.position.entryMcap)}</small>
                             <b style={{ color: c.position.currentPnlPct >= 0 ? "var(--win)" : "var(--loss)" }}>{c.position.currentPnlPct >= 0 ? "+" : ""}{c.position.currentPnlPct.toFixed(1)}%</b>
                           </span>
                         )}

@@ -9,7 +9,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, Transaction, TransactionInstruction, VersionedTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 import { createPublicClient, createWalletClient, custom, encodeFunctionData, formatUnits, http, isAddress, parseAbi, parseUnits } from "viem";
-import { Check, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ClipboardPaste, Delete, LoaderCircle } from "lucide-react";
 import ChainLogo from "@/components/ChainLogo";
 import CashLogo from "@/components/CashLogo";
 import { ARC_USDC_ERC20, CASH_TOKENS, DEPOSIT_CHAINS, VIEM_CHAINS, lifiSource, rpcFor } from "@/lib/cashTokens";
@@ -27,6 +27,12 @@ const ata = (owner: PublicKey, mint: PublicKey) =>
   PublicKey.findProgramAddressSync([owner.toBuffer(), TOKEN_PROGRAM.toBuffer(), mint.toBuffer()], ATA_PROGRAM)[0];
 
 type Phase = "idle" | "quoting" | "approving" | "sending" | "bridging" | "done" | "error";
+type Step = "amount" | "to" | "review";
+// the last few addresses a withdrawal went to, per network, kept on this device only (a shortcut, nothing is sent anywhere)
+const RECENT_KEY = "wraith_wd_recent_v1";
+const readRecent = (chain: string): string[] => { try { const v = (JSON.parse(localStorage.getItem(RECENT_KEY) || "{}") as Record<string, string[]>)[chain]; return Array.isArray(v) ? v.slice(0, 3) : []; } catch { return []; } };
+const pushRecent = (chain: string, addr: string) => { try { const all = JSON.parse(localStorage.getItem(RECENT_KEY) || "{}") as Record<string, string[]>; all[chain] = [addr, ...(all[chain] ?? []).filter((a) => a !== addr)].slice(0, 3); localStorage.setItem(RECENT_KEY, JSON.stringify(all)); } catch { /* storage blocked */ } };
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"] as const;
 const fmt = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
@@ -53,6 +59,8 @@ export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
   const [tx, setTx] = useState("");
   const [txChain, setTxChain] = useState("solana");
   const [sent, setSent] = useState<{ usd: number; name: string; symbol: string; to: string } | null>(null);
+  const [step, setStep] = useState<Step>("amount");
+  const [recent, setRecent] = useState<string[]>([]);
   const qSeq = useRef(0);
 
   useEffect(() => {
@@ -205,6 +213,7 @@ export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
       }
       setTx(hash); setTxChain(src.chain);
       setSent({ usd: amt, name: dest.name, symbol: dest.symbol, to: rcp });
+      pushRecent(destKey, rcp);
       setPhase("done"); setQuote(null); setAmount(""); void cash.reload();
       window.dispatchEvent(new Event("wraith:trade-recorded"));
     } catch (e) {
@@ -215,6 +224,31 @@ export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
 
   const busy = phase === "approving" || phase === "sending" || phase === "bridging";
   const explorer = tx ? (txChain === "solana" ? `https://solscan.io/tx/${tx}` : `${chainOf(txChain)?.explorer}/tx/${tx}`) : "";
+
+  const press = (k: (typeof KEYS)[number]) => {
+    setMsg(""); if (phase === "error") setPhase("idle");
+    setAmount((cur) => {
+      if (k === "back") return cur.slice(0, -1);
+      if (k === ".") return cur.includes(".") ? cur : (cur || "0") + ".";
+      const next = (cur === "0" ? "" : cur) + k;
+      const [whole, dec = ""] = next.split(".");
+      return dec.length > 2 || whole.length > 9 ? cur : next;
+    });
+  };
+  // the typed keys of a computer keyboard drive the amount too (only while the amount step is showing and no text box has focus)
+  useEffect(() => {
+    if (step !== "amount") return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^[0-9.]$/.test(e.key)) { e.preventDefault(); press(e.key as (typeof KEYS)[number]); }
+      else if (e.key === "Backspace") { e.preventDefault(); press("back"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, phase]);
 
   if (phase === "done" && sent) {
     const short = `${sent.to.slice(0, 6)}…${sent.to.slice(-6)}`;
@@ -229,7 +263,7 @@ export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
           <div><span>Status</span><b className="wd-ok">{destKey === txChain ? "Confirmed" : "Arriving in a few minutes"}</b></div>
         </div>
         {explorer && <a href={explorer} target="_blank" rel="noopener noreferrer" className="wd-link">View transaction ↗</a>}
-        <button type="button" className="wd-btn" onClick={() => { setPhase("idle"); setTx(""); setRecipient(""); setSent(null); onDone?.(); }}>Done</button>
+        <button type="button" className="wd-btn" onClick={() => { setPhase("idle"); setTx(""); setRecipient(""); setSent(null); setStep("amount"); onDone?.(); }}>Done</button>
       </div>
     );
   }
@@ -242,79 +276,113 @@ export default function WithdrawCash({ onDone }: { onDone?: () => void }) {
   else if (amt > src.balance + 1e-9) blocked = `Only ${fmt(src.balance)} ${src.symbol} on ${src.chainName}.`;
   else if (!rcpOk) blocked = rcp ? `Not a valid ${dest.name} address` : `Paste a ${dest.name} address`;
 
+  const amountReady = loaded && sources.length > 0 && amtOk && !!src && amt <= src.balance + 1e-9;
+  const paste = async () => { try { const t = (await navigator.clipboard.readText()).trim(); if (t) { setRecipient(t); setMsg(""); if (phase === "error") setPhase("idle"); } } catch { setMsg("Paste is blocked here. Long-press the box and paste."); } };
+  const goTo = () => { setRecent(readRecent(destKey)); setStep("to"); };
+  const shortAddr = rcp.length > 14 ? `${rcp.slice(0, 6)}…${rcp.slice(-6)}` : rcp;
+
   return (
-    <div className="wd-form">
-      <div className="wd-balance"><span>Cash balance</span><b>{loaded ? fmt(total) : "—"}</b></div>
+    <div className="wd2">
+      {step !== "amount" && (
+        <button type="button" className="wd2-back" disabled={busy} onClick={() => setStep(step === "review" ? "to" : "amount")}><ArrowLeft size={18} /> Back</button>
+      )}
 
-      <label className="wd-label">Send to network</label>
-      <div className="ewt-dd wd-dd" ref={ddRef}>
-        <button type="button" className="ewt-dd-btn" aria-haspopup="listbox" aria-expanded={ddOpen} onClick={() => setDdOpen((o) => !o)} disabled={busy}>
-          <ChainLogo chain={dest.key} size={22} />
-          <span className="ewt-dd-name">{dest.name}</span>
-          <span className="ewt-dd-tok"><CashLogo symbol={dest.symbol} size={14} />{dest.symbol}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-        </button>
-        {ddOpen && (
-          <ul className="ewt-dd-list" role="listbox" aria-label="Destination network">
-            {DEPOSIT_CHAINS.map((c) => (
-              <li key={c.key}>
-                <button type="button" role="option" aria-selected={c.key === destKey} className={c.key === destKey ? "on" : ""} onClick={() => { setDestKey(c.key); setRecipient(""); setMsg(""); setPhase("idle"); setDdOpen(false); }}>
-                  <ChainLogo chain={c.key} size={20} />
-                  <span className="ewt-dd-name">{c.name}</span>
-                  <span className="ewt-dd-tok"><CashLogo symbol={c.symbol} size={14} />{c.symbol}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <label className="wd-label">Amount</label>
-      <div className="wd-amount">
-        <span>$</span>
-        <input type="text" inputMode="decimal" placeholder="0.00" value={amount} disabled={busy}
-          onChange={(e) => { setAmount(e.target.value.replace(/[^0-9.]/g, "")); setMsg(""); if (phase === "error") setPhase("idle"); }} />
-        <button type="button" className="wd-max" disabled={busy} onClick={() => setAmount(String(maxUsd))}>MAX</button>
-      </div>
-      <div className="wd-pcts">
-        {[25, 50, 75].map((p) => (
-          <button key={p} type="button" disabled={busy} onClick={() => setAmount((Math.floor(maxUsd * p / 100 * 100) / 100).toFixed(2))}>{p}%</button>
-        ))}
-      </div>
-
-      {sources.length > 1 && (
+      {step === "amount" && (
         <>
-          <label className="wd-label">Pay from</label>
-          <select value={pick} disabled={busy} onChange={(e) => { setPick(e.target.value); setMsg(""); }} className="wd-input wd-select">
-            <option value="">Best route (automatic)</option>
-            {sources.map((s) => <option key={s.id} value={s.id}>{s.chainName} · {s.symbol} · {fmt(s.balance)}</option>)}
-          </select>
+          <div className="wd2-top"><span>Withdraw cash</span><b>Available {loaded ? fmt(total) : "—"}</b></div>
+          <div className="wd2-amt" aria-live="polite"><span className="sign">$</span><b className={amount ? "" : "ph"}>{amount || "0"}</b></div>
+          {amtOk && src && amt > src.balance + 1e-9
+            ? <p className="wd2-sub bad">{blocked}</p>
+            : <p className="wd2-sub">{src ? <>From <b>{src.chainName}</b> · {src.symbol}, up to {fmt(maxUsd)}</> : "Enter how much to send"}</p>}
+          <div className="wd2-chips">
+            {[25, 50, 75].map((p) => <button key={p} type="button" disabled={busy} onClick={() => setAmount((Math.floor(maxUsd * p / 100 * 100) / 100).toFixed(2))}>{p}%</button>)}
+            <button type="button" disabled={busy} onClick={() => setAmount(String(maxUsd))}>Max</button>
+          </div>
+
+          <div className="wd2-netwrap" ref={ddRef}>
+            <button type="button" className="wd2-net" aria-haspopup="listbox" aria-expanded={ddOpen} onClick={() => setDdOpen((o) => !o)} disabled={busy}>
+              <ChainLogo chain={dest.key} size={26} />
+              <span className="t"><small>Send to network</small><b>{dest.name}</b></span>
+              <span className="tok"><CashLogo symbol={dest.symbol} size={15} />{dest.symbol}</span>
+              <ChevronDown size={18} aria-hidden="true" />
+            </button>
+            {ddOpen && (
+              <ul className="wd2-netlist" role="listbox" aria-label="Destination network">
+                {DEPOSIT_CHAINS.map((c) => (
+                  <li key={c.key}>
+                    <button type="button" role="option" aria-selected={c.key === destKey} className={c.key === destKey ? "on" : ""} onClick={() => { setDestKey(c.key); setRecipient(""); setMsg(""); setPhase("idle"); setDdOpen(false); }}>
+                      <ChainLogo chain={c.key} size={22} />
+                      <span className="n">{c.name}</span>
+                      <span className="tok"><CashLogo symbol={c.symbol} size={14} />{c.symbol}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="wd2-keys" role="group" aria-label="Amount">
+            {KEYS.map((k) => (
+              <button key={k} type="button" disabled={busy} aria-label={k === "back" ? "Delete" : k} onClick={() => press(k)}>{k === "back" ? <Delete size={22} /> : k}</button>
+            ))}
+          </div>
+          {msg && <p className="wd-error">{msg}</p>}
+          <button type="button" className="wd2-cta" disabled={!amountReady} onClick={goTo}>{loaded && sources.length === 0 ? "No cash to withdraw yet" : amountReady ? `Next · ${fmt(amt)}` : "Enter an amount"}</button>
         </>
       )}
 
-      <label className="wd-label">Recipient address</label>
-      <input type="text" className="wd-input" placeholder={`${dest.name} wallet address`} value={recipient} disabled={busy}
-        onChange={(e) => { setRecipient(e.target.value); setMsg(""); if (phase === "error") setPhase("idle"); }} spellCheck={false} autoComplete="off" />
-
-      {src && amtOk && rcpOk && (
-        <div className="wd-summary">
-          {direct
-            ? <>Direct {src.symbol} transfer on {src.chainName}. No bridge, no swap.</>
-            : phase === "quoting" ? "Finding the best route…"
-            : quote && receive !== null ? <>They receive about <b>{receive.toLocaleString("en-US", { maximumFractionDigits: 2 })} {quote.action.toToken.symbol}</b><span>fee ≈ {fmt(feeUsd)}{eta ? ` · ~${eta} min` : ""} · from {src.chainName}</span></>
-            : null}
-        </div>
+      {step === "to" && (
+        <>
+          <h3 className="wd2-h">Where to?</h3>
+          <p className="wd2-lead">Sending <b>{fmt(amt)}</b> on <b>{dest.name}</b>.</p>
+          <div className={`wd2-addr${rcp ? (rcpOk ? " ok" : " bad") : ""}`}>
+            <input type="text" placeholder={`${dest.name} wallet address`} value={recipient} onChange={(e) => { setRecipient(e.target.value); setMsg(""); if (phase === "error") setPhase("idle"); }} spellCheck={false} autoComplete="off" autoCapitalize="off" autoCorrect="off" aria-label={`${dest.name} wallet address`} />
+            <button type="button" onClick={() => void paste()}><ClipboardPaste size={16} /> Paste</button>
+          </div>
+          {rcp && <p className={`wd2-valid ${rcpOk ? "ok" : "bad"}`}>{rcpOk ? <><Check size={14} strokeWidth={3} /> Looks like a valid {dest.name} address</> : `Not a valid ${dest.name} address`}</p>}
+          {recent.length > 0 && (
+            <div className="wd2-recent">
+              <small>Recent</small>
+              {recent.map((a) => <button key={a} type="button" onClick={() => setRecipient(a)}><span>{a.slice(0, 8)}…{a.slice(-8)}</span></button>)}
+            </div>
+          )}
+          <div className="wd2-warn">Only send to a <b>{dest.name}</b> address. A transfer cannot be undone, and money sent to the wrong network is usually lost.</div>
+          {msg && <p className="wd-error">{msg}</p>}
+          <button type="button" className="wd2-cta" disabled={!rcpOk} onClick={() => setStep("review")}>Review</button>
+        </>
       )}
 
-      {(msg || (blocked && amount && phase !== "quoting")) && <p className="wd-error">{msg || blocked}</p>}
-      <button type="button" className="wd-btn" disabled={busy || !!blocked || (!direct && !quote)} onClick={() => void run()}>
-        {phase === "approving" ? <><LoaderCircle size={15} className="animate-spin" /> Approving…</>
-          : phase === "sending" ? <><LoaderCircle size={15} className="animate-spin" /> Confirm in wallet…</>
-          : phase === "bridging" ? <><LoaderCircle size={15} className="animate-spin" /> Arriving on {dest.name}…</>
-          : phase === "quoting" ? <><LoaderCircle size={15} className="animate-spin" /> Finding route…</>
-          : amtOk ? `Send ${fmt(amt)}` : "Enter amount"}
-      </button>
-      <p className="wd-note">Transfers are irreversible. Check the address is on {dest.name}.</p>
+      {step === "review" && (
+        <>
+          <h3 className="wd2-h">Review</h3>
+          <div className="wd2-big"><span>You send</span><b>{fmt(amt)}</b></div>
+          <div className="wd2-rows">
+            <div><span>To</span><b className="mono">{shortAddr}</b></div>
+            <div><span>Network</span><b><ChainLogo chain={destKey} size={16} /> {dest.name}</b></div>
+            <div><span>From</span><b>{src ? `${src.chainName} · ${src.symbol}` : "—"}</b></div>
+            <div><span>They receive</span><b>{direct ? `${fmt(amt)} ${src?.symbol ?? ""}` : phase === "quoting" ? "Finding the best route…" : quote && receive !== null ? `about ${receive.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${quote.action.toToken.symbol}` : "—"}</b></div>
+            <div><span>Network fee</span><b>{direct ? "Tiny (paid by the network)" : quote ? `about ${fmt(feeUsd)}${eta ? ` · ~${eta} min` : ""}` : "—"}</b></div>
+          </div>
+          {sources.length > 1 && (
+            <label className="wd2-from">
+              <small>Pay from</small>
+              <select value={pick} disabled={busy} onChange={(e) => { setPick(e.target.value); setMsg(""); }} className="wd-input wd-select">
+                <option value="">Best route (automatic)</option>
+                {sources.map((x) => <option key={x.id} value={x.id}>{x.chainName} · {x.symbol} · {fmt(x.balance)}</option>)}
+              </select>
+            </label>
+          )}
+          {(msg || (blocked && phase !== "quoting" && blocked !== "Enter an amount")) && <p className="wd-error">{msg || blocked}</p>}
+          <button type="button" className="wd2-cta go" disabled={busy || !!blocked || (!direct && !quote)} onClick={() => void run()}>
+            {phase === "approving" ? <><LoaderCircle size={16} className="animate-spin" /> Approving…</>
+              : phase === "sending" ? <><LoaderCircle size={16} className="animate-spin" /> Confirm in wallet…</>
+              : phase === "bridging" ? <><LoaderCircle size={16} className="animate-spin" /> Arriving on {dest.name}…</>
+              : phase === "quoting" ? <><LoaderCircle size={16} className="animate-spin" /> Finding route…</>
+              : `Confirm and send ${fmt(amt)}`}
+          </button>
+          <p className="wd2-fine">Transfers are irreversible. Check the address is on {dest.name}.</p>
+        </>
+      )}
     </div>
   );
 }
