@@ -5,7 +5,7 @@
 // "wraith-screenshot" event (see MainActivity.java and app/app/profile/page.tsx).
 // Every card is drawn on a canvas, so what you see is exactly the picture that gets shared. Numbers come from the profile page; nothing is made up.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronDown, Crop, ImagePlus, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Crop, Download, ImagePlus, SlidersHorizontal, X } from "lucide-react";
 
 export type ShareTrade = { ts: number; usd: number }; // realized profit (+) or loss (-) of one closed trade, or the size of one trade, in display currency
 type Range = "24h" | "7d" | "30d";
@@ -21,10 +21,13 @@ const RANGES: { id: Range; label: string; ms: number }[] = [
   { id: "30d", label: "Past 30 Days", ms: 30 * 86400e3 },
 ];
 const PRESETS: { id: string; label: string }[] = [
-  { id: "wraith", label: "Wraith" }, { id: "avatar", label: "Your avatar" }, { id: "ember", label: "Ember" }, { id: "midnight", label: "Midnight" },
-  { id: "aurora", label: "Aurora" }, { id: "gold", label: "Gold" }, { id: "ocean", label: "Ocean" }, { id: "neon", label: "Neon" },
-  { id: "sunset", label: "Sunset" }, { id: "candles", label: "Candles" }, { id: "ghosts", label: "Ghosts" }, { id: "graphite", label: "Graphite" },
+  { id: "wraith", label: "Wraith" }, { id: "avatar", label: "Your avatar" }, { id: "moneyrain", label: "Money rain" }, { id: "coins", label: "Gold rush" },
+  { id: "candles", label: "Candles" }, { id: "matrix", label: "Matrix" }, { id: "ember", label: "Ember" }, { id: "violet", label: "Violet" },
+  { id: "mint", label: "Mint" }, { id: "glitch", label: "Glitch" }, { id: "ghosts", label: "Ghost wall" }, { id: "graphite", label: "Graphite" },
 ];
+/** The backgrounds that move (the card preview plays them; the picture you save or share is the frame on screen at that moment). */
+const MOVING = new Set(["moneyrain", "coins", "candles", "matrix"]);
+type Clip = { id: string; url: string }; // a video the person added: kept for as long as the studio is open (a phone cannot keep videos in the page's storage)
 const W = 1080, H = 1620;
 const FONT = `"Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif`;
 const PREFS_KEY = "wraith_share_studio_v1";
@@ -46,6 +49,14 @@ const savePhotos = (list: Photo[]) => {
   while (l.length) { try { localStorage.setItem(PHOTOS_KEY, JSON.stringify(l.map((p) => p.src))); return; } catch { l = l.slice(0, -1); } } // storage full: keep the newest that fit
   try { localStorage.removeItem(PHOTOS_KEY); } catch { /* blocked */ }
 };
+
+// The Android app hands the page two native functions (see MainActivity.java): one puts the picture in the phone's gallery, one opens the phone's share sheet.
+// The app's web view cannot download files by itself, so before this the Share button only PRETENDED to save (and said it had).
+type NativeShare = { saveImage?: (b64: string, name: string) => boolean; shareImage?: (b64: string, name: string, text: string) => boolean };
+const nativeBridge = (): NativeShare | null => { try { const n = (window as unknown as { WraithShare?: NativeShare }).WraithShare; return n && typeof n.shareImage === "function" ? n : null; } catch { return null; } };
+const inOldApp = () => /WraithApp/.test(navigator.userAgent) && !nativeBridge(); // the app, but a version from before native save and share
+const blobToBase64 = (b: Blob) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = () => rej(new Error("read")); r.readAsDataURL(b); });
+const downloadBlob = (blob: Blob, name: string) => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); window.setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
 
 const loadImg = (src: string) => new Promise<HTMLImageElement | null>((res) => {
   if (!src) return res(null);
@@ -73,8 +84,8 @@ const glow = (g: CanvasRenderingContext2D, x: number, y: number, r: number, rgb:
 };
 const dot = (g: CanvasRenderingContext2D, x: number, y: number, r: number) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
 
-/** One piece of background art. Everything is relative to the size, so the small tile and the full card look the same. */
-function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: string, im: Imgs) {
+/** One piece of background art. Everything is relative to the size, so the small tile and the full card look the same. `t` is in seconds, for the moving ones. */
+function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: string, im: Imgs, t = 0) {
   const u = w / W;
   const R = rng(id.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7));
   const ghostLogo = (x: number, y: number, size: number, a: number, rot = 0) => {
@@ -83,84 +94,115 @@ function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: strin
     g.drawImage(im.ghost, -size / 2, -size / 2, size, size * (im.ghost.height / im.ghost.width));
     g.restore();
   };
+  // fine film grain on top of the soft colour fields: it is what makes a gradient look printed instead of flat
+  const grain = (n: number, a: number) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(255,255,255,${R() * a})`; const s = 1.6 * u + 0.6; g.fillRect(R() * w, R() * h, s, s); } };
+  const blob = (x: number, y: number, r: number, rgb: string, a: number) => glow(g, x * w, y * h, r * w, rgb, a);
   switch (id) {
-    case "ember": {
-      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#120303"], [0.55, "#3a0f06"], [0.86, "#90300d"], [1, "#ff7b3d"]]); g.fillRect(0, 0, w, h);
-      glow(g, w * 0.5, h * 1.02, w * 0.95, "255,150,70", 0.5);
-      for (let i = 0; i < 110; i++) { g.fillStyle = `rgba(255,${140 + ((R() * 90) | 0)},70,${0.12 + R() * 0.5})`; dot(g, R() * w, h * (0.25 + R() * 0.75), (1 + R() * 3.4) * u); }
+    case "ember": { // warm colour fields
+      g.fillStyle = "#0a0504"; g.fillRect(0, 0, w, h);
+      blob(0.2, 0.1, 0.95, "255,120,50", 0.55); blob(0.95, 0.38, 0.85, "225,45,30", 0.42); blob(0.35, 0.92, 1.0, "255,170,60", 0.4); blob(1, 1, 0.8, "160,30,90", 0.38);
+      grain(2600, 0.05);
       break;
     }
-    case "midnight": {
-      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#050921"], [0.55, "#171250"], [1, "#31176a"]]); g.fillRect(0, 0, w, h);
-      glow(g, w * 0.82, h * 0.13, w * 0.55, "150,165,255", 0.2);
-      for (let i = 0; i < 280; i++) { g.fillStyle = `rgba(255,255,255,${0.15 + R() * 0.75})`; dot(g, R() * w, R() * h * 0.92, (0.7 + R() * 2.2) * u); }
-      g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = Math.max(1, 2 * u);
-      for (let i = 0; i < 9; i++) { const x = R() * w, y = R() * h * 0.7, s = (10 + R() * 14) * u; g.beginPath(); g.moveTo(x - s, y); g.lineTo(x + s, y); g.moveTo(x, y - s); g.lineTo(x, y + s); g.stroke(); }
-      g.fillStyle = "rgba(236,239,255,.9)"; dot(g, w * 0.82, h * 0.13, 40 * u);
+    case "violet": {
+      g.fillStyle = "#07050f"; g.fillRect(0, 0, w, h);
+      blob(0.15, 0.1, 1.0, "120,80,255", 0.5); blob(0.95, 0.32, 0.85, "255,70,180", 0.38); blob(0.4, 0.96, 1.0, "60,120,255", 0.42); blob(0, 0.72, 0.6, "170,60,255", 0.26);
+      grain(2600, 0.05);
       break;
     }
-    case "aurora": {
-      g.fillStyle = "#03100e"; g.fillRect(0, 0, w, h);
-      glow(g, w * 0.25, h * 0.2, w * 0.75, "40,230,160", 0.38);
-      glow(g, w * 0.88, h * 0.42, w * 0.65, "80,160,255", 0.3);
-      glow(g, w * 0.15, h * 0.78, w * 0.8, "150,90,255", 0.3);
-      glow(g, w * 0.75, h * 0.97, w * 0.65, "40,230,160", 0.2);
-      for (let i = 0; i < 120; i++) { g.fillStyle = `rgba(255,255,255,${0.1 + R() * 0.5})`; dot(g, R() * w, R() * h, (0.6 + R() * 1.6) * u); }
+    case "mint": {
+      g.fillStyle = "#03100d"; g.fillRect(0, 0, w, h);
+      blob(0.2, 0.14, 0.95, "40,230,170", 0.46); blob(0.95, 0.4, 0.9, "40,150,255", 0.36); blob(0.3, 1, 1.0, "60,255,150", 0.3); blob(0.9, 0.95, 0.7, "20,120,120", 0.36);
+      grain(2600, 0.05);
       break;
     }
-    case "gold": {
-      g.fillStyle = "#0b0803"; g.fillRect(0, 0, w, h);
-      glow(g, w * 0.5, h * 0.38, w * 0.95, "255,190,70", 0.3);
-      for (let i = 0; i < 16; i++) { g.fillStyle = `rgba(255,200,90,${0.03 + R() * 0.05})`; dot(g, R() * w, R() * h, (30 + R() * 70) * u); }
-      for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(255,${190 + ((R() * 50) | 0)},90,${0.2 + R() * 0.7})`; dot(g, R() * w, R() * h, (0.8 + R() * 3) * u); }
+    case "moneyrain": { // animated: green bills falling at different depths
+      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#03140a"], [1, "#0a3a1f"]]); g.fillRect(0, 0, w, h);
+      blob(0.5, 0.35, 0.95, "61,220,151", 0.16);
+      for (let i = 0; i < 46; i++) {
+        const depth = 0.35 + R() * 0.65, bw = (110 + R() * 70) * depth * u, bh = bw * 0.5;
+        const x0 = R() * w, y0 = R() * (h + 400 * u), sp = (90 + R() * 160) * depth * u, ph = R() * 6.28, rot0 = (R() - 0.5) * 1.6;
+        const y = ((y0 + t * sp) % (h + 300 * u)) - 150 * u;
+        const x = x0 + Math.sin(t * 0.7 * depth + ph) * 40 * u;
+        g.save(); g.translate(x, y); g.rotate(rot0 + Math.sin(t * 0.9 + ph) * 0.5); g.globalAlpha = 0.25 + depth * 0.6;
+        g.fillStyle = grad(g, -bw / 2, 0, bw / 2, 0, [[0, "#2f9e63"], [1, "#6fe0a2"]]);
+        g.beginPath(); g.roundRect(-bw / 2, -bh / 2, bw, bh, bh * 0.12); g.fill();
+        g.strokeStyle = "rgba(5,40,20,.55)"; g.lineWidth = Math.max(1, 3 * u * depth);
+        g.beginPath(); g.roundRect(-bw / 2 + bh * 0.1, -bh / 2 + bh * 0.1, bw - bh * 0.2, bh - bh * 0.2, bh * 0.08); g.stroke();
+        g.fillStyle = "rgba(5,50,25,.6)"; g.beginPath(); g.arc(0, 0, bh * 0.26, 0, 6.28); g.fill();
+        g.fillStyle = "rgba(200,255,225,.85)"; g.font = `800 ${Math.max(6, bh * 0.34)}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("$", 0, bh * 0.02);
+        g.restore();
+      }
+      g.textAlign = "left"; g.textBaseline = "alphabetic";
       break;
     }
-    case "ocean": {
-      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#02101c"], [0.5, "#04324a"], [1, "#0b6e82"]]); g.fillRect(0, 0, w, h);
-      glow(g, w * 0.5, h * 0.05, w * 0.8, "120,220,255", 0.14);
-      g.lineWidth = Math.max(1, 3 * u);
-      for (let k = 0; k < 11; k++) {
-        g.beginPath();
-        for (let x = 0; x <= w; x += Math.max(2, 12 * u)) { const y = h * (0.3 + k * 0.065) + Math.sin((x / w) * Math.PI * (2.2 + k * 0.15) + k) * 22 * u; if (x === 0) g.moveTo(x, y); else g.lineTo(x, y); }
-        g.strokeStyle = `rgba(190,240,255,${0.05 + k * 0.012})`; g.stroke();
+    case "coins": { // animated: gold coins turning as they fall
+      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#0c0903"], [1, "#1c1405"]]); g.fillRect(0, 0, w, h);
+      blob(0.5, 0.3, 1.0, "255,190,70", 0.22);
+      for (let i = 0; i < 40; i++) {
+        const depth = 0.4 + R() * 0.6, r = (46 + R() * 40) * depth * u, x0 = R() * w, y0 = R() * (h + 300 * u), sp = (110 + R() * 170) * depth * u, ph = R() * 6.28;
+        const y = ((y0 + t * sp) % (h + 300 * u)) - 150 * u, x = x0 + Math.sin(t * 0.8 + ph) * 30 * u;
+        const sx = Math.abs(Math.cos(t * (1.2 + depth) + ph)); // the coin turning: its width squeezes to a line and back
+        g.save(); g.translate(x, y); g.globalAlpha = 0.35 + depth * 0.65; g.scale(Math.max(0.12, sx), 1);
+        g.fillStyle = grad(g, -r, -r, r, r, [[0, "#fff0b0"], [0.5, "#ffc83d"], [1, "#c98410"]]); g.beginPath(); g.arc(0, 0, r, 0, 6.28); g.fill();
+        g.strokeStyle = "rgba(122,67,0,.6)"; g.lineWidth = Math.max(1, r * 0.12); g.beginPath(); g.arc(0, 0, r * 0.72, 0, 6.28); g.stroke();
+        g.fillStyle = "rgba(122,67,0,.85)"; g.font = `800 ${Math.max(6, r)}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("W", 0, r * 0.04);
+        g.restore();
+      }
+      for (let i = 0; i < 26; i++) { // sparkles
+        const x = R() * w, y = R() * h, s = (6 + R() * 10) * u, a = 0.5 + 0.5 * Math.sin(t * 3 + R() * 6.28);
+        g.fillStyle = `rgba(255,236,170,${0.25 + a * 0.6})`; g.beginPath(); g.moveTo(x, y - s); g.lineTo(x + s * 0.25, y - s * 0.25); g.lineTo(x + s, y); g.lineTo(x + s * 0.25, y + s * 0.25); g.lineTo(x, y + s); g.lineTo(x - s * 0.25, y + s * 0.25); g.lineTo(x - s, y); g.lineTo(x - s * 0.25, y - s * 0.25); g.closePath(); g.fill();
+      }
+      g.textAlign = "left"; g.textBaseline = "alphabetic";
+      break;
+    }
+    case "candles": { // animated: a chart scrolling by, neon candles
+      g.fillStyle = "#040806"; g.fillRect(0, 0, w, h);
+      blob(0.85, 0.2, 0.9, "55,213,138", 0.16); blob(0.1, 0.9, 0.8, "255,93,77", 0.1);
+      g.strokeStyle = "rgba(255,255,255,.04)"; g.lineWidth = Math.max(1, 2 * u);
+      for (let y = 120 * u; y < h; y += 170 * u) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      const L = 260, open: number[] = [], close: number[] = [], hi: number[] = [], lo: number[] = [];
+      let p = 0.62;
+      for (let i = 0; i < L; i++) { const o = p, c2 = Math.min(0.88, Math.max(0.14, o + (R() - 0.46) * 0.09)); p = c2; open.push(o); close.push(c2); hi.push(Math.min(o, c2) - R() * 0.03); lo.push(Math.max(o, c2) + R() * 0.03); }
+      const cw = w / 14, pos = t * 1.1, i0 = Math.floor(pos), fr = pos - i0;
+      for (let k = 0; k < 16; k++) {
+        const i = (i0 + k) % L, x = (k - fr) * cw + cw / 2, up = close[i] < open[i], col = up ? "55,213,138" : "255,93,77";
+        g.save(); g.shadowColor = `rgba(${col},.55)`; g.shadowBlur = 26 * u;
+        g.strokeStyle = `rgba(${col},.8)`; g.lineWidth = Math.max(1, 4 * u); g.beginPath(); g.moveTo(x, hi[i] * h); g.lineTo(x, lo[i] * h); g.stroke();
+        g.fillStyle = `rgba(${col},.85)`; g.fillRect(x - cw * 0.3, Math.min(open[i], close[i]) * h, cw * 0.6, Math.max(8 * u, Math.abs(open[i] - close[i]) * h));
+        g.restore();
       }
       break;
     }
-    case "neon": {
-      g.fillStyle = "#06030d"; g.fillRect(0, 0, w, h);
-      glow(g, w * 0.15, h * 0.12, w * 0.85, "255,40,180", 0.34);
-      glow(g, w * 0.92, h * 0.88, w * 0.95, "40,220,255", 0.3);
-      const hz = h * 0.66; g.strokeStyle = "rgba(255,70,200,.3)"; g.lineWidth = Math.max(1, 2 * u);
-      for (let i = -14; i <= 14; i++) { g.beginPath(); g.moveTo(w / 2 + i * 14 * u, hz); g.lineTo(w / 2 + i * 120 * u, h); g.stroke(); }
-      for (let k = 1; k < 12; k++) { const y = hz + (h - hz) * Math.pow(k / 12, 1.9); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
-      break;
-    }
-    case "sunset": {
-      g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#140a33"], [0.45, "#5b1e6e"], [0.72, "#d3446a"], [0.9, "#ff8a3d"], [1, "#ffd27a"]]); g.fillRect(0, 0, w, h);
-      glow(g, w * 0.5, h * 0.9, w * 0.75, "255,214,130", 0.5);
-      for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(255,255,255,${0.08 + R() * 0.4})`; dot(g, R() * w, R() * h * 0.45, (0.6 + R() * 1.6) * u); }
-      break;
-    }
-    case "candles": {
-      g.fillStyle = "#050806"; g.fillRect(0, 0, w, h);
-      glow(g, w * 0.85, h * 0.2, w * 0.8, "55,213,138", 0.2);
-      const n = 22, cw = w / n;
-      let price = 0.86;
-      for (let i = 0; i < n; i++) {
-        const open = price, up = R() < 0.72;
-        const close = Math.min(0.9, Math.max(0.12, open + (0.01 + R() * 0.05) * (up ? -1 : 1) - 0.012)); // y grows downward: a falling y is a rising price
-        price = close;
-        const hi = Math.min(open, close) - R() * 0.03, lo = Math.max(open, close) + R() * 0.03, x = i * cw + cw / 2;
-        g.strokeStyle = up ? "rgba(55,213,138,.45)" : "rgba(255,93,77,.4)"; g.lineWidth = Math.max(1, 3 * u);
-        g.beginPath(); g.moveTo(x, hi * h); g.lineTo(x, lo * h); g.stroke();
-        g.fillStyle = up ? "rgba(55,213,138,.5)" : "rgba(255,93,77,.45)";
-        g.fillRect(x - cw * 0.3, Math.min(open, close) * h, cw * 0.6, Math.max(8 * u, Math.abs(open - close) * h));
+    case "matrix": { // animated: falling code
+      g.fillStyle = "#010a04"; g.fillRect(0, 0, w, h);
+      blob(0.5, 0.5, 0.9, "30,200,100", 0.07);
+      const cols = 22, cwid = w / cols, fs = Math.max(8, 34 * u), glyphs = "01アイウエオカキクケコサシスセソ$W₿Ξ";
+      g.font = `700 ${fs}px monospace`; g.textAlign = "center"; g.textBaseline = "top";
+      for (let c = 0; c < cols; c++) {
+        const sp = 5 + R() * 9, len = 10 + ((R() * 14) | 0), off = R() * 100, x = (c + 0.5) * cwid, head = (t * sp + off) % (h / fs + len);
+        for (let k = 0; k < len; k++) {
+          const row = head - k;
+          if (row < 0 || row * fs > h) continue;
+          const ch = glyphs[Math.abs(Math.floor(c * 7 + row * 3 + k * 5 + Math.floor(t * 4))) % glyphs.length];
+          g.fillStyle = k === 0 ? "rgba(220,255,235,.95)" : `rgba(60,255,140,${Math.max(0.05, 0.8 * (1 - k / len))})`;
+          g.fillText(ch, x, Math.floor(row) * fs);
+        }
       }
+      g.textAlign = "left"; g.textBaseline = "alphabetic";
+      break;
+    }
+    case "glitch": {
+      g.fillStyle = "#07070a"; g.fillRect(0, 0, w, h);
+      blob(0.5, 0.4, 1.0, "255,60,90", 0.12); blob(0.2, 0.85, 0.8, "60,200,255", 0.12);
+      if (im.ghost) { for (const dx of [-16, 0, 16]) { g.save(); g.globalCompositeOperation = "lighter"; ghostLogo(w * 0.5 + dx * u, h * 0.46, w * 0.85, dx === 0 ? 0.16 : 0.1, 0.08); g.restore(); } }
+      for (let y = 0; y < h; y += 6 * u) { g.fillStyle = "rgba(255,255,255,.025)"; g.fillRect(0, y, w, 2 * u); }
+      for (let i = 0; i < 14; i++) { const y = R() * h, hh = (6 + R() * 40) * u, dx = (R() - 0.5) * 120 * u; g.fillStyle = `rgba(${R() < 0.5 ? "255,60,90" : "60,200,255"},${0.05 + R() * 0.12})`; g.fillRect(dx, y, w, hh); }
       break;
     }
     case "ghosts": {
       g.fillStyle = grad(g, 0, 0, 0, h, [[0, "#06120a"], [1, "#0c2214"]]); g.fillRect(0, 0, w, h);
-      glow(g, w * 0.5, h * 0.4, w * 0.9, "55,213,138", 0.1);
+      blob(0.5, 0.4, 0.9, "55,213,138", 0.1);
       for (let r = 0; r < 8; r++) for (let c = 0; c < 5; c++) {
         const x = (c + (r % 2 ? 0.5 : 0)) * 240 * u + 40 * u, y = r * 250 * u + 110 * u;
         if (im.ghost) ghostLogo(x, y, 130 * u, 0.1, -0.2); else { g.fillStyle = "rgba(255,255,255,.06)"; dot(g, x, y, 20 * u); }
@@ -201,7 +243,7 @@ function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: strin
   }
 }
 
-function clampFrame(f: Frame, photo: HTMLImageElement | null): Frame {
+function clampFrame(f: Frame, photo: { width: number; height: number } | null): Frame {
   const z = Math.min(4, Math.max(1, Number.isFinite(f.z) ? f.z : 1));
   if (!photo) return { z, x: 0, y: 0 };
   const s = Math.max(W / photo.width, H / photo.height) * z;
@@ -210,13 +252,21 @@ function clampFrame(f: Frame, photo: HTMLImageElement | null): Frame {
 }
 
 /** The whole background: preset art or the framed photo, a soft dark band top and bottom so text stays readable, then the person's own darken amount. */
-function paintBg(g: CanvasRenderingContext2D, w: number, h: number, bg: string, im: Imgs, photo: HTMLImageElement | null, frame: Frame, darken: number) {
-  if (bg.startsWith("photo:") && photo) {
+function paintBg(g: CanvasRenderingContext2D, w: number, h: number, bg: string, im: Imgs, photo: HTMLImageElement | null, frame: Frame, darken: number, t = 0, video: HTMLVideoElement | null = null) {
+  if (bg.startsWith("video:")) {
+    g.fillStyle = "#000"; g.fillRect(0, 0, w, h);
+    if (video && video.videoWidth > 0 && video.readyState >= 2) {
+      const vw = video.videoWidth, vh = video.videoHeight, z = Math.min(4, Math.max(1, frame.z)), k = w / W;
+      const s = Math.max(w / vw, h / vh) * z, dw = vw * s, dh = vh * s;
+      const mx = Math.max(0, (dw - w) / 2), my = Math.max(0, (dh - h) / 2);
+      try { g.drawImage(video, (w - dw) / 2 + Math.min(mx, Math.max(-mx, frame.x * k)), (h - dh) / 2 + Math.min(my, Math.max(-my, frame.y * k)), dw, dh); } catch { /* not ready yet */ }
+    }
+  } else if (bg.startsWith("photo:") && photo) {
     g.fillStyle = "#000"; g.fillRect(0, 0, w, h);
     const f = clampFrame(frame, photo), k = w / W;
     const s = Math.max(w / photo.width, h / photo.height) * f.z, dw = photo.width * s, dh = photo.height * s;
     g.drawImage(photo, (w - dw) / 2 + f.x * k, (h - dh) / 2 + f.y * k, dw, dh);
-  } else drawPreset(g, w, h, bg.startsWith("photo:") ? "wraith" : bg, im);
+  } else drawPreset(g, w, h, bg.startsWith("photo:") ? "wraith" : bg, im, t);
   g.fillStyle = grad(g, 0, 0, 0, h, [[0, "rgba(0,0,0,.28)"], [0.22, "rgba(0,0,0,0)"], [0.55, "rgba(0,0,0,.12)"], [1, "rgba(0,0,0,.62)"]]);
   g.fillRect(0, 0, w, h);
   if (darken > 0) { g.fillStyle = `rgba(0,0,0,${darken})`; g.fillRect(0, 0, w, h); }
@@ -378,7 +428,7 @@ function Thumb({ id, im }: { id: string; im: Imgs }) {
     const c = ref.current, g = c?.getContext("2d");
     if (!c || !g) return;
     c.width = 220; c.height = 330;
-    paintBg(g, 220, 330, id, im, null, FRESH, 0);
+    paintBg(g, 220, 330, id, im, null, FRESH, 0, 1.4);
   }, [id, im]);
   return <canvas ref={ref} aria-hidden="true" />;
 }
@@ -422,6 +472,9 @@ export default function ShareStudio({
   const [ref, setRef] = useState("");
   const [im, setIm] = useState<Imgs>({ av: null, ghost: null, mascot: NO_MASCOTS });
   const [photoImg, setPhotoImg] = useState<HTMLImageElement | null>(null);
+  const [clips, setClips] = useState<Clip[]>([]);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoDims = useRef<{ width: number; height: number } | null>(null);
   // Android app only: some phones' own screenshot tool does not tell the app about screenshots; allowing photo access lets the app see them instead
   const [shotHint, setShotHint] = useState(false);
   useEffect(() => {
@@ -441,11 +494,14 @@ export default function ShareStudio({
   const bgCanvas = useRef<HTMLCanvasElement | null>(null);
   const bgKey = useRef("");
   const snap = useRef<{ frame: Frame; darken: number } | null>(null);
-  const photoRef = useRef<HTMLImageElement | null>(null);
-  photoRef.current = photoImg;
+  const photoRef = useRef<{ width: number; height: number } | null>(null);
   const noteTimer = useRef(0);
 
   const isPhoto = bg.startsWith("photo:");
+  const isVideo = bg.startsWith("video:");
+  const canFrame = isPhoto || isVideo; // photos and videos can be moved and zoomed; the drawn backgrounds cannot
+  const moving = isVideo || MOVING.has(bg);
+  photoRef.current = isVideo ? videoDims.current : photoImg;
   const flash = useCallback((m: string) => { setNote(m); window.clearTimeout(noteTimer.current); noteTimer.current = window.setTimeout(() => setNote(""), 2200); }, []);
   useEffect(() => () => window.clearTimeout(noteTimer.current), []);
 
@@ -475,6 +531,20 @@ export default function ShareStudio({
     void (p ? loadImg(p.src) : Promise.resolve(null)).then((i) => { if (on) setPhotoImg(i); });
     return () => { on = false; };
   }, [bg, isPhoto, photos]);
+
+  // a chosen video: a muted, looping <video> that the card draws a frame of; gone clips (the studio was closed) fall back to the default
+  useEffect(() => {
+    if (!isVideo) { videoRef.current = null; videoDims.current = null; return; }
+    const clip = clips.find((c) => `video:${c.id}` === bg);
+    if (!clip) { setBg("wraith"); return; }
+    const v = document.createElement("video");
+    v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto"; v.src = clip.url;
+    v.addEventListener("loadedmetadata", () => { videoDims.current = { width: v.videoWidth, height: v.videoHeight }; });
+    void v.play().catch(() => undefined);
+    videoRef.current = v;
+    return () => { v.pause(); v.removeAttribute("src"); v.load(); if (videoRef.current === v) videoRef.current = null; videoDims.current = null; };
+  }, [bg, isVideo, clips]);
+  useEffect(() => () => { for (const c of clips) URL.revokeObjectURL(c.url); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const t = window.setTimeout(() => { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ range, bg, showAvatar, showStats, showMascot, darken } satisfies Prefs)); } catch { /* storage blocked */ } }, 250);
@@ -507,7 +577,7 @@ export default function ShareStudio({
       c.width = W; c.height = H;
       const g = c.getContext("2d");
       if (!g) return;
-      paintBg(g, W, H, bg, im, photoImg, frame, darken);
+      paintBg(g, W, H, bg, im, photoImg, frame, darken, 1.4, videoRef.current);
       bgKey.current = key;
       const t = thumbRef.current, tg = t?.getContext("2d");
       if (t && tg) { t.width = 88; t.height = 88; tg.drawImage(c, 0, H * 0.18, W, W, 0, 0, 88, 88); }
@@ -516,6 +586,27 @@ export default function ShareStudio({
     if (profitRef.current) drawCard(profitRef.current, "profit", data, c);
     if (adjRef.current) drawCard(adjRef.current, idx === 0 ? "bio" : "profit", data, c);
   }, [bg, frame, darken, im, photoImg, data, idx, adjusting]);
+
+  // moving backgrounds (drawn ones and videos): redraw the card on screen about 20 times a second; nothing else is redrawn
+  useEffect(() => {
+    if (!moving) return;
+    let raf = 0, last = 0;
+    const t0 = performance.now();
+    const loop = (now: number) => {
+      raf = requestAnimationFrame(loop);
+      if (now - last < 48 || document.hidden) return;
+      last = now;
+      const c = bgCanvas.current, g = c?.getContext("2d");
+      if (!c || !g) return;
+      paintBg(g, W, H, bg, im, photoImg, frame, darken, (now - t0) / 1000 + 1.4, videoRef.current);
+      const target = adjusting ? adjRef.current : idx === 0 ? bioRef.current : profitRef.current;
+      if (target) drawCard(target, idx === 0 ? "bio" : "profit", data, c);
+      const th = thumbRef.current, tg = th?.getContext("2d");
+      if (th && tg) tg.drawImage(c, 0, H * 0.18, W, W, 0, 0, 88, 88);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [moving, bg, im, photoImg, frame, darken, data, idx, adjusting]);
 
   const onScroll = () => {
     const t = track.current, first = t?.firstElementChild as HTMLElement | null;
@@ -531,10 +622,17 @@ export default function ShareStudio({
 
   const selectBg = (id: string) => {
     setBg(id); setFrame(FRESH);
-    if (id.startsWith("photo:") && darken === 0) setDarken(0.2); // photos are busy: a little darker keeps the numbers readable
+    if ((id.startsWith("photo:") || id.startsWith("video:")) && darken === 0) setDarken(0.2); // photos and clips are busy: a little darker keeps the numbers readable
   };
   const onFile = async (f?: File | null) => {
     if (!f) return;
+    if (f.type.startsWith("video/")) { // a video: played from the phone's own file, not copied anywhere
+      const id = hash(`${f.name}|${f.size}|${f.lastModified}`);
+      const url = URL.createObjectURL(f);
+      setClips((cur) => { const old = cur.find((c) => c.id === id); if (old) URL.revokeObjectURL(old.url); const next = [{ id, url }, ...cur.filter((c) => c.id !== id)]; for (const gone of next.slice(4)) URL.revokeObjectURL(gone.url); return next.slice(0, 4); });
+      setTab("yours"); selectBg(`video:${id}`);
+      return;
+    }
     try {
       const url = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error("read")); r.readAsDataURL(f); });
       const img = await loadImg(url);
@@ -564,7 +662,7 @@ export default function ShareStudio({
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const p = pts.current.get(e.pointerId);
     if (!p) return;
-    if (!isPhoto) { if (!toasted.current) { toasted.current = true; flash("Framing is available for photos"); } p.x = e.clientX; p.y = e.clientY; return; }
+    if (!canFrame) { if (!toasted.current) { toasted.current = true; flash("Framing is available for photos and videos"); } p.x = e.clientX; p.y = e.clientY; return; }
     const k = W / e.currentTarget.getBoundingClientRect().width;
     const dx = (e.clientX - p.x) * k, dy = (e.clientY - p.y) * k;
     p.x = e.clientX; p.y = e.clientY;
@@ -575,21 +673,34 @@ export default function ShareStudio({
     }
   };
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => { pts.current.delete(e.pointerId); if (pts.current.size < 2) pinch.current = null; };
-  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => { if (isPhoto) setFrame((f) => clampFrame({ ...f, z: f.z * (e.deltaY < 0 ? 1.08 : 0.92) }, photoRef.current)); };
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>) => { if (canFrame) setFrame((f) => clampFrame({ ...f, z: f.z * (e.deltaY < 0 ? 1.08 : 0.92) }, photoRef.current)); };
 
-  const share = async () => {
+  const cardBlob = async () => {
     const c = (idx === 0 ? bioRef : profitRef).current;
-    if (!c) return;
-    const blob = await new Promise<Blob | null>((res) => { try { c.toBlob((b) => res(b), "image/png"); } catch { res(null); } });
+    if (!c) return null;
+    return new Promise<Blob | null>((res) => { try { c.toBlob((bl) => res(bl), "image/png"); } catch { res(null); } });
+  };
+  const fileName = () => `wraith-${idx === 0 ? "bio" : "profit"}-${Date.now().toString(36)}.png`;
+  const caption = () => (shareText ? (ref ? `${shareText} Join with my code ${ref}.` : shareText) : (ref ? `Trade with me on Wraith. Code ${ref}` : "My Wraith card"));
+  // Share: the phone's own share sheet (the app: native; a browser on a phone: the web share sheet; a computer: the file downloads)
+  const share = async () => {
+    const blob = await cardBlob();
     if (!blob) { flash("Could not make the image"); return; }
-    const file = new File([blob], `wraith-${idx === 0 ? "bio" : "profit"}.png`, { type: "image/png" });
-    try {
-      const text = shareText ? (ref ? `${shareText} Join with my code ${ref}.` : shareText) : (ref ? `Trade with me on Wraith. Code ${ref}` : "My Wraith card");
-      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
-    } catch { return; /* the share sheet was closed */ }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
-    window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    flash("Saved the image");
+    const name = fileName(), text = caption(), nat = nativeBridge();
+    if (nat) { try { if (!nat.shareImage?.(await blobToBase64(blob), name, text)) flash("Could not open the share sheet"); } catch { flash("Could not share the picture"); } return; }
+    const file = new File([blob], name, { type: "image/png" });
+    try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text }); return; } } catch { return; /* the share sheet was closed */ }
+    if (inOldApp()) { flash("Update the Wraith app to share pictures"); return; }
+    downloadBlob(blob, name); flash("Downloaded to your device");
+  };
+  // Save: into the gallery (the app) or the downloads (a browser). It only says "Saved" when it really was.
+  const save = async () => {
+    const blob = await cardBlob();
+    if (!blob) { flash("Could not make the image"); return; }
+    const name = fileName(), nat = nativeBridge();
+    if (nat?.saveImage) { try { flash(nat.saveImage(await blobToBase64(blob), name) ? "Saved to your gallery" : "Could not save. Allow photo access for Wraith."); } catch { flash("Could not save the picture"); } return; }
+    if (inOldApp()) { flash("Update the Wraith app to save pictures"); return; }
+    downloadBlob(blob, name); flash("Downloaded to your device");
   };
 
   return (
@@ -651,6 +762,7 @@ export default function ShareStudio({
 
       <div className="shs-bar">
         <button type="button" className="shs-bgbtn" onClick={() => { setMenu(null); setSheet(true); }}><canvas ref={thumbRef} aria-hidden="true" />Background</button>
+        <button type="button" className="shs-save" onClick={() => void save()} aria-label="Save to your gallery"><Download size={22} /></button>
         <button type="button" className="shs-share" onClick={() => void share()}>Share <ArrowRight size={20} /></button>
       </div>
 
@@ -670,9 +782,15 @@ export default function ShareStudio({
             <div className="shs-grid">
               {tab === "yours" ? (
                 <>
-                  <label className="shs-tile add"><ImagePlus size={26} /><span>Add photo</span>
-                    <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void onFile(f); }} />
+                  <label className="shs-tile add"><ImagePlus size={26} /><span>Photo or video</span>
+                    <input type="file" accept="image/*,video/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void onFile(f); }} />
                   </label>
+                  {clips.map((c) => (
+                    <button key={c.id} type="button" className={`shs-tile${bg === `video:${c.id}` ? " sel" : ""}`} onClick={() => selectBg(`video:${c.id}`)} aria-label="Use this video">
+                      <video src={c.url} muted playsInline preload="metadata" />
+                      {bg === `video:${c.id}` && <i><Check size={14} /></i>}
+                    </button>
+                  ))}
                   {photos.map((p) => (
                     <button key={p.id} type="button" className={`shs-tile${bg === `photo:${p.id}` ? " sel" : ""}`} onClick={() => selectBg(`photo:${p.id}`)} aria-label="Use this photo">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -704,7 +822,7 @@ export default function ShareStudio({
               <canvas ref={adjRef} aria-label="Card being adjusted" />
               <div className="shs-thirds" aria-hidden="true" />
             </div>
-            <p className="shs-hint">{isPhoto ? "Drag to move, pinch to zoom" : "Framing is available for photos"}</p>
+            <p className="shs-hint">{canFrame ? "Drag to move, pinch to zoom" : "Framing is available for photos and videos"}</p>
           </div>
           <div className="shs-adj-panel">
             <span>Darken</span>

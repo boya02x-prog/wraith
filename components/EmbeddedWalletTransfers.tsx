@@ -158,30 +158,27 @@ export default function EmbeddedWalletTransfers({
 
       {/* DEPOSIT HOME */}
       {screen === "deposit-home" && (
-        <div className="ewt-screen">
+        <div className="ewt-screen ewt-home">
           <h3 className="ewt-title">Deposit with</h3>
-          <p className="ewt-deposit-hint" style={{ margin: "0 0 12px", textAlign: "left" }}>
-            <b>One Cash balance.</b> Deposit USDC, USDT or USDG on any network and it all adds up to a single balance in dollars. Buying a token spends from it, selling puts the money back.
-          </p>
           <button type="button" className="ewt-option" onClick={() => setScreen("deposit-crypto")}>
-            <span className="ewt-option-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M2 12h20"/></svg>
-            </span>
             <div className="ewt-option-text">
               <strong>Crypto</strong>
-              <span>USDC / USDG on 7 networks</span>
+              <span>Send USDC, USDT or USDG from any wallet, on 7 networks</span>
             </div>
-            <span className="ewt-chevron">›</span>
-          </button>
-          <button type="button" className="ewt-option ewt-option-dim">
             <span className="ewt-option-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></svg>
             </span>
-            <div className="ewt-option-text">
-              <strong>Credit or debit</strong>
-              <span>Coming soon!</span>
-            </div>
           </button>
+          <button type="button" className="ewt-option ewt-option-dim" aria-disabled="true">
+            <div className="ewt-option-text">
+              <strong>Credit or debit <em className="ewt-soon">Soon</em></strong>
+              <span>Pay with your card</span>
+            </div>
+            <span className="ewt-option-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h4"/></svg>
+            </span>
+          </button>
+          <p className="ewt-fine">Everything you deposit adds up to one cash balance in dollars. Buying a token spends from it, selling puts the money back.</p>
         </div>
       )}
 

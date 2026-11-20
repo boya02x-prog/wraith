@@ -62,6 +62,47 @@ function Spark({ curve }: { curve: number[] }) {
   );
 }
 
+function Crown({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 22" aria-hidden="true">
+      <path d="M3 19 5.5 6.5 11.5 12.5 16 3l4.5 9.5 6-6L29 19Z" fill="currentColor" />
+      <rect x="3" y="19" width="26" height="3" rx="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** The top three get their own block: second on the left, first in the middle (taller, with a crown), third on the right. Gold, silver and bronze are only used here. */
+function Podium({ list, pnlOf, money }: { list: Trader[]; pnlOf: (t: Trader) => number; money: ReturnType<typeof useCash>["money"] }) {
+  const slots = [1, 0, 2];
+  return (
+    <div className="tp" aria-label="Top three traders">
+      {slots.map((i) => {
+        const t = list[i];
+        if (!t) return <span key={i} className="tp-empty" aria-hidden="true" />;
+        const rank = i + 1;
+        const pnl = pnlOf(t);
+        const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
+        const wr = t.stats?.winRate;
+        return (
+          <article key={t.userId} className={`tp-card r${rank}`}>
+            <Link className="tp-main" href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`}>
+              {rank === 1 && <Crown className="tp-crown" />}
+              <span className="tp-av">
+                {t.avatarDataUrl ? <Image src={t.avatarDataUrl} alt="" width={72} height={72} unoptimized /> : <span className="tp-fb">{t.displayName.slice(0, 1).toUpperCase()}</span>}
+                <i className="tp-medal">{rank}</i>
+              </span>
+              <b className="tp-name">{t.displayName}</b>
+              <strong className={`tp-gain ${tone}`}>{money(pnl, true)}</strong>
+              <small className="tp-sub">{wr == null ? `${t.closedTradeCount} trades` : `${wr.toFixed(0)}% win · ${t.closedTradeCount} trades`}</small>
+            </Link>
+            <span className="tp-follow"><TraderFollowButton traderId={t.userId} compact initialFollowing={t.isFollowing === true} statusKnown={typeof t.isFollowing === "boolean"} /></span>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TradersPage() {
   const [traders, setTraders] = useState<Trader[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +169,10 @@ export default function TradersPage() {
   }, []);
 
   const periodMeta = PERIODS.find((p) => p.key === period)!;
+  // on the real leaderboard (top gains) the first three are shown as a podium, the rest follow as cards
+  const podiumOn = sort === "pnl" && sorted.length > 0;
+  const podiumBase = podiumOn ? 3 : 0;
+  const rest = podiumOn ? sorted.slice(3) : sorted;
 
   return (
     <main className="wraith-dashboard profile-page">
@@ -135,11 +180,7 @@ export default function TradersPage() {
       <DiscoverNav active="traders" />
       <div className="profile-shell traders-shell">
         <section className="traders-heading">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="traders-mascot" src="/mascot/wraith-king-solo.webp" alt="" draggable={false} />
-          <span className="profile-eyebrow">WRAITH COMMUNITY</span>
-          <h1>{periodMeta.long} ranking</h1>
-          <p>Who is making money, and what they are good at.</p>
+          <h1>Leaderboard</h1>
           <div className="tc-bar">
           <div className="tc-periods" role="tablist" aria-label="Ranking period">
             {PERIODS.map((p) => (
@@ -175,8 +216,11 @@ export default function TradersPage() {
             <p>Tap Follow on a trader to see them here and get alerts when they trade.</p>
           </div>
         ) : traders.length ? (
-          <div className={`traders-grid${layout === "list" ? " is-list" : ""}`}>
-            {sorted.map((trader, index) => {
+          <>
+          {podiumOn && <Podium list={sorted.slice(0, 3)} pnlOf={(t) => gain(t, period)} money={money} />}
+          {rest.length > 0 && <div className={`traders-grid${layout === "list" ? " is-list" : ""}`}>
+            {rest.map((trader, i) => {
+              const index = i + podiumBase;
               const s = trader.stats;
               const pnl = gain(trader, period);
               const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
@@ -230,7 +274,8 @@ export default function TradersPage() {
                 </article>
               );
             })}
-          </div>
+          </div>}
+          </>
         ) : (
           <div className="profile-panel traders-empty">
             <Users size={22} />

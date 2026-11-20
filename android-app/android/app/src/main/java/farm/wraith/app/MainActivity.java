@@ -2,7 +2,13 @@ package farm.wraith.app;
 
 import android.Manifest;
 import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.util.Base64;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -177,6 +183,63 @@ public class MainActivity extends BridgeActivity {
                 runOnUiThread(() -> fireScreenshot());
             }
         }, "WraithShot");
+
+        // The share studio's two buttons. A web view cannot save a file or open the share sheet for one by itself, so the page asks the app to
+        // (the picture arrives as base64). saveImage puts it in the gallery (Pictures/Wraith) and says whether that worked; shareImage opens the phone's share sheet.
+        web.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public boolean saveImage(String base64, String name) {
+                try {
+                    byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+                    values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Wraith");
+                        values.put(MediaStore.Images.Media.IS_PENDING, 1);
+                    }
+                    ContentResolver resolver = getContentResolver();
+                    Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                    if (uri == null) return false;
+                    try (OutputStream out = resolver.openOutputStream(uri)) {
+                        if (out == null) return false;
+                        out.write(data);
+                    }
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        ContentValues done = new ContentValues();
+                        done.put(MediaStore.Images.Media.IS_PENDING, 0);
+                        resolver.update(uri, done, null, null);
+                    }
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @JavascriptInterface
+            public boolean shareImage(String base64, String name, String text) {
+                try {
+                    byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                    File dir = new File(getCacheDir(), "share");
+                    //noinspection ResultOfMethodCallIgnored
+                    dir.mkdirs();
+                    File file = new File(dir, name.replaceAll("[^A-Za-z0-9._-]", "_"));
+                    try (FileOutputStream out = new FileOutputStream(file)) {
+                        out.write(data);
+                    }
+                    final Uri uri = androidx.core.content.FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", file);
+                    final Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("image/png");
+                    send.putExtra(Intent.EXTRA_STREAM, uri);
+                    if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    runOnUiThread(() -> startActivity(Intent.createChooser(send, "Share your card")));
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        }, "WraithShare");
 
         ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (v, windowInsets) -> {
             Insets b = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());

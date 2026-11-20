@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import NotificationBell from "@/components/NotificationBell";
+import WakingGhost from "@/components/WakingGhost";
 import { appLockEnabled, appLockSupported, biometricReady, biometricVerify, disableAppLock, enableAppLock } from "@/components/AppLock";
 import { PIN_HASH_KEY, PIN_ENABLED_KEY, PIN_TIMEOUT_KEY, clearLocalPin, clearServerPin, hashPin, newSalt, pushLockPin, pushLockTimeout, saveLocalPin, storedSalt, syncLockFromAccount } from "@/lib/pinLockSync";
 import Link from "next/link";
@@ -990,7 +991,10 @@ function CoinSearch({
               ref={inputRef}
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value);
+                const v = e.target.value;
+                // a big jump in one step is a paste, also the one from the keyboard's clipboard suggestion (that sends no paste event): an address opens its token
+                if (v.length - query.length >= 8 && onPasteAddress(v)) { setActiveIdx(-1); return; }
+                setQuery(v);
                 setActiveIdx(-1);
               }}
               onPaste={(e) => { if (onPasteAddress(e.clipboardData.getData("text"))) e.preventDefault(); }}
@@ -2069,6 +2073,13 @@ function PinLockOverlay({ onUnlock, onLogout }: { onUnlock: () => void; onLogout
     setPin((p) => p.slice(0, -1));
   };
   const tone = error ? "#ff5a5a" : unlocked ? "#55cf91" : "#ff7b3d";
+  // the ghost sleeps until the first key is touched, and goes back to sleep a moment after the code is cleared
+  const [wake, setWake] = useState(false);
+  useEffect(() => {
+    if (pin.length > 0 || checking || unlocked) { setWake(true); return; }
+    const t = window.setTimeout(() => setWake(false), 1200);
+    return () => window.clearTimeout(t);
+  }, [pin, checking, unlocked]);
 
   return createPortal(
     <div className={`wpl${unlocked ? " wpl-open" : ""}`}>
@@ -2081,7 +2092,13 @@ function PinLockOverlay({ onUnlock, onLogout }: { onUnlock: () => void; onLogout
         .wpl-logo{position:relative;width:96px;height:96px;display:grid;place-items:center;margin-bottom:22px;animation:wpl-float 5s ease-in-out infinite}
         .wpl-logo::before,.wpl-logo::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(255,123,61,.35);animation:wpl-ring 3.2s ease-out infinite}
         .wpl-logo::after{animation-delay:1.6s}
-        .wpl-logo>span{position:relative;width:46px;height:72px;display:block}
+        .wpl-ghost{width:60px;height:67px;overflow:visible;transform-origin:50% 100%;filter:drop-shadow(0 0 16px rgba(255,123,61,.55));animation:wpl-breathe 4.2s ease-in-out infinite}
+        .wpl-ghost.awake{animation:wpl-wake .6s cubic-bezier(.3,1.6,.5,1)}
+        .wpl-ghost .eyes{transition:transform .16s cubic-bezier(.3,1.3,.5,1),opacity .12s linear}
+        .wpl-ghost .lids{transition:opacity .12s linear}
+        @keyframes wpl-breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.025,1.045)}}
+        @keyframes wpl-wake{0%{transform:scale(1,1)}30%{transform:translateY(-7px) scale(.96,1.06)}65%{transform:translateY(0) scale(1.05,.95)}100%{transform:scale(1,1)}}
+        @media (prefers-reduced-motion:reduce){.wpl-ghost,.wpl-ghost.awake{animation:none}.wpl-ghost .eyes,.wpl-ghost .lids{transition:none}}
         @keyframes wpl-float{50%{transform:translateY(-8px)}}
         @keyframes wpl-ring{from{transform:scale(.7);opacity:.9}to{transform:scale(1.9);opacity:0}}
         .wpl h1{margin:0;color:#fff;font-size:15px;font-weight:800;letter-spacing:.42em;text-indent:.42em;text-transform:uppercase}
@@ -2100,7 +2117,7 @@ function PinLockOverlay({ onUnlock, onLogout }: { onUnlock: () => void; onLogout
         .wpl-key.ghost:hover{color:#fff;background:transparent;border-color:transparent}
         .wpl-foot{margin-top:30px;font-size:12px;color:#6f655d}
         .wpl-foot button,.wpl-out{background:none;border:0;padding:0;color:#ff9a5c;font-weight:700;cursor:pointer;font-size:12px}
-        .wpl-out{position:absolute;top:calc(max(var(--sai-top, 0px), env(safe-area-inset-top, 0px)) + 18px);right:16px;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.04);color:#c9bfb7;font-weight:600;font-size:13px}
+        .wpl-out{position:absolute;top:calc(max(var(--sai-top, 0px), env(safe-area-inset-top, 0px)) + 18px);right:16px;display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border:0;border-radius:12px;background:rgba(255,255,255,.07);color:#c9bfb7;font-weight:600;font-size:13px}
         @media (max-width:767px){.wpl-out{top:calc(max(var(--sai-top, 0px), env(safe-area-inset-top, 0px), 28px) + 18px)}}
         .wpl-out:hover{color:#fff}
         @media (max-width:480px){.wpl-pad{grid-template-columns:repeat(3,64px);gap:12px}.wpl-key{height:64px}.wpl-orbs{gap:13px}}
@@ -2117,9 +2134,7 @@ function PinLockOverlay({ onUnlock, onLogout }: { onUnlock: () => void; onLogout
       )}
 
       <div className="wpl-logo">
-        <span>
-          <Image src="/logo.png" alt="" fill sizes="46px" style={{ objectFit: "contain", filter: "drop-shadow(0 0 16px rgba(255,123,61,0.6))" }} priority />
-        </span>
+        <WakingGhost awake={wake} tone={error ? "error" : unlocked ? "ok" : "idle"} />
       </div>
       <h1>The veil is down</h1>
       <div className="wpl-sub" style={{ color: error ? "#ff6b6b" : unlocked ? "#55cf91" : undefined }}>
@@ -4125,7 +4140,7 @@ export default function Header({ onSelectMeme }: HeaderProps) {
             }}
           >
             <section
-              className="wraith-account-modal"
+              className={`wraith-account-modal${profileDialog === "deposit" || profileDialog === "withdraw" ? " is-sheet" : ""}`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="wraith-account-modal-title"

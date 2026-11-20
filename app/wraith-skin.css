@@ -77,11 +77,28 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 .profile-portfolio-head .profile-eyebrow { font-size: 15px !important; }
 
 /* ═══ cards: flat, one corner, no outline, no glow ═══ */
-html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win, .wb-stats > div, .wb-wins, .profile-panel, .ts-panel, .wp-head, .wp-block, .callout-card, .la, .mn, .hc-side section, .wx-chart-card, .wx-pricebar, .wx-scanner-layout, .evm-trades, .wx-safety, .wx-panel .la, .wx-panel .mn, .fb-compose, .profile-summary-card .profile-stat-card) {
+html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win, .wb-stats > div, .wb-wins, .profile-panel, .ts-panel, .wp-head, .wp-block, .callout-card, .la, .mn, .hc-side section, .wx-chart-card, .evm-trades, .wx-safety, .wx-panel .la, .wx-panel .mn, .fb-compose, .profile-summary-card .profile-stat-card) {
   background: var(--surface) !important; background-image: none !important; border-color: transparent !important; box-shadow: none !important; border-radius: 14px !important;
 }
 /* the lit orange edge across the top of a card is gone everywhere */
 html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win, .wb-stats > div, .wb-wins, .profile-summary-card .profile-stat-card)::before { content: none !important; display: none !important; }
+/* The panels that only HOLD a list are the page itself: before, they were the same grey as the cards inside them, so on the Market and the
+   Scanner the tokens ran together and you could not tell where one ended (a card needs a different shade from what is behind it). */
+html:root :is(.wx-market-layout .wx-market-main, .wx-scanner-main, .wx-board, .wx-wins, .hc-scroll, .wx-scanner-layout) { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+html:root .wx-scanner-layout { gap: 12px; }
+html:root :is(.wx-scanner-rail, .wx-market-layout .mc-rail) { background: var(--surface) !important; border-color: transparent !important; border-radius: 14px !important; }
+html:root .wx-board-bar { border-bottom-color: transparent !important; }
+html:root .wx-grid { gap: 12px !important; }
+html:root .wx-tcard, html:root .sg-card { margin: 0; }
+/* the price strip on the token page: a plain row on a phone (it was a lighter slab with a big curve at the bottom), a card beside the chart on a computer */
+html:root .wx-pricebar { background: transparent !important; border-color: transparent !important; border-radius: 0 !important; box-shadow: none !important; }
+@media (min-width: 768px) { html:root .wx-pricebar { background: var(--surface) !important; border-radius: 14px !important; } }
+html:root .wx-change { border-color: transparent !important; background: transparent !important; }
+html:root .wb-spot { border: 0 !important; background: rgba(250, 204, 21, .1) !important; border-radius: 10px !important; }
+html:root :is(.wx-note, .wx-curve) { border-color: transparent !important; }
+html:root .wx-note { background: var(--surface) !important; }
+html:root .wx-note.warn { background: rgba(245, 165, 36, .1) !important; }
+html:root .wx-curve { background: rgba(var(--accent-rgb), .08) !important; }
 /* a card inside a card steps one shade up */
 html:root :is(.profile-summary-card .profile-stat-card, .wb-win, .hc-card .hc-pos, .callout-position) { background: var(--surface-2) !important; }
 html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win):hover { background: var(--surface-2) !important; transform: none; box-shadow: none !important; }
@@ -351,3 +368,115 @@ html:root .wx-cs-rq-ico { border: 0 !important; background: var(--surface-2); }
 .is-open .wx-sicon .si-a { stroke-dasharray: 25.5 100; stroke-dashoffset: 0; }
 .is-open .wx-sicon .si-b { stroke-dashoffset: 0; opacity: 1; transition: stroke-dashoffset .3s cubic-bezier(.3, 1, .4, 1) .06s, opacity 0s; }
 @media (prefers-reduced-motion: reduce) { .wx-sicon, .wx-sicon * { transition: none !important; } html:root .wx-cs-drop, html:root .wx-cs-inputrow { animation: none !important; } }
+
+/* search bar parts share ONE colour (the bar, the round button and the field were three different greys, so the change did not read as one thing) */
+html:root { --sk-bar: #1c1c20; }
+@media (max-width: 767px) {
+  html:root .wx-tabbar-pill { background: var(--sk-bar) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .5) !important; }
+  html:root .wx-tabbar-search, html:root .wx-tabbar-search.is-open { background: var(--sk-bar) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .5) !important; }
+  html:root .wx-cs-inputrow { background: var(--sk-bar) !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .5) !important; animation: wx-cs-row2 .22s cubic-bezier(.2, .8, .2, 1) both !important; transform-origin: right center; }
+  html:root .wx-cs-drop { animation-name: wx-cs-in2 !important; animation-duration: .2s !important; }
+  html:root .wx-tabbar-pill { transition: opacity .16s ease .04s, transform .26s cubic-bezier(.2, .8, .2, 1) !important; }
+  html:root .wx-tabbar-search { transition: none !important; }
+}
+@keyframes wx-cs-row2 { from { opacity: 0; transform: translateX(8px) scaleX(.96); } to { opacity: 1; transform: none; } }
+@keyframes wx-cs-in2 { from { opacity: 0; } to { opacity: 1; } }
+
+/* ═══ Share studio: the Save button next to Share, and clips as background tiles ═══ */
+.shs-save { margin-left: auto; width: 62px; height: 62px; flex: 0 0 62px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 16px !important; background: rgba(36, 36, 42, .92); color: #fff; cursor: pointer; }
+.shs-save:active { transform: scale(.96); }
+.shs-bar { gap: 8px; }
+.shs-bgbtn { flex: 1 1 auto; min-width: 0; overflow: hidden; font-size: 15px !important; padding-right: 14px !important; white-space: nowrap; }
+.shs-share { flex: 0 0 auto; padding: 0 22px !important; }
+.shs-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* ═══ Deposit and withdraw: a clean sheet (handle, centred title, filled option cards), like the ones in other trading apps ═══ */
+html:root .wraith-modal-backdrop { background: rgba(0, 0, 0, .62) !important; -webkit-backdrop-filter: blur(3px) !important; backdrop-filter: blur(3px) !important; }
+html:root .wraith-account-modal { border: 0 !important; box-shadow: none !important; background: var(--surface) !important; border-radius: 22px !important; }
+html:root .wraith-account-modal-heading { border-bottom: 0 !important; }
+html:root .wraith-modal-close { border: 0 !important; background: var(--sk-fill) !important; }
+html:root .wraith-account-modal.is-sheet { position: relative; width: min(480px, 100%); }
+html:root .is-sheet .wraith-account-modal-heading { position: absolute; top: 10px; right: 10px; min-height: 0; padding: 0; z-index: 2; }
+html:root .is-sheet .wraith-account-modal-heading > div { display: none; }
+html:root .is-sheet .wraith-account-modal-body { padding: 26px 16px 18px; }
+html:root .is-sheet::before { content: ""; position: absolute; top: 9px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: rgba(255, 255, 255, .18); }
+html:root .ewt-title { text-align: center; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+html:root .ewt-home { gap: 10px; }
+html:root .ewt-option { border: 0 !important; background: var(--surface-2) !important; border-radius: 16px !important; padding: 18px !important; justify-content: space-between; }
+html:root .ewt-option:hover:not(.ewt-option-dim) { background: var(--surface-3) !important; }
+html:root .ewt-option-text strong { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+html:root .ewt-option-text span { font-size: 13.5px; color: var(--sk-text-3); line-height: 1.35; }
+html:root .ewt-option-icon { background: transparent !important; color: #fff; width: 34px; height: 34px; }
+html:root .ewt-soon { margin-left: 8px; padding: 2px 8px; border-radius: 6px; background: var(--surface-3); color: var(--sk-text-2); font: 700 11px var(--font-sans); font-style: normal; vertical-align: middle; }
+html:root .ewt-fine { margin: 6px 6px 0; text-align: center; color: var(--sk-text-3); font-size: 12.5px; line-height: 1.5; }
+html:root :is(.ewt-dd-btn, .ewt-address-box, .ewt-amount-input-wrap, .ewt-recipient-input, .ewt-pct-btn, .ewt-network-badge) { border-color: transparent !important; background: var(--surface-2) !important; }
+@keyframes wx-sheet-up { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+@media (max-width: 767px) {
+  html:root .wraith-modal-backdrop { padding: 0 !important; place-items: end center !important; }
+  html:root .wraith-account-modal.is-sheet { width: 100% !important; max-height: 90dvh !important; border-radius: 22px 22px 0 0 !important; padding-bottom: env(safe-area-inset-bottom, 0px); animation: wx-sheet-up .28s cubic-bezier(.2, .8, .2, 1) both; }
+}
+
+/* ═══ Leaderboard: a plain title, and a podium for the top three (gold, silver and bronze appear only here) ═══ */
+html:root .traders-heading { padding-top: 2px; }
+html:root .traders-heading h1 { font-size: 24px !important; max-width: none !important; margin: 0 0 4px !important; letter-spacing: -.025em !important; line-height: 1.15 !important; }
+.tp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; margin: 6px auto 16px; max-width: 780px; }
+.tp-empty { display: block; }
+.tp-card { --metal: #cfd6e4; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 8px 10px; border-radius: 14px; background: var(--surface); min-width: 0; }
+.tp-card.r1 { --metal: #ffc94a; background: #1c1a13; min-height: 232px; padding-top: 32px; }
+.tp-card.r2 { --metal: #cfd6e4; min-height: 200px; }
+.tp-card.r3 { --metal: #d8955a; background: #1a1613; min-height: 184px; }
+.tp-main { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: inherit; width: 100%; min-width: 0; }
+.tp-crown { position: absolute; top: 9px; left: 50%; width: 30px; margin-left: -15px; color: var(--metal); }
+.tp-av { position: relative; display: block; width: 58px; height: 58px; border-radius: 50%; box-shadow: 0 0 0 2.5px var(--metal); margin-bottom: 8px; }
+.tp-card.r1 .tp-av { width: 74px; height: 74px; }
+.tp-av img, .tp-fb { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--surface-3); color: #fff; font-weight: 800; font-size: 22px; }
+.tp-medal { position: absolute; right: -5px; bottom: -6px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--metal); color: #1a1205; font: 800 12px/1 var(--font-sans); font-style: normal; }
+.tp-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 14px/1.2 var(--font-sans); color: #fff; }
+.tp-gain { font: 800 17px/1.1 var(--font-sans); letter-spacing: -.02em; }
+.tp-card.r1 .tp-gain { font-size: 21px; }
+.tp-gain.up { color: var(--sk-up); }
+.tp-gain.down { color: var(--sk-down); }
+.tp-gain.flat { color: #fff; }
+.tp-sub { font: 600 11.5px/1.25 var(--font-sans); color: var(--sk-text-3); text-align: center; }
+.tp-follow { display: block; width: 100%; }
+.tp-follow > span { display: flex !important; width: 100%; }
+.tp-follow .tfb { width: 100% !important; min-width: 0 !important; min-height: 34px; padding: 0 6px; font-size: 12.5px; }
+@media (min-width: 700px) {
+  .tp { gap: 12px; }
+  .tp-card { padding-left: 14px; padding-right: 14px; }
+  .tp-av { width: 72px; height: 72px; }
+  .tp-card.r1 .tp-av { width: 92px; height: 92px; }
+  .tp-card.r1 { min-height: 274px; padding-top: 38px; }
+  .tp-card.r2 { min-height: 240px; }
+  .tp-card.r3 { min-height: 220px; }
+  .tp-name { font-size: 16px; }
+  .tp-gain { font-size: 20px; }
+  .tp-card.r1 .tp-gain { font-size: 26px; }
+  .tp-crown { width: 38px; margin-left: -19px; top: 11px; }
+}
+
+/* ═══ Intel feed: the same flat cards as everywhere ═══ */
+html:root .hc-wrap { padding: 14px 14px 40px; }
+html:root .hc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title live" "sub sub" "filters filters"; align-items: center; gap: 2px 10px; padding: 2px 2px 14px; }
+html:root .hc-head strong { grid-area: title; font-size: 26px !important; font-weight: 800; letter-spacing: -.03em; }
+html:root .hc-sub { grid-area: sub; font-size: 14px; color: var(--sk-text-3); flex: none; }
+html:root .hc-off { grid-area: sub; justify-self: end; }
+html:root .hc-filters { grid-area: filters; margin: 10px 0 0 !important; width: auto !important; }
+html:root .hc-btn { grid-area: live; justify-self: end; height: 38px; padding: 0 14px; }
+html:root .hc-card { padding: 16px !important; }
+html:root .hc-av { width: 42px !important; height: 42px !important; flex-basis: 42px !important; box-shadow: none !important; }
+html:root .hc-av.fb { background: var(--surface-3); color: #fff; }
+html:root .hc-name { font-size: 16px !important; }
+html:root .hc-age { font-size: 13px; color: var(--sk-text-3); }
+html:root .hc-text { font-size: 15px !important; margin: 12px 0 !important; color: rgba(255, 255, 255, .9); }
+html:root .hc-token { background: var(--surface-2) !important; border: 0 !important; border-radius: 12px !important; padding: 12px !important; }
+html:root .hc-tk b { font-family: var(--font-sans) !important; font-weight: 800 !important; font-size: 17px !important; letter-spacing: -.01em; }
+html:root .hc-tk small { font-family: var(--font-sans) !important; font-size: 13px !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-3) !important; }
+html:root .hc-pos b { font-size: 20px !important; font-weight: 800 !important; }
+html:root .hc-pos small { font-size: 12.5px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--sk-text-3) !important; font-family: var(--font-sans) !important; }
+html:root .hc-foot { border-top: 0 !important; margin-top: 8px !important; padding-top: 0 !important; gap: 4px !important; }
+html:root .hc-act { padding: 8px 12px 8px 0; font-size: 13.5px; color: var(--sk-text-3); }
+html:root .hc-act.on { color: #ff5a7a; }
+html:root .hc-media { border: 0 !important; border-radius: 12px; }
+html:root .hc-mc { background: var(--sk-fill) !important; color: var(--sk-text-2) !important; }
+html:root .hc-x { background: rgba(61, 220, 151, .16) !important; color: #86ffc6 !important; }
