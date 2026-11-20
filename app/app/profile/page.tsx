@@ -44,7 +44,7 @@ import FollowListModal from "@/components/FollowListModal";
 import { decryptHotWalletKey } from "@/lib/hotWalletCrypto";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { useCashSources } from "@/lib/useCashSources";
-import PortfolioShare from "@/components/PortfolioShare";
+import ShareStudio from "@/components/ShareStudio";
 import PositionShare, { type PositionCard } from "@/components/PositionShare";
 import {
   DisplayCurrency,
@@ -230,6 +230,16 @@ export default function ProfilePage() {
   const [avatarFallback, setAvatarFallback] = useState("");
   // false until the real profile (cached or fetched) is in: avoids flashing placeholder name/cover/avatar first
   const [profileReady, setProfileReady] = useState(false);
+  // Android app: a screenshot of this screen pops the share studio up on its own (MainActivity.java sends this event, like Fomo's share-after-screenshot)
+  useEffect(() => {
+    if (!profileReady) return;
+    const open = () => {
+      try { localStorage.setItem("wraith_shot_ok", "1"); } catch { /* blocked */ } // this phone reports screenshots: no need to ask for photo access
+      setShareOpen(true);
+    };
+    window.addEventListener("wraith-screenshot", open);
+    return () => window.removeEventListener("wraith-screenshot", open);
+  }, [profileReady]);
   const [xBusy, setXBusy] = useState(false);
   const [usernameEdit, setUsernameEdit] = useState("");
   const [usernameChecking, setUsernameChecking] = useState(false);
@@ -1247,8 +1257,9 @@ export default function ProfilePage() {
     <main className="wraith-dashboard profile-page">
       <Header />
       {shareOpen && (
-        <PortfolioShare
+        <ShareStudio
           name={displayName}
+          bio={profile.bio}
           username={profile.username ?? null}
           avatar={avatar || defaultAvatar(userId || displayName)}
           value={portfolioValue}
@@ -1258,7 +1269,6 @@ export default function ProfilePage() {
           volumeItems={solUsd !== null && fxRate !== null ? [...trades.filter((t) => t.status !== "failed"), ...positions.filter((p) => !trades.some((t) => t.id === p.id))].map((t) => ({ ts: t.ts, usd: t.amountSol * solUsd * fxRate })) : []}
           followers={socialCounts.followers}
           following={socialCounts.following}
-          since={accountCreatedAt ? new Date(accountCreatedAt).getTime() : null}
           onClose={() => setShareOpen(false)}
         />
       )}

@@ -14,6 +14,7 @@ import { Bell, X } from "lucide-react";
 import { usePresence } from "@/lib/usePresence";
 import { readTokenFavorites } from "@/lib/tokenFavorites";
 import PushToggle from "@/components/PushToggle";
+import { showHeadsUp } from "@/components/HeadsUp";
 import { enablePush, isStandalone, pushAvailable } from "@/lib/pushClient";
 import { pushState, restoreState, watchFavorites } from "@/lib/userStateSync";
 import { callText, intelText, savedText, tradeText, winMilestone, winText } from "@/lib/notifyText";
@@ -191,6 +192,9 @@ export default function NotificationBell() {
           return next;
         });
         try { navigator.vibrate?.(40); } catch { /* not supported */ }
+        // a banner at the top, like any other app (only for something that just happened, not an old call found after a long time away)
+        const newest = fresh.reduce((a, b) => (b.ts > a.ts ? b : a), fresh[0]);
+        if (Date.now() - newest.ts < 15 * 60_000) showHeadsUp({ title: newest.title, body: fresh.length > 1 ? `${newest.body} · +${fresh.length - 1} more` : newest.body, href: newest.href });
       }
     } finally {
       busy.current = false;

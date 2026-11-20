@@ -3,12 +3,13 @@
 // Native Android app only (Capacitor). Asks for notification permission, gets the Firebase token from the app's own
 // push plugin and hands it to FcmLink (same storage key the old app used), which links it to the signed-in account.
 import { useEffect } from "react";
+import { showHeadsUp } from "@/components/HeadsUp";
 
 type PushPlugin = {
   requestPermissions: () => Promise<{ receive: string }>;
   register: () => Promise<void>;
   createChannel?: (c: { id: string; name: string; importance: number }) => Promise<void>;
-  addListener: (ev: string, cb: (d: { value?: string; notification?: { data?: { url?: string } } }) => void) => Promise<unknown>;
+  addListener: (ev: string, cb: (d: { value?: string; title?: string; body?: string; data?: { url?: string; title?: string; body?: string }; notification?: { data?: { url?: string } } }) => void) => Promise<unknown>;
 };
 type Cap = { isNativePlatform?: () => boolean; Plugins?: { PushNotifications?: PushPlugin } };
 
@@ -33,6 +34,11 @@ export default function NativePush() {
           window.dispatchEvent(new Event("wraith:fcm-relink"));
         });
         await push.addListener("registrationError", () => undefined);
+        // A push that arrives while the app is open is not drawn by Android (it only draws them when the app is closed or behind), so show it as a banner
+        await push.addListener("pushNotificationReceived", (n) => {
+          const title = n.title || n.data?.title, body = n.body || n.data?.body, url = n.data?.url;
+          if (title) showHeadsUp({ title, body, href: typeof url === "string" ? url : undefined });
+        });
         // tapping a notification opens the page it is about
         await push.addListener("pushNotificationActionPerformed", (a) => {
           const url = a.notification?.data?.url;
