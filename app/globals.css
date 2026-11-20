@@ -2,8 +2,12 @@
 
 :root {
   --font-sans:
-    "Aeonik", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+    var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  /* the old condensed display face is gone: big numbers and titles use the same face, just heavier */
+  --font-display: var(--font-sans);
+  /* "mono" labels and numbers across the app now use the same face too (the typewriter look read as rough). Real monospace is --font-code. */
+  --font-mono: var(--font-sans);
 
   /* Neutral graphite: no blue tint, no brown tint */
   --bg: #050506;

@@ -7,7 +7,10 @@ import { GhostMini } from "./GhostScene";
 export function ErrorMessage({ children }: { children: React.ReactNode }) {
   return (
     <Panel style={{ background: "#100807", border: "1px solid #3a1712" }}>
-      <div style={{ color: "#ffb3a8", fontWeight: 700 }}>{children}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <GhostMini size={34} pose="oops" />
+        <div style={{ color: "#ffb3a8", fontWeight: 700 }}>{children}</div>
+      </div>
     </Panel>
   );
 }

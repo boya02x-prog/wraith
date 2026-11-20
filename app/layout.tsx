@@ -8,6 +8,7 @@ import "./wraith-polish.css";
 import "./wraith-responsive.css";
 import "./wraith-mobile.css";
 import "./wraith-compact.css";
+import "./wraith-skin.css";
 import WalletProvider from "@/components/WalletProvider";
 import BootSplash from "@/components/BootSplash";
 import NativePush from "@/components/NativePush";
@@ -29,13 +30,15 @@ const mono = localFont({
     { path: "./fonts/ibm-plex-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
   ],
   display: "swap",
-  variable: "--font-mono",
+  variable: "--font-code", // real monospace: only for addresses and code boxes (see wraith-skin.css); labels and numbers use the one text face
 });
 
-const display = localFont({
-  src: [{ path: "./fonts/anton-latin-400-normal.woff2", weight: "400", style: "normal" }],
+// The app's one text face (variable weight 200-800, OFL licence). It used to ask for "Aeonik", which was never loaded, so every phone fell back to
+// its own system font and the app looked different (and plain) on each one. Numbers use the same face in bold, so there is one voice, not three.
+const sans = localFont({
+  src: [{ path: "./fonts/plus-jakarta-sans-latin-wght-normal.woff2", weight: "200 800", style: "normal" }],
   display: "swap",
-  variable: "--font-display",
+  variable: "--font-jakarta",
 });
 
 const SITE = "https://www.wraith.farm";
@@ -83,7 +86,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${mono.variable} ${display.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${mono.variable} ${sans.variable}`} suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:#0c0c0d}#wx-boot{position:fixed;inset:0;z-index:2147483000;display:none;place-items:center;background:#0c0c0d}#wx-boot img{width:min(18vw,110px);height:auto}@media (display-mode:standalone),(display-mode:fullscreen),(display-mode:minimal-ui){#wx-boot{display:grid}}html.wx-native #wx-boot{display:grid}#wx-boot[hidden],html.wx-booted #wx-boot{display:none!important}@media (hover:hover) and (pointer:fine){#wx-boot{display:none!important}}` }} />
         {/* The ghost splash is for a cold start only: the first page load of this app session. Later full page loads (pull to refresh, a link

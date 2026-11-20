@@ -133,6 +133,8 @@ export default function TradersPage() {
       <Header />
       <div className="profile-shell traders-shell">
         <section className="traders-heading">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="traders-mascot" src="/mascot/wraith-king-solo.webp" alt="" draggable={false} />
           <span className="profile-eyebrow">WRAITH COMMUNITY</span>
           <h1>{periodMeta.long} ranking</h1>
           <p>Who is making money, and what they are good at.</p>
@@ -200,7 +202,7 @@ export default function TradersPage() {
 
                   <div className="tc-body">
                     <div className="tc-pnl">
-                      <small>{periodMeta.label} GAIN</small>
+                      <small>{periodMeta.key === "all" ? "All-time gain" : `${periodMeta.label.toLowerCase()} gain`}</small>
                       <strong className={tone}>{money(pnl, true)}</strong>
                       <Spark curve={s?.curve ?? []} />
                     </div>
@@ -208,10 +210,10 @@ export default function TradersPage() {
                   </div>
 
                   <div className="tc-foot">
-                    <span><small>WIN</small><b>{s?.winRate == null ? "-" : `${s.winRate.toFixed(0)}%`}</b></span>
-                    <span><small>TRADES</small><b>{trader.closedTradeCount}</b></span>
-                    <span><small>BEST</small><b>{s && s.bestPct > 0 ? fmtMult(s.bestPct) : "-"}</b></span>
-                    <span><small>HOLD</small><b>{fmtHold(s?.avgHoldMs ?? null)}</b></span>
+                    <span><small>Win rate</small><b>{s?.winRate == null ? "-" : `${s.winRate.toFixed(0)}%`}</b></span>
+                    <span><small>Trades</small><b>{trader.closedTradeCount}</b></span>
+                    <span><small>Best</small><b>{s && s.bestPct > 0 ? fmtMult(s.bestPct) : "-"}</b></span>
+                    <span><small>Avg hold</small><b>{fmtHold(s?.avgHoldMs ?? null)}</b></span>
                   </div>
 
                   {trader.openPositions.length > 0 && (

@@ -1401,28 +1401,26 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { body.wx-enter-fwd .wx-page, body.wx-enter-back .wx-page, body.wx-enter-fwd .profile-page, body.wx-enter-back .profile-page { animation: none !important; } }
 
 /* ───────── Ghost scene: the Wraith ghost as a character (Wins banner) and the sleepy ghost in empty states ───────── */
-.gs { position: relative; overflow: hidden; border-radius: 20px; margin-bottom: 14px; background: radial-gradient(70% 90% at 50% 0%, rgba(255, 190, 110, .10), transparent 70%), #0a0a0b; border: 1px solid rgba(255, 255, 255, .06); }
-.gs-cone { position: absolute; left: 50%; top: 0; width: min(420px, 90%); height: 100%; transform: translateX(-50%); background: linear-gradient(180deg, rgba(255, 214, 150, .30), rgba(255, 214, 150, .05) 70%, transparent); clip-path: polygon(41% 0, 59% 0, 100% 100%, 0 100%); pointer-events: none; }
-.gs-spark { position: absolute; top: -10px; border-radius: 1px; background: #ff8a4c; opacity: 0; animation: gs-fall 6s linear infinite; pointer-events: none; }
-.gs-spark.gold { background: #ffd36b; }
-@keyframes gs-fall { 0% { transform: translateY(0) rotate(0); opacity: 0; } 12% { opacity: .95; } 100% { transform: translateY(240px) rotate(300deg); opacity: 0; } }
-.gs-stage { position: absolute; inset: 0; display: grid; justify-items: center; align-content: end; }
-.gs-ghost-wrap { position: relative; width: 74px; margin-bottom: -2px; animation: gs-float 3.2s ease-in-out infinite; z-index: 2; }
-.gs-ghost { display: block; width: 74px; height: auto; filter: drop-shadow(0 0 18px rgba(255, 140, 60, .65)); }
-.gs-crown { position: absolute; left: 50%; top: -17px; transform: translateX(-50%) rotate(-7deg); filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5)); }
-@keyframes gs-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
-.gs-podium { display: flex; align-items: flex-end; gap: 4px; margin-top: 2px; }
-.gs-podium span { display: block; width: 58px; border-radius: 8px 8px 0 0; background: linear-gradient(180deg, #1b1b1e, #101012); border: 1px solid rgba(255, 255, 255, .08); border-bottom: 0; }
-.gs-podium .p1 { height: 36px; border-color: rgba(255, 190, 90, .45); background: linear-gradient(180deg, #2a2118, #131110); } .gs-podium .p2 { height: 24px; } .gs-podium .p3 { height: 16px; }
-.gs-copy { position: absolute; left: 18px; top: 16px; display: grid; gap: 2px; max-width: 42%; z-index: 3; }
-.gs-copy b { font-size: 17px; letter-spacing: .01em; } .gs-copy small { color: var(--text-muted); font-size: 12px; line-height: 1.35; }
-@media (max-width: 520px) { .gs-copy { left: 14px; top: 14px; max-width: 34%; } .gs-copy b { font-size: 15px; } .gs-copy small { font-size: 11px; } }
+.gs { position: relative; overflow: hidden; border-radius: 26px; margin-bottom: 16px; background: radial-gradient(80% 110% at 50% 0%, rgba(255, 190, 110, .14), transparent 70%), #0a0a0b; box-shadow: 0 14px 34px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .075); }
+.gs-copy { position: absolute; left: 18px; top: 16px; display: grid; gap: 3px; max-width: 46%; z-index: 3; pointer-events: none; }
+.gs-copy b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 2px 14px rgba(0, 0, 0, .6); } .gs-copy small { color: rgba(255, 255, 255, .72); font-size: 12.5px; line-height: 1.4; text-shadow: 0 1px 10px rgba(0, 0, 0, .7); }
+@media (max-width: 520px) { .gs-copy { left: 16px; top: 14px; max-width: 44%; } .gs-copy b { font-size: 19px; } .gs-copy small { font-size: 12px; } }
+/* the 3D character (components/Wraith3D.tsx): a still poster underneath, the live canvas fades in over it */
+.w3d { position: relative; width: 100%; height: 100%; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+.gs .w3d { position: absolute; inset: 0; }
+.w3d-poster, .w3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.w3d-poster { object-fit: fill; pointer-events: none; -webkit-user-drag: none; }
+.w3d-canvas { opacity: 0; transition: opacity .5s ease; }
+.w3d.is-live .w3d-canvas { opacity: 1; }
+.w3d.is-live .w3d-poster { opacity: 0; transition: opacity .1s linear .5s; }
+/* the small still ghost for empty and error states */
 .gm { position: relative; display: inline-grid; place-items: center; }
-.gm img { width: auto; opacity: .85; filter: drop-shadow(0 0 12px rgba(255, 140, 60, .4)); animation: gs-float 3.6s ease-in-out infinite; }
+.gm img { width: auto; max-width: none; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45)); animation: gs-float 3.6s ease-in-out infinite; }
+@keyframes gs-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .gm span { position: absolute; color: var(--accent-text); font-weight: 800; opacity: 0; animation: gm-z 3.2s ease-in-out infinite; font-size: 11px; right: 4px; top: 2px; }
 .gm .z2 { animation-delay: 1s; font-size: 13px; right: -2px; } .gm .z3 { animation-delay: 2s; font-size: 15px; right: -8px; }
 @keyframes gm-z { 0% { transform: translate(0, 8px); opacity: 0; } 30% { opacity: .9; } 100% { transform: translate(8px, -16px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .gs-spark, .gs-ghost-wrap, .gm img, .gm span { animation: none !important; } .gs-spark { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .gm img, .gm span { animation: none !important; } }
 
 /* ───────── Share studio (components/ShareStudio.tsx): swipeable Bio / Profit cards, backgrounds, adjust ───────── */
 .shs { --shs-w: min(78vw, 40dvh); position: fixed; inset: 0; z-index: 10001; display: flex; flex-direction: column; color: #fff; background: radial-gradient(90% 42% at 50% 0%, rgba(var(--accent-rgb), .2), transparent 70%), #08080a; padding: calc(max(var(--wx-top, 0px), env(safe-area-inset-top, 0px)) + 12px) 0 calc(max(var(--wx-bottom, 0px), env(safe-area-inset-bottom, 0px)) + 14px); animation: wt-in .25s ease; -webkit-user-select: none; user-select: none; overscroll-behavior: contain; }

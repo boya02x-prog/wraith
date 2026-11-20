@@ -1450,7 +1450,7 @@ export default function ProfilePage() {
           </div>
           <div className={`profile-portfolio-chart${completedTrades.length ? "" : " is-empty"} tone-${!pnlChart.line ? "flat" : realizedPnl >= 0 ? "up" : "down"}`}>
             <div className="profile-chart-label">
-              <span>REALIZED P&L CURVE</span>
+              <span>Realized P&amp;L</span>
               <span>{completedTrades.length} closes</span>
             </div>
             <svg
@@ -1490,7 +1490,7 @@ export default function ProfilePage() {
 
         <section className="profile-stat-grid">
           <article className="profile-stat-card is-highlight">
-            <span>REALIZED P&L</span>
+            <span>Realized P&amp;L</span>
             <strong className={realizedPnl >= 0 ? "is-positive" : "is-negative"}>
               {busy && !trades.length
                 ? "Loading…"
@@ -1500,28 +1500,28 @@ export default function ProfilePage() {
             </strong>
             <small>
               {timeframe === "all"
-                ? "All recorded closes"
-                : `Selected ${timeframe} period`}
+                ? "All closes"
+                : `Last ${timeframe}`}
             </small>
           </article>
           <article className="profile-stat-card">
-            <span>WIN RATE</span>
+            <span>Win rate</span>
             <strong>
               {winRate === null ? "No closes" : `${winRate.toFixed(1)}%`}
             </strong>
-            <small>{completedTrades.length} closed trades</small>
+            <small>{completedTrades.length} closed</small>
           </article>
           <article className="profile-stat-card">
-            <span>POSITIONS</span>
+            <span>Positions</span>
             <strong>{positions.length}</strong>
             <small className={openPositionPnl >= 0 ? "is-positive" : "is-negative"}>
               {positions.length
-                ? `${openPositionPnlDisplay} unrealized`
+                ? `${openPositionPnlDisplay} open`
                 : "None open"}
             </small>
           </article>
           {bestTrade && <article className="profile-stat-card">
-            <span>BEST TRADE</span>
+            <span>Best trade</span>
             <strong className={bestTrade ? "is-positive" : ""}>
               {bestTrade
                 ? `+${(bestTrade.pnlPct ?? 0).toFixed(1)}%`

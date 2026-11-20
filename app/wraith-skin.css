@@ -1,0 +1,196 @@
+/* ═════════════════════════ Wraith skin: the last stylesheet loaded ═════════════════════════
+   Earlier files each had their own idea of the look (a condensed display face, typewriter labels, 8px boxes, outlines on everything).
+   This layer sits on top and settles it: ONE text face (Plus Jakarta Sans, loaded in layout.tsx), quiet sentence-case labels, bold numbers,
+   rounder controls, soft filled cards instead of outlined boxes. To undo the whole redesign, remove its import from layout.tsx. */
+
+html:root {
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+  --wr-display: var(--font-sans);
+  --wr-mono: var(--font-sans);
+  --radius-control: 14px;
+  --radius-card: 22px;
+  --sk-card: linear-gradient(180deg, rgba(255, 255, 255, .068), rgba(255, 255, 255, .03));
+  --sk-shadow: 0 14px 34px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .075);
+  --sk-text-2: rgba(255, 255, 255, .68);
+  --sk-text-3: rgba(255, 255, 255, .46);
+  --sk-up: #3ddc97;
+  --sk-down: #ff6b62;
+  --sk-gold: #ffc94a;
+}
+
+body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* real monospace stays only where it helps: addresses and code boxes */
+.wx-ca, .wd-input, .rf-card input, .q-code .q-input, .wt-code input, .ob-field input.mono {
+  font-family: var(--font-code), "IBM Plex Mono", ui-monospace, monospace !important;
+}
+
+/* ── labels: sentence case, quiet, no typewriter tracking ── */
+.fp-age, .fp-call-gain small, .fp-mc, .tc-pnl small, .tc-gains small, .tc-foot small, .ts-gains small, .wr-radar-label,
+.profile-summary-card .profile-stat-card > span, .wb-win small, .q-stat span, .hc-tk small, .hc-pos small, .ms-sub, .wb-row small, .wb-stats small,
+.profile-chart-label span, .profile-portfolio-period > span {
+  font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-weight: 600 !important;
+  font-size: 12.5px !important; color: var(--sk-text-3) !important;
+}
+.tc-gains b, .tc-foot b, .ts-gains b, .ts-list dd, .fp-mc { font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+
+/* ── numbers and titles that used the condensed face: now the same face, heavy ── */
+.wraith-dashboard .profile-summary-card .profile-portfolio-value {
+  font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: -.035em !important; line-height: 1 !important;
+  font-size: clamp(42px, 12.5vw, 56px) !important;
+}
+.profile-portfolio-value .dim { font-weight: 700 !important; font-size: .6em !important; color: var(--sk-text-3) !important; letter-spacing: -.01em; margin-left: 2px; }
+.traders-heading h1, .q-hero h1, .ob h2, .ts-title {
+  font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: -.03em !important; text-transform: none !important;
+}
+.traders-heading h1 { font-size: clamp(28px, 8vw, 36px) !important; line-height: 1.05; }
+.tc-rank, .tc-pnl strong, .hc-tk b, .hc-pos b { font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.tc-pnl strong { font-size: clamp(28px, 8vw, 34px) !important; }
+.tc-pnl strong.up { color: var(--sk-up) !important; }
+.tc-pnl strong.down { color: var(--sk-down) !important; }
+
+/* eyebrows ("WRAITH COMMUNITY"): small, accent, not shouting */
+.profile-eyebrow, .q-eyebrow, .wx-kicker {
+  font-family: var(--font-sans) !important; font-size: 12px !important; font-weight: 800 !important; letter-spacing: .09em !important;
+  text-transform: uppercase; color: var(--accent-text) !important;
+}
+.profile-portfolio-head .profile-eyebrow { color: var(--sk-text-2) !important; letter-spacing: 0 !important; text-transform: none; font-size: 15px !important; font-weight: 700 !important; }
+
+/* ── segmented controls and chips: one pill style ── */
+.wraith-dashboard .wx-seg, .tc-periods, .profile-periods, .tc-layout {
+  background: rgba(255, 255, 255, .065) !important; border: 0 !important; border-radius: 999px !important; padding: 4px !important; gap: 2px !important; box-shadow: none !important;
+}
+.trader-tabs { background: transparent !important; border: 0 !important; padding: 0 !important; gap: 8px !important; box-shadow: none !important; }
+.wraith-dashboard .wx-seg button, .tc-periods button, .profile-periods button, .trader-tabs button, .tc-layout button {
+  border-radius: 999px !important; font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important;
+  font-size: 14px !important; color: var(--sk-text-2); border: 0 !important; background: transparent; box-shadow: none !important; transition: background .18s, color .18s;
+}
+.trader-tabs button { background: rgba(255, 255, 255, .065) !important; padding: 10px 18px !important; }
+.wraith-dashboard .wx-seg button.on, .tc-periods button.on, .profile-periods button.on, .tc-layout button.on { background: rgba(255, 255, 255, .16) !important; color: #fff !important; }
+.trader-tabs button.on { background: var(--accent) !important; color: #1a0d05 !important; }
+
+/* ── buttons ── */
+.profile-edit-button {
+  border-radius: 999px !important; height: 50px; min-height: 50px; font-family: var(--font-sans) !important; font-weight: 800 !important; font-size: 15px !important;
+  letter-spacing: 0 !important; border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; box-shadow: none !important;
+}
+.profile-btn-pair { display: flex !important; gap: 10px !important; width: 100%; }
+.profile-btn-pair .profile-edit-button { flex: 1; }
+.profile-btn-pair .profile-edit-button:last-child {
+  background: linear-gradient(180deg, #ff9a5e, #ff7b3d) !important; color: #1a0d05 !important;
+  box-shadow: 0 10px 26px rgba(255, 123, 61, .3), inset 0 1px 0 rgba(255, 255, 255, .4) !important;
+}
+/* Follow / Following (components/TraderFollowButton.tsx) */
+.tfb {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; min-width: 128px !important; width: auto !important; padding: 0 18px;
+  border: 0; border-radius: 999px !important; background: var(--accent); color: #1a0d05; font: 800 13.5px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(255, 123, 61, .26); user-select: none; -webkit-tap-highlight-color: transparent;
+  transition: background .18s, color .18s, opacity .18s, transform .1s;
+}
+.tfb:active { transform: scale(.96); }
+.tfb.is-compact { min-height: 38px; min-width: 104px !important; padding: 0 14px; }
+.tfb.is-following { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; }
+.tfb.is-loading { background: rgba(255, 255, 255, .06); color: transparent; box-shadow: none; }
+.tfb:disabled { cursor: wait; opacity: .7; }
+
+/* ── cards: soft filled surfaces, big radius, no outlines ── */
+.wraith-dashboard .tc, .wraith-dashboard .wb-card, .wraith-dashboard .wb-win, .wraith-dashboard .wb-stats > div, .wraith-dashboard .profile-panel {
+  background: var(--sk-card) !important; border: 0 !important; border-radius: 22px !important; box-shadow: var(--sk-shadow) !important;
+}
+.wraith-dashboard .wb-win { border-radius: 20px !important; }
+.wraith-dashboard .wb-stats > div { border-radius: 20px !important; }
+.wraith-dashboard .tc.podium-1 { background: linear-gradient(180deg, rgba(255, 201, 74, .14), rgba(255, 255, 255, .03)) !important; }
+.tc-main { gap: 12px !important; }
+.tc-avatar { width: 48px !important; height: 48px !important; flex-basis: 48px !important; }
+.tc-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
+.tc-tags i {
+  font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 700 !important;
+  border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: var(--sk-text-2) !important; border-radius: 999px !important; padding: 3px 10px !important;
+}
+.tc-foot b { font-size: 15px !important; }
+
+/* ── profile header: name, handle, bio, then counts and buttons ── */
+.profile-hero .profile-cover { border-radius: 26px !important; }
+.profile-hero .profile-title-block > h1 { font-size: 28px !important; font-weight: 800 !important; letter-spacing: -.03em !important; line-height: 1.1 !important; margin: 16px 0 0 !important; }
+.profile-hero .profile-username, .profile-hero .profile-username span { font-family: var(--font-sans) !important; font-size: 15px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+.profile-hero .profile-username { margin-top: 4px !important; }
+.profile-hero .profile-bio { margin: 14px 0 0 !important; font-size: 15px !important; font-weight: 500 !important; color: var(--sk-text-2) !important; line-height: 1.5 !important; }
+.profile-count-item strong { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.02em !important; color: #fff !important; }
+.profile-count-item span { font-size: 13px !important; font-weight: 600 !important; color: var(--sk-text-3) !important; letter-spacing: 0 !important; text-transform: none !important; }
+@media (max-width: 767px) {
+  .profile-hero .profile-identity { grid-template-areas: "avatar name" "avatar handle" "bio bio" "counts counts" "edit edit" "meta meta" !important; }
+  .profile-hero .profile-social-counts { margin: 18px 0 0 !important; gap: 32px !important; }
+  .profile-hero .profile-btn-pair { margin: 16px 0 0 !important; }
+}
+
+/* ── profile: a clean tile row under the portfolio value instead of one hairline strip ── */
+.profile-portfolio-period { display: flex !important; align-items: center; gap: 10px; margin-top: 10px; }
+.profile-portfolio-period strong { font-size: 16px !important; font-weight: 800 !important; }
+.wraith-dashboard .profile-summary-card .profile-stat-grid {
+  display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; margin-top: 14px;
+  border: 0 !important; background: transparent !important;
+}
+.wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.wraith-dashboard .profile-summary-card .profile-stat-card {
+  padding: 14px 12px !important; gap: 4px !important; border: 0 !important; border-left: 0 !important; border-radius: 20px !important;
+  background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; min-width: 0;
+}
+.wraith-dashboard .profile-summary-card .profile-stat-card:first-child { padding-left: 12px !important; }
+.wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) > :nth-child(n+3) { border-top: 0 !important; }
+.profile-summary-card .profile-stat-card > strong { font-size: clamp(15px, 4.6vw, 19px) !important; font-weight: 800 !important; letter-spacing: -.02em !important; white-space: nowrap; }
+.profile-summary-card .profile-stat-card > span, .profile-summary-card .profile-stat-card > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Wins ── */
+.wb-head h2 { font-family: var(--font-sans) !important; font-size: 24px !important; font-weight: 800 !important; letter-spacing: -.025em !important; display: flex; align-items: center; gap: 10px; }
+.wb-head h2 svg { color: var(--sk-gold); width: 20px; height: 20px; }
+.wb-head p { font-size: 14.5px !important; line-height: 1.5 !important; color: var(--sk-text-2) !important; }
+.wb-stats b { font-size: 24px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.wb-stats b i { font-style: normal; font-size: 13px; font-weight: 700; color: var(--sk-text-3); }
+.wraith-dashboard .wb-wins {
+  border: 0 !important; border-radius: 28px !important; padding: 18px 14px !important; box-shadow: var(--sk-shadow) !important;
+  background: linear-gradient(180deg, rgba(61, 220, 151, .14), rgba(61, 220, 151, 0) 230px), var(--sk-card) !important;
+}
+.wb-wins-head h3, .wb-all-head h3 { font-size: 20px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.wb-wins-head h3 em { font-size: 13px !important; font-weight: 700 !important; color: var(--sk-up) !important; }
+.wb-wins-head h3 svg { color: var(--sk-up) !important; }
+.wb-wins-head > span, .wb-all-head > span { font-size: 13px !important; color: var(--sk-text-3) !important; }
+.wb-tier-label { font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 800 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-2) !important; }
+.wb-tier-label b { color: var(--sk-up) !important; }
+.wb-tier-label.t10x b { color: var(--sk-gold) !important; }
+.wb-tier-label i { font-family: var(--font-sans); font-weight: 800; background: rgba(255, 255, 255, .1) !important; color: #fff !important; padding: 2px 9px !important; }
+.wb-tier-label::after { background: rgba(255, 255, 255, .08) !important; }
+.wb-win { padding: 13px 14px !important; }
+.wb-win-rank { font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 800 !important; color: var(--sk-text-3) !important; }
+.wb-win-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
+.wb-win-id span { font-size: 12.5px !important; color: var(--sk-text-3) !important; }
+.wb-win-path b, .wb-win-now b { font-size: 14.5px !important; font-weight: 800 !important; }
+.wb-win-mult {
+  border: 0 !important; background: linear-gradient(180deg, rgba(61, 220, 151, .3), rgba(61, 220, 151, .15)) !important; color: #86ffc6 !important;
+  font-size: 15px !important; font-weight: 800 !important; border-radius: 999px !important; padding: 6px 13px !important;
+}
+.wb-wins-more { border-radius: 999px !important; height: 46px !important; border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; font-size: 14px !important; font-weight: 800 !important; }
+
+/* ── share studio: the shapes must win over the app-wide button radius (on phones the X, period, Background and Share buttons came out as rounded squares) ── */
+.shs .shs-circle, .shs .shs-rail button { border-radius: 50% !important; }
+.shs .shs-period, .shs .shs-pill, .shs .shs-bgbtn, .shs .shs-share { border-radius: 999px !important; }
+.shs .shs-menu button { border-radius: 14px !important; }
+.shs .shs-share { background: linear-gradient(180deg, #ff9a5e, #ff7b3d); box-shadow: 0 10px 28px rgba(255, 123, 61, .35), inset 0 1px 0 rgba(255, 255, 255, .4); }
+.shs .shs-card { border-radius: 30px; box-shadow: 0 30px 70px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08), 0 0 70px rgba(255, 123, 61, .09); }
+
+/* ── ranking header: the crowned Wraith sits at the right of the title ── */
+.traders-heading { position: relative; }
+.traders-mascot { position: absolute; right: 4px; top: -20px; height: 92px; width: auto; pointer-events: none; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, .5)); z-index: 0; }
+.traders-heading > *:not(.traders-mascot) { position: relative; z-index: 1; }
+.traders-heading h1 { max-width: 62%; }
+
+/* ── top bar: cash chip, deposit, bell, avatar ── */
+.embedded-wallet-header-chip { border: 0 !important; border-radius: 999px !important; background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; }
+.embedded-wallet-header-value > span { font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 600 !important; color: var(--sk-text-3) !important; }
+.embedded-wallet-header-value > strong { font-family: var(--font-sans) !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.embedded-wallet-header-deposit {
+  border: 0 !important; border-radius: 999px !important; background: linear-gradient(180deg, #ff9a5e, #ff7b3d) !important; color: #1a0d05 !important;
+  font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: 0 !important; box-shadow: 0 6px 18px rgba(255, 123, 61, .28) !important;
+}
+.embedded-wallet-header-withdraw { border: 0 !important; border-radius: 999px !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; font-family: var(--font-sans) !important; font-weight: 800 !important; }
+.wx-bell, .wraith-header-avatar { border: 0 !important; border-radius: 50% !important; background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; }

@@ -10,7 +10,9 @@ import { ArrowRight, Check, ChevronDown, Crop, ImagePlus, SlidersHorizontal, X }
 export type ShareTrade = { ts: number; usd: number }; // realized profit (+) or loss (-) of one closed trade, or the size of one trade, in display currency
 type Range = "24h" | "7d" | "30d";
 type Frame = { z: number; x: number; y: number }; // photo framing: zoom (1 = just covers the card) and offset in card pixels
-type Imgs = { av: HTMLImageElement | null; ghost: HTMLImageElement | null };
+type Mascots = { king: HTMLImageElement | null; wave: HTMLImageElement | null; oops: HTMLImageElement | null; sleep: HTMLImageElement | null };
+type Imgs = { av: HTMLImageElement | null; ghost: HTMLImageElement | null; mascot: Mascots };
+const NO_MASCOTS: Mascots = { king: null, wave: null, oops: null, sleep: null };
 type Photo = { id: string; src: string };
 
 const RANGES: { id: Range; label: string; ms: number }[] = [
@@ -30,7 +32,7 @@ const PHOTOS_KEY = "wraith_share_photos_v1";
 const MAX_PHOTOS = 6;
 const FRESH: Frame = { z: 1, x: 0, y: 0 };
 
-type Prefs = { range?: Range; bg?: string; showAvatar?: boolean; showStats?: boolean; darken?: number };
+type Prefs = { range?: Range; bg?: string; showAvatar?: boolean; showStats?: boolean; showMascot?: boolean; darken?: number };
 const readPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") as Prefs; } catch { return {}; } };
 const hash = (s: string) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return `p${h.toString(36)}${s.length.toString(36)}`; };
 const readPhotos = (): Photo[] => {
@@ -224,7 +226,7 @@ function paintBg(g: CanvasRenderingContext2D, w: number, h: number, bg: string, 
 type CardData = {
   name: string; username: string | null; bio: string; value: number | null; bigText?: string; bigCaption?: string; followers: number; following: number;
   total: number; realized: number; un: number; volume: number; pct: number | null; period: string;
-  showAvatar: boolean; showStats: boolean; ref: string; im: Imgs; fmt: (n: number) => string; sym: string;
+  showAvatar: boolean; showStats: boolean; showMascot: boolean; ref: string; im: Imgs; fmt: (n: number) => string; sym: string;
 };
 const tidy = (s: string) => s.replace(/([.,])00(?=\D*$)/, "");
 /** Big figures read cleaner without cents ("$7,855" not "$7,854.46"); small ones keep them. */
@@ -316,7 +318,7 @@ function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg:
     const lines = wrapLines(g, d.bio || "Trading on Wraith", W - 200, 2);
     lines.forEach((l, i) => g.fillText(l, cx, bioY + i * 68, W - 160));
     g.restore();
-    if (d.showStats) cols([[d.following.toLocaleString("en-US"), "FOLLOWING"], [d.followers.toLocaleString("en-US"), "FOLLOWERS"]], py + 700);
+    if (d.showStats) cols([[d.following.toLocaleString("en-US"), "FOLLOWING"], [d.followers.toLocaleString("en-US"), "FOLLOWERS"]], py + 660);
   } else {
     const mood = d.total > 0 ? "up" : d.total < 0 ? "down" : "flat";
     const rgb = mood === "up" ? "55,213,138" : mood === "down" ? "255,93,77" : "255,255,255";
@@ -345,7 +347,14 @@ function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg:
       [signed(d.realized, compact), "REALIZED", d.realized >= 0 ? "#37d58a" : "#ff6a5a"],
       [signed(d.un, compact), "UNREALIZED", d.un >= 0 ? "#37d58a" : "#ff6a5a"],
       [compact(d.volume), "VOLUME"],
-    ], py + 700);
+    ], py + 660);
+  }
+
+  // the Wraith mascot in the lower right: crowned on the Bio card, then waving, shocked or asleep depending on how the period went
+  if (d.showMascot) {
+    const tone = d.total > 0 ? "up" : d.total < 0 ? "down" : "flat";
+    const m = kind === "bio" ? d.im.mascot.king : tone === "up" ? d.im.mascot.wave : tone === "down" ? d.im.mascot.oops : d.im.mascot.sleep;
+    if (m) { const mh = 430, mw = mh * (m.width / m.height); g.drawImage(m, W - mw - 14, H - mh - 6, mw, mh); }
   }
 
   // footer: ghost + WRAITH, then the invite code or the address
@@ -400,6 +409,7 @@ export default function ShareStudio({
   const [bg, setBg] = useState<string>(initial.bg ?? "wraith");
   const [showAvatar, setShowAvatar] = useState(initial.showAvatar ?? true);
   const [showStats, setShowStats] = useState(initial.showStats ?? true);
+  const [showMascot, setShowMascot] = useState(initial.showMascot ?? true);
   const [darken, setDarken] = useState(Math.min(0.8, Math.max(0, initial.darken ?? 0)));
   const [frame, setFrame] = useState<Frame>(FRESH);
   const [photos, setPhotos] = useState<Photo[]>(() => (typeof window === "undefined" ? [] : readPhotos()));
@@ -410,7 +420,7 @@ export default function ShareStudio({
   const [adjusting, setAdjusting] = useState(false);
   const [note, setNote] = useState("");
   const [ref, setRef] = useState("");
-  const [im, setIm] = useState<Imgs>({ av: null, ghost: null });
+  const [im, setIm] = useState<Imgs>({ av: null, ghost: null, mascot: NO_MASCOTS });
   const [photoImg, setPhotoImg] = useState<HTMLImageElement | null>(null);
   // Android app only: some phones' own screenshot tool does not tell the app about screenshots; allowing photo access lets the app see them instead
   const [shotHint, setShotHint] = useState(false);
@@ -453,7 +463,8 @@ export default function ShareStudio({
   }, []);
   useEffect(() => {
     let on = true;
-    void Promise.all([loadImg(avatar), loadImg("/logo.png")]).then(([av, ghost]) => { if (on) setIm({ av, ghost }); });
+    void Promise.all([loadImg(avatar), loadImg("/logo.png"), loadImg("/mascot/wraith-king-solo.webp"), loadImg("/mascot/wraith-wave.webp"), loadImg("/mascot/wraith-oops.webp"), loadImg("/mascot/wraith-sleep.webp")])
+      .then(([av, ghost, king, wave, oops, sleep]) => { if (on) setIm({ av, ghost, mascot: { king, wave, oops, sleep } }); });
     return () => { on = false; };
   }, [avatar]);
   // the chosen photo, decoded
@@ -466,9 +477,9 @@ export default function ShareStudio({
   }, [bg, isPhoto, photos]);
 
   useEffect(() => {
-    const t = window.setTimeout(() => { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ range, bg, showAvatar, showStats, darken } satisfies Prefs)); } catch { /* storage blocked */ } }, 250);
+    const t = window.setTimeout(() => { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ range, bg, showAvatar, showStats, showMascot, darken } satisfies Prefs)); } catch { /* storage blocked */ } }, 250);
     return () => window.clearTimeout(t);
-  }, [range, bg, showAvatar, showStats, darken]);
+  }, [range, bg, showAvatar, showStats, showMascot, darken]);
 
   const rangeInfo = RANGES.find((r) => r.id === range) ?? RANGES[1];
   const stats = useMemo(() => {
@@ -485,8 +496,8 @@ export default function ShareStudio({
   const data: CardData = useMemo(() => ({
     name, username, bio: bio ?? "", value, bigText: bioBig?.text, bigCaption: bioBig?.caption, followers: followers ?? 0, following: following ?? 0,
     total: stats.total, realized: stats.realized, un: stats.un, volume: stats.volume, pct: stats.pct, period: rangeInfo.label,
-    showAvatar, showStats, ref, im, fmt, sym,
-  }), [name, username, bio, value, bioBig, followers, following, stats, rangeInfo, showAvatar, showStats, ref, im, fmt, sym]);
+    showAvatar, showStats, showMascot, ref, im, fmt, sym,
+  }), [name, username, bio, value, bioBig, followers, following, stats, rangeInfo, showAvatar, showStats, showMascot, ref, im, fmt, sym]);
 
   // build the background once per change, then draw the cards (and the adjust preview) on top of it
   useEffect(() => {
@@ -611,6 +622,7 @@ export default function ShareStudio({
               <h4>SHOW ON CARD</h4>
               <button type="button" onClick={() => setShowAvatar((v) => !v)} role="switch" aria-checked={showAvatar}>Avatar<span className={`shs-sw${showAvatar ? " on" : ""}`} /></button>
               <button type="button" onClick={() => setShowStats((v) => !v)} role="switch" aria-checked={showStats}>Stats<span className={`shs-sw${showStats ? " on" : ""}`} /></button>
+              <button type="button" onClick={() => setShowMascot((v) => !v)} role="switch" aria-checked={showMascot}>Wraith<span className={`shs-sw${showMascot ? " on" : ""}`} /></button>
             </div>
           )}
         </div>
