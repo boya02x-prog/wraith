@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import ChainLogo from "@/components/ChainLogo";
+import GhostSpot from "./GhostSpot";
 
 export interface Call { address: string; chain: string; symbol: string; imageUrl: string | null; tier: "HOT" | "WATCH"; score: number; spottedAt: number; spottedMcap: number; peakMcap: number; lastMcap: number; x: number; nowX?: number }
 export interface Candle { t: number; o: number; h: number; l: number; c: number; v?: number }
@@ -319,6 +320,8 @@ export function HeroStage({ data, loading }: { data: LandingData | null; loading
       {ch && ch.candles.length >= 8 && (
         <div className="lp-float chart"><ChartReal data={data} /></div>
       )}
+      {/* the app's own 3D Wraith, waving beside the board (wide screens only; tap it for an emote) */}
+      <GhostSpot className="lp-mascot" when="idle" pose="wave" />
     </div>
   );
 }

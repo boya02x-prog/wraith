@@ -1,0 +1,77 @@
+import type { DocPage } from "./types";
+
+export const SAFETY: DocPage[] = [
+  {
+    slug: "security",
+    group: "Safety",
+    title: "Security and the app lock",
+    lead: "Keep your account and your money safe: the PIN lock, fingerprint, and extra sign-in protection.",
+    blocks: [
+      { t: "h2", text: "Who holds your money" },
+      { t: "p", text: "Your wallets are embedded wallets: only you can approve a transaction from them, and Wraith does not hold your funds. That also means nobody can reverse a mistake for you, so the habits on this page matter." },
+      { t: "h2", text: "The PIN lock" },
+      { t: "p", text: "The PIN lock covers the screen with the lock screen until you enter a **6-digit PIN** (Wraith calls it your *sigil*). It is set in **Security** in the avatar menu, under **App PIN lock**." },
+      { t: "steps", items: [
+        { title: "Turn it on", text: "Open **Security**, switch on **6-digit PIN lock**, and enter a new PIN twice." },
+        { title: "Choose when it locks", text: "Pick **Never**, **1 minute**, **5 minutes** or **15 minutes**. The app locks itself after that long without you touching it, and it is also locked when you come back to the app after being away. The default is 5 minutes." },
+        { title: "Lock it yourself", text: "Choose **Lock now** in the avatar menu whenever you want." },
+      ] },
+      { t: "p", text: "The PIN is saved to your account, so it applies on all your devices. To change it, use **Change PIN** in Security (you enter the current one first). If you forget it, the lock screen has **Log out and sign in again** at the bottom: signing in again with Google lets you set a new one." },
+      { t: "h3", text: "The ghost on the lock screen" },
+      { t: "p", text: "The ghost is asleep, eyes shut, while the screen is locked. When you touch the first key it wakes up and opens its eyes. A wrong PIN makes it squint and shakes the dots; the right one makes it open its eyes wide and the lock lifts." },
+      { t: "h2", text: "Fingerprint or face unlock" },
+      { t: "p", text: "In **Security** you can add **Fingerprint / face unlock** for the device you are holding. It opens the lock without typing the PIN. The PIN always still works as a fallback." },
+      { t: "h2", text: "Extra sign-in protection" },
+      { t: "ul", items: [
+        "**Authenticator app (TOTP).** Scan a QR code with Google Authenticator, Authy or similar, then enter the 6-digit code to finish. From then on your account asks for a code.",
+        "**Passkey.** Use your phone's or computer's built-in unlock (fingerprint, face or screen lock) as a second check.",
+      ] },
+      { t: "callout", kind: "tip", text: "Turn on at least the PIN lock. It is the difference between a lost phone being an inconvenience and being a problem." },
+      { t: "h2", text: "Habits that protect you" },
+      { t: "ul", items: [
+        "Never share a PIN, a code or a recovery phrase with anyone, including people who say they are from Wraith. The team never asks for them.",
+        "Be careful with links in direct messages. Open Wraith from the site or the app, not from a link in a chat.",
+        "Use **Blur balances** in the avatar menu when someone can see your screen.",
+        "Log out on a shared computer.",
+      ] },
+    ],
+  },
+  {
+    slug: "risk",
+    group: "Safety",
+    title: "Risk and good habits",
+    lead: "New tokens are the riskiest part of crypto. This is what can go wrong, what Wraith shows you about it, and how to trade so one mistake does not hurt.",
+    blocks: [
+      { t: "callout", kind: "warn", title: "Not financial advice", text: "Everything in Wraith, including scores, calls and the leaderboard, is information. It is not advice and not a promise. Most new tokens lose value. Only trade money you can afford to lose entirely." },
+      { t: "h2", text: "What can go wrong" },
+      { t: "table", head: ["Risk", "What it looks like"], rows: [
+        ["Rug pull", "The people behind a token drain its liquidity or dump their supply, and the price collapses"],
+        ["Honeypot", "A token you can buy but cannot sell"],
+        ["Thin liquidity", "So little money in the pool that your own trade moves the price, and exiting is hard"],
+        ["Concentrated supply", "A few wallets hold most of the supply and can dump on everyone"],
+        ["Copycats", "A token with the name and ticker of a real one, to catch careless buyers"],
+        ["Pump and dump", "A coordinated rise that attracts buyers, followed by the sellers leaving"],
+        ["Chasing", "Buying after a big rise: the move may already be over"],
+      ] },
+      { t: "h2", text: "What Wraith shows you" },
+      { t: "ul", items: [
+        "**Collapse risk** and risk flags on every [scanner](/docs/scanner) card.",
+        "A **safety score** with its individual checks (mint authority, liquidity, holder spread) on the token page.",
+        "**Warnings** under the Buy button for low liquidity, brand-new tokens, sell pressure and tokens that have pumped hard.",
+        "**Lookalikes** that share a token's name or ticker, and whether they link the same X account.",
+        "**Wallet watch**: a bar at the top of the Buy panel that warns you when wallets Wraith has seen dump again and again bought the token early (and shows a hint when wallets from past winners did). It stays hidden when there is nothing to say.",
+        "**Receipts**: the [Wins](/docs/wins) page, so you can see what past calls really did.",
+      ] },
+      { t: "h2", text: "Habits that work" },
+      { t: "ol", items: [
+        "**Start small** and treat every position as one you may lose entirely.",
+        "**Size by your stop.** Decide how much you accept to lose, then let the position-size hint turn that into an amount.",
+        "**Set an exit before you buy.** See [Auto-exit](/docs/exits). Decide when you would sell while you are calm.",
+        "**Read the warnings.** If two or three appear together, that is information.",
+        "**Verify the address** you are buying from a source you trust, not from a post or message.",
+        "**Do not chase.** If a token is up 150% in an hour, the early money is already in.",
+        "**Take some out.** A partial take-profit turns a winner into real cash.",
+      ] },
+    ],
+  },
+];

@@ -3,7 +3,8 @@ import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { isOwnSessionFormat, readSession } from "@/lib/appSession";
 import { isSitePrivate } from "@/lib/siteAccess";
 
-const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms"]);
+const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms", "/docs"]);
+const PUBLIC_PAGE_PREFIXES = ["/docs/"]; // the documentation: one page per topic, readable without an account
 const PUBLIC_API_PATHS = new Set(["/api/native-prices", "/api/landing", "/api/banner", "/api/settings"]);
 const PUBLIC_API_PREFIXES = [
   "/api/auth/",
@@ -47,7 +48,7 @@ async function route(request: NextRequest) {
   }
 
   const hasSession = Boolean(await sessionUser(request.cookies.get(PRIVY_SESSION_COOKIE)?.value));
-  if (PUBLIC_PATHS.has(pathname)) {
+  if (PUBLIC_PATHS.has(pathname) || PUBLIC_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     if (pathname === "/login" && hasSession) {
       return NextResponse.redirect(new URL("/app", request.url));
     }

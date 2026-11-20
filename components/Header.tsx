@@ -17,8 +17,11 @@ import OnboardingFlow from "@/components/OnboardingFlow";
 import { useRouter } from "next/navigation";
 import { cacheTokenNav } from "@/lib/tokenNav";
 import { Lock as LockIcon,
+  ArrowDownToLine,
   ArrowLeftRight,
+  ArrowUpFromLine,
   Bookmark,
+  BookOpen,
   CheckCircle2,
   CircleDollarSign,
   EyeOff,
@@ -3626,6 +3629,25 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                   }}
                 />
               )}
+              {/* the Withdraw button next to the balance is hidden below 1100px wide, which left no way to withdraw on a phone: the menu has both, always */}
+              <ProfileMenuItem
+                icon={ArrowDownToLine}
+                label="Deposit"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  setTransfersTab("receive");
+                  setProfileDialog("deposit");
+                }}
+              />
+              <ProfileMenuItem
+                icon={ArrowUpFromLine}
+                label="Withdraw"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  setTransfersTab("send");
+                  setProfileDialog("withdraw");
+                }}
+              />
               <ProfileMenuItem
                 icon={ArrowLeftRight}
                 label="Transfers"
@@ -3654,6 +3676,12 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                   <span />
                 </span>
               </button>
+              <ProfileMenuItem
+                icon={BookOpen}
+                label="Docs & guides"
+                href="/docs"
+                onClick={() => setUserMenuOpen(false)}
+              />
               <ProfileMenuItem
                 icon={Gift}
                 label="Rewards"

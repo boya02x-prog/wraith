@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { CallsTable, ChartReal, HeroStage, PaperExample, TelegramPhone, Ticker, WinsReal, useLandingFeed } from "./Mocks";
 import DownloadApp from "./DownloadApp";
+import GhostSpot from "./GhostSpot";
 import { CursorGlow, Magnetic, Reveal, TiltFrame } from "./Motion";
 import { BOT, CHAINS, FAQ, HERO, PORTAL, SHOWCASE, TELEGRAM_STEPS } from "./content";
 import { useLaunchSettings } from "@/hooks/useLaunchSettings";
@@ -88,6 +89,7 @@ function Nav() {
                 <span>{label}</span>
               </a>
             ))}
+            <Link href="/docs"><span>Docs</span></Link>
           </nav>
         </LayoutGroup>
         <Link className="lp-nav-cta" href="/login">Sign in</Link>
@@ -96,6 +98,7 @@ function Nav() {
       {open && (
         <div className="lp-sheet" onClick={() => setOpen(false)}>
           {NAV.map(([id, label]) => (<a key={id} href={`#${id}`}>{label}</a>))}
+          <Link href="/docs">Docs</Link>
           <Link href="/login" className="go">Sign in</Link>
         </div>
       )}
@@ -269,18 +272,23 @@ export default function Landing() {
             <div className="ws-faq">
               {FAQ.map(([q, a]) => (<details key={q}><summary>{q}</summary><p>{a}</p></details>))}
             </div>
-            <div className="ws-final">
-              <h2 className="lp-h2">See it before the crowd does.</h2>
-              <p>Open the scanner, add some cash and make your first trade in minutes.</p>
-              <div className="ws-cta">
-                <Magnetic><Link className="ws-btn primary lg" href="/app">Launch app</Link></Magnetic>
-                <a className="ws-btn lg" href={PORTAL} target="_blank" rel="noreferrer">Join Telegram</a>
-                <DownloadApp />
+            <p className="ws-note" style={{ textAlign: "left", marginTop: 16 }}>More questions? <Link href="/docs" style={{ color: "var(--accent-text, #ffad7b)", fontWeight: 700 }}>Read the documentation</Link>, step by step.</p>
+            <div className="ws-final lp-final">
+              <div className="lp-final-copy">
+                <h2 className="lp-h2">See it before the crowd does.</h2>
+                <p>Open the scanner, add some cash and make your first trade in minutes.</p>
+                <div className="ws-cta">
+                  <Magnetic><Link className="ws-btn primary lg" href="/app">Launch app</Link></Magnetic>
+                  <a className="ws-btn lg" href={PORTAL} target="_blank" rel="noreferrer">Join Telegram</a>
+                  <DownloadApp />
+                </div>
               </div>
+              {/* the same crowned 3D Wraith as the app's Wins screen: tap it and it plays an emote */}
+              <GhostSpot className="lp-final-ghost" when="near" pose="king" podium={3} confetti={44} spotlight zoom={1.05} />
             </div>
             <footer className="ws-foot">
               <span>Wraith © {new Date().getFullYear()} · Not financial advice. Tokens are high risk.</span>
-              <span><a href={PORTAL} target="_blank" rel="noreferrer">Telegram channel</a> · <a href={BOT} target="_blank" rel="noreferrer">Alerts bot</a> · <Link href="/app">App</Link> · <Link href="/privacy">Privacy Policy</Link> · <Link href="/terms">Terms</Link></span>
+              <span><a href={PORTAL} target="_blank" rel="noreferrer">Telegram channel</a> · <a href={BOT} target="_blank" rel="noreferrer">Alerts bot</a> · <Link href="/app">App</Link> · <Link href="/docs">Docs</Link> · <Link href="/privacy">Privacy Policy</Link> · <Link href="/terms">Terms</Link></span>
             </footer>
           </div>
         </section>
