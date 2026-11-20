@@ -11,13 +11,16 @@ export const YOU: DocPage[] = [
       { t: "ul", items: [
         "**Avatar, name and @handle**, a short **bio**, and how many people you **follow** and how many follow **you** (tap either number for the list).",
         "**Edit profile** changes your photo, cover, name, handle, bio and **avatar border**. **Share** opens the [Share studio](/docs/share).",
+        "**The cover.** If you have not uploaded one, Wraith gives you a 3D banner of its ghost in a different colour and a different pose (wearing the crown, waving, asleep, shocked, cheering, dancing, spinning or hopping). Which one you get depends on your account and never changes by itself.",
         "**Tap a photo to see it large.** Your photo and cover open full screen; the same works for other traders' photos and covers, in search results and on the leaderboard, and for token pictures in search. Pinch to zoom, drag down or tap outside to close.",
         "**Joined** and your number of trades, plus your linked X account if you added one.",
       ] },
       { t: "h2", text: "Portfolio value" },
       { t: "p", text: "The big number is what you have in total: your wallet's value and your open positions. Below it you see your profit or loss for the period you picked with **24h, 7d, 30d or All**. The chart shows your **realized** profit and loss (from trades you closed) over time." },
       { t: "h2", text: "Avatar border" },
-      { t: "p", text: "In **Edit profile** you can pick a border for your photo: a thin ring with a soft glow that is drawn around it on the leaderboard, in Hot shots, on your profile and in search. There are twelve to choose from (Ember, Gold, Neon, Aurora, Inferno, Spectral, Matrix, Royal, Prism, Frost and Toxic, or plain) and **event borders** (Black Friday, Winter lights, New Year, Valentine and Halloween) that can be picked only while their event is on. Once you pick an event border you keep it. Press **Save** to apply. Borders are only decoration and do not change your ranking." },
+      { t: "p", text: "In **Edit profile** you can pick a border for your photo. Each one is a small drawing around it: a gold ring with a crown, a ring of flames, angel wings with a halo, devil horns, crackling lightning, spinning HUD rings, a gold laurel wreath, ice crystals, or little ghosts circling (**Crown, Flames, Wings, Horns, Storm, Cyber, Champion, Frost** and **Haunt**), or plain for none. **Event borders** (Black Friday, Winter, New Year, Valentine and Halloween) can be picked only while their event is on, and once you pick one you keep it. The border shows on the leaderboard, in Hot shots, on your profile and in search. On your own profile it moves; in long lists it stands still, so they stay smooth. Press **Save** to apply. Borders are only decoration and do not change your ranking. (The plain glowing rings that were here first are no longer offered, but anyone who had picked one keeps it.)" },
+      { t: "h2", text: "Showing your balance to others" },
+      { t: "p", text: "By default nobody can see how much you hold. In **Edit profile**, under **Share my trading activity**, there is a second switch: **Show my balance**. When it is on, the top of your public page shows your **portfolio value**, its change over **24h, 7d or 30d** with a chart, your **total cash** and the tokens you hold with what each is worth. Only your Solana wallet is counted and its address stays hidden. The chart builds up over time: it starts from the first time your page is opened with the switch on, so at first it has only a few points, and the change fills in once there is enough history. Turn the switch off and the block is replaced by a line saying you keep your balance private." },
       { t: "h2", text: "The four tiles" },
       { t: "table", head: ["Tile", "Meaning"], rows: [
         ["Realized P&L", "Profit or loss from trades you have closed in the period"],
@@ -27,7 +30,7 @@ export const YOU: DocPage[] = [
       ] },
       { t: "h2", text: "Further down" },
       { t: "p", text: "Below the tiles you find your detailed performance (the same six-sided radar and tags other traders see on the [Leaderboard](/docs/leaderboard)), your live exposure, your wallet and linked accounts, and a security check. Your trade history and open positions are listed here too." },
-      { t: "callout", kind: "note", title: "Privacy", text: "Only traders who turn on **Share my trading activity** appear on the leaderboard and show their trades publicly. You can switch it in your profile settings. Your wallet address stays private either way." },
+      { t: "callout", kind: "note", title: "Privacy", text: "Only traders who turn on **Share my trading activity** appear on the leaderboard and show their trades publicly. You can switch it in your profile settings. Your wallet address stays private either way, and so does your balance unless you also switch on **Show my balance**." },
     ],
   },
   {
@@ -42,7 +45,7 @@ export const YOU: DocPage[] = [
         "On the Market screen, the **Called by traders you follow** panel shows their latest calls.",
         "You can get a notification when someone you follow trades or posts a call. See [Notifications, push and Telegram](/docs/notifications).",
       ] },
-      { t: "p", text: "On a trader's page you also see their calls, their stats and what they are holding live. If their wallet is private, the page shows only what they made public." },
+      { t: "p", text: "On a trader's page you also see their calls, their stats and what they are holding live. If their wallet is private, the page shows only what they made public. If they chose to **show their balance**, it sits at the very top of their page: portfolio value, a chart, cash and holdings, like the trader pages in other trading apps." },
     ],
   },
   {

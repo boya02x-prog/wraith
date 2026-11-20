@@ -11,6 +11,9 @@ import FollowListModal from "@/components/FollowListModal";
 import PnlChart from "@/components/PnlChart";
 import TraderStats from "@/components/TraderStats";
 import { useCash } from "@/lib/cash";
+import PortfolioBlock from "@/components/PortfolioBlock";
+import FrameArt from "@/components/FrameArt";
+import { frameClass } from "@/components/Frame";
 import { Link2 } from "lucide-react";
 import ShareStudio from "@/components/ShareStudio";
 import { traderShareData } from "@/lib/traderShare";
@@ -219,9 +222,10 @@ export default function PublicTraderPage() {
           />
 
           <div className="pub-identity">
-            <div className={`pub-avatar fx fr-${trader.frame || "none"}`}>
+            <div className={`pub-avatar fx ${frameClass(trader.frame)}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img data-zoom src={trader.avatarDataUrl || defaultAvatar(userId)} alt="" className="pub-avatar-img" />
+              <FrameArt id={trader.frame} />
             </div>
 
             <div className="pub-id-name">
@@ -337,6 +341,9 @@ export default function PublicTraderPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Balance, chart and holdings (only when the trader chose to show them) ── */}
+        <PortfolioBlock userId={trader.userId} fmt={cashFmt} />
 
         {/* ── Top calls: horizontal cards ── */}
         {stats && stats.topCalls.length > 0 && (

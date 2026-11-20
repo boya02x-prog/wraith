@@ -1,9 +1,12 @@
 /* ═════════════ Avatar borders ("frames") ═════════════
-   A trader picks one in Edit profile; it is drawn around their photo wherever it shows (components/Frame.tsx). The look is a thin ring (a masked
-   gradient, slowly turning), a small gap, and a soft glow behind. Everything is drawn OUTSIDE the photo so the photo keeps its size.
-   Each frame only sets three things: --ring (the gradient), --glow (the colour of the soft light) and optionally --spin (the animation). */
+   A trader picks one in Edit profile; it is drawn around their photo wherever it shows (components/Frame.tsx). Two kinds:
+   1) ART borders (crown, flames, wings ... see components/FrameArt.tsx): a small SVG that sits around the photo (.fr-art). Always drawn; it only MOVES
+      on the big photos, in the picker and wherever a row opts in with .fr-live, so a long list does not run 50 animations at once.
+   2) the old plain RINGS (ember, gold ... marked legacy in lib/frames.ts): a masked gradient + soft glow made with ::before / ::after. Only people who
+      picked one before still have it; it is not offered any more.
+   Everything is drawn OUTSIDE the photo so the photo keeps its size. */
 
-/* .fr wraps a photo (components/Frame.tsx); .fx puts the same ring on an element that already has its own size and shape (the big profile photo) */
+/* .fr wraps a photo (components/Frame.tsx); .fx puts the same border on an element that already has its own size and shape (the big profile photo) */
 .fr, .fx {
   --w: 3px;
   --ring: transparent;
@@ -24,6 +27,42 @@
 /* the glow */
 .fr::after, .fx::after { inset: calc(var(--w) * -2.2); background: var(--glow); filter: blur(11px); opacity: .75; z-index: -1; animation: fr-pulse 2.8s ease-in-out infinite; }
 .fr-none::before, .fr-none::after, .fx.fr-none::before, .fx.fr-none::after { display: none; }
+/* art borders draw themselves, so the ring and the glow are off */
+.has-art::before, .has-art::after, .fx.has-art::before, .fx.has-art::after { display: none; }
+
+/* the art: the SVG is 147% of the photo (its picture is a 100-wide box with the photo as a circle of 68), centred on it */
+.fr-art { position: absolute; left: -23.53%; top: -23.53%; width: 147.06%; height: 147.06%; max-width: none !important; max-height: none !important; display: block; overflow: visible; pointer-events: none; z-index: 3; }
+.fr-art * { transform-box: view-box; transform-origin: 0 0; }
+.fx > .fr-art { z-index: 3; }
+
+/* moving parts: only on the big photo, in the picker and in rows that ask for it */
+@keyframes fa-rot { to { transform: rotate(360deg); } }
+@keyframes fa-rot-rev { to { transform: rotate(-360deg); } }
+@keyframes fa-tw { 0%, 100% { transform: scale(.35); opacity: .2; } 50% { transform: scale(1.15); opacity: 1; } }
+@keyframes fa-fl { 0%, 100% { transform: scale(1, 1) skewX(0); } 25% { transform: scale(.9, 1.14) skewX(-4deg); } 55% { transform: scale(1.08, .9) skewX(3deg); } 80% { transform: scale(.94, 1.08) skewX(-2deg); } }
+@keyframes fa-wing { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes fa-bolt { 0%, 52%, 100% { opacity: .15; } 56%, 60% { opacity: 1; } 64% { opacity: .3; } 68% { opacity: .95; } }
+@keyframes fa-up { 0% { transform: translateY(5px) scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-8px) scale(1.1); opacity: 0; } }
+@keyframes fa-flapb { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
+@keyframes fa-snow { 0% { transform: translateY(-4px); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(9px); opacity: 0; } }
+@keyframes fa-pop { 0%, 100% { transform: scale(.2); opacity: 0; } 40% { opacity: 1; } 70% { transform: scale(1.2); opacity: .9; } }
+:is(.fx, .fp-av, .fr-live) .fa-spin { animation: fa-rot 18s linear infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-spin.rev { animation: fa-rot-rev 24s linear infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-orbit { animation: fa-rot 14s linear infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-twinkle { animation: fa-tw 2.4s ease-in-out infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-flame { animation: fa-fl 1.1s ease-in-out infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-flap { transform-origin: -34px 0; animation: fa-wing 2.8s ease-in-out infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-bolt { animation: fa-bolt 2.2s linear infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-rise { animation: fa-up 2.6s ease-in-out infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-bat { animation: fa-flapb .5s ease-in-out infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-fall { animation: fa-snow 2.6s ease-in infinite; }
+:is(.fx, .fp-av, .fr-live) .fa-burst { animation: fa-pop 2.2s ease-out infinite; }
+/* standing still, the twinkles and the bolts must not vanish */
+.fa-twinkle { opacity: .9; }
+.fa-bolt { opacity: .85; }
+.fa-burst { opacity: .9; }
+.fa-rise, .fa-fall { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .fr-art *, .fr-art { animation: none !important; } }
 
 @keyframes fr-rot { to { transform: rotate(360deg); } }
 @keyframes fr-pulse { 0%, 100% { opacity: .5; transform: scale(.96); } 50% { opacity: .9; transform: scale(1.04); } }
@@ -31,6 +70,7 @@
 @keyframes fr-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @keyframes fr-beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.06); } 28% { transform: scale(1); } 42% { transform: scale(1.05); } 70% { transform: scale(1); } }
 
+/* the old plain rings */
 .fr-ember   { --ring: conic-gradient(#ff7b3d, #ffc59e, #ff7b3d, #d9531a, #ff7b3d); --glow: radial-gradient(closest-side, rgba(255, 123, 61, .75), transparent); --spin: fr-rot 7s linear infinite; }
 .fr-gold    { --ring: conic-gradient(#fff3b0, #ffc94a, #a86f12, #ffc94a, #fff3b0); --glow: radial-gradient(closest-side, rgba(255, 201, 74, .7), transparent); --spin: fr-rot 6s linear infinite; }
 .fr-neon    { --ring: conic-gradient(#22e5ff, #7a5cff, #ff2bd6, #7a5cff, #22e5ff); --glow: radial-gradient(closest-side, rgba(70, 150, 255, .75), transparent); --spin: fr-rot 3s linear infinite; }
@@ -43,14 +83,6 @@
 .fr-prism   { --ring: conic-gradient(#ff3b3b, #ffb13b, #f6ff3b, #3bff7a, #3bd7ff, #6b5bff, #ff3bd0, #ff3b3b); --glow: radial-gradient(closest-side, rgba(255, 94, 168, .6), transparent); --spin: fr-rot 3.5s linear infinite; }
 .fr-ice     { --ring: conic-gradient(#eefcff, #8fe3ff, #ffffff, #5cc8ff, #eefcff); --glow: radial-gradient(closest-side, rgba(140, 225, 255, .7), transparent); --spin: fr-rot 8s linear infinite; }
 .fr-toxic   { --ring: conic-gradient(#c6ff2e, #2eff7a, #c6ff2e, #7dff00, #c6ff2e); --glow: radial-gradient(closest-side, rgba(170, 255, 50, .7), transparent); --spin: fr-rot 4s linear infinite; }
-
-/* events */
-.fr-blackfriday { --ring: repeating-conic-gradient(#ffd24a 0 12deg, #0b0b0c 12deg 24deg); --glow: radial-gradient(closest-side, rgba(255, 210, 74, .7), transparent); --spin: fr-rot 6s linear infinite; }
-.fr-winter  { --ring: repeating-conic-gradient(#ff3b3b 0 9deg, transparent 9deg 18deg, #3bff7a 18deg 27deg, transparent 27deg 36deg, #3bb5ff 36deg 45deg, transparent 45deg 54deg); --glow: radial-gradient(closest-side, rgba(255, 120, 120, .55), transparent); --spin: fr-rot 14s linear infinite, fr-blink 1.4s ease-in-out infinite; }
-.fr-newyear { --ring: conic-gradient(#fff2b0, #ffc94a, #ff9d2e, #ffc94a, #fff2b0); --glow: radial-gradient(closest-side, rgba(255, 224, 138, .8), transparent); --spin: fr-rot 2.4s linear infinite; }
-.fr-valentine { --ring: conic-gradient(#ff5c93, #ffb3cc, #ff5c93, #d9266b, #ff5c93); --glow: radial-gradient(closest-side, rgba(255, 92, 147, .75), transparent); --spin: fr-rot 6s linear infinite; }
-.fr-valentine::before { animation: fr-rot 6s linear infinite, fr-beat 1.6s ease-in-out infinite; }
-.fr-halloween { --ring: conic-gradient(#ff8a1f, #7c2bff, #ff8a1f, #7c2bff, #ff8a1f); --glow: radial-gradient(closest-side, rgba(255, 138, 31, .7), transparent); --spin: fr-rot 4s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .fr::before, .fr::after, .fx::before, .fx::after { animation: none !important; }

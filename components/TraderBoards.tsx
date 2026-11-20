@@ -51,14 +51,16 @@ function Board({ title, icon, rows, value, note }: { title: string; icon: React.
 
 export default function TraderBoards() {
   const { money } = useCash();
-  const [data, setData] = useState<Boards | null>(() => readLast<Boards>("traders-boards"));
+  // a saved copy from an older shape (or a bad answer) must not crash the page: only a well-formed pair of lists counts
+  const wellFormed = (d: Boards | null): d is Boards => !!d && Array.isArray(d.followed) && Array.isArray(d.earners);
+  const [data, setData] = useState<Boards | null>(() => { const d = readLast<Boards>("traders-boards"); return wellFormed(d) ? d : null; });
 
   useEffect(() => {
     let alive = true;
     const load = () =>
       fetch("/api/traders/boards")
         .then((r) => (r.ok ? r.json() : null))
-        .then((d: Boards | null) => { if (alive && d) { setData(d); writeLast("traders-boards", d); } })
+        .then((d: Boards | null) => { if (alive && wellFormed(d)) { setData(d); writeLast("traders-boards", d); } })
         .catch(() => undefined);
     void load();
     window.addEventListener("wraith:refresh", load);

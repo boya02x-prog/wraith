@@ -21,6 +21,8 @@ export interface SceneOpts {
   zoom?: number;
   /** slide the scene to the right by this many units */
   shiftX?: number;
+  /** turns the ghost's orange to another colour: a fraction of the colour wheel (0 = orange, 0.55 = blue, 0.3 = green ...) */
+  hue?: number;
 }
 export interface WraithScene {
   scene: THREE.Scene;
@@ -29,6 +31,8 @@ export interface WraithScene {
   update(t: number, dt: number, pointer: { x: number; y: number }): void;
   /** a happy hop (tap) */
   poke(): void;
+  /** freeze an emote at a point of its timeline (0..1) at time t: used to draw stills of the ghost mid-action */
+  forceEmote(i: number, k: number, t: number): void;
   dispose(): void;
 }
 
@@ -175,13 +179,30 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   // so the body takes much less of it and the arms none
   bodyMat.envMap = envTex; bodyMat.envMapIntensity = 0.2;
   armMat.envMap = envTex; armMat.envMapIntensity = 0.0;
+  // another colour of ghost (the default covers use a few): rotate the hue of everything that is orange; the gold, the eyes and the face stay
+  const hue = opts.hue ?? 0;
+  const shift = <C extends THREE.Color>(c: C): C => {
+    if (!hue) return c;
+    const hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    c.setHSL((((hsl.h + hue) % 1) + 1) % 1, hsl.s, hsl.l);
+    return c;
+  };
+  shift(armMat.color); shift(bodyMat.emissive); shift(bodyMat.sheenColor); shift(rim.color);
   const goldMat = own(new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.24 }));
   const glow = own(new THREE.MeshBasicMaterial({ color: "#fff1dc" }));
   const coinFace = own(new THREE.MeshStandardMaterial({ map: own(coinTexture()), metalness: 0.8, roughness: 0.3 }));
 
   // everything about the ghost lives in one group so it can bob and turn as one
   const ghost = new THREE.Group();
-  const body = new THREE.Mesh(own(bodyGeometry()), bodyMat);
+  const bodyGeo = own(bodyGeometry());
+  if (hue) {
+    const a = bodyGeo.getAttribute("color") as THREE.BufferAttribute;
+    const c = new THREE.Color();
+    for (let i = 0; i < a.count; i++) { c.setRGB(a.getX(i), a.getY(i), a.getZ(i)); shift(c); a.setXYZ(i, c.r, c.g, c.b); }
+    a.needsUpdate = true;
+  }
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
   ghost.add(body);
 
   // eyes: glowing cream ovals with a bright spark each, a soft halo behind
@@ -326,6 +347,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
       vertexShader: "varying vec3 vN; varying vec3 vV; varying float vH; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vH = uv.y; gl_Position = projectionMatrix * mv; }",
       fragmentShader: "uniform vec3 uColor; uniform float uOpacity; varying vec3 vN; varying vec3 vV; varying float vH; void main(){ float f = abs(dot(normalize(vN), normalize(vV))); float edge = smoothstep(0.0, 0.7, f); float along = pow(vH, 1.3); gl_FragColor = vec4(uColor, uOpacity * edge * along); }",
     }));
+    if (hue) shift(mat.uniforms.uColor.value as THREE.Color);
     beam = new THREE.Mesh(own(new THREE.ConeGeometry(2.6, 8.4, 64, 1, true)), mat);
     beam.position.set(0, 3.9, -0.3);
     scene.add(beam);
@@ -506,6 +528,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
       stepBurst(dt);
     },
     poke() { boop = 1; if (emote) queued = true; else wantStart = true; },
+    forceEmote(i, k, t) { emote = { i: Math.max(0, Math.min(EMOTES.length - 1, Math.floor(i))), t0: t - k * EMOTES[Math.max(0, Math.min(EMOTES.length - 1, Math.floor(i)))].dur, burst: true }; wantStart = false; queued = false; },
     dispose() {
       scene.traverse((o) => { const m = o as THREE.Mesh; if (m.geometry) m.geometry.dispose(); const mat = m.material as THREE.Material | THREE.Material[] | undefined; if (mat) (Array.isArray(mat) ? mat : [mat]).forEach((x) => x.dispose()); });
       for (const d of disposables) { try { d.dispose(); } catch { /* already gone */ } }

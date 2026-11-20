@@ -36,6 +36,8 @@ import {
 import Header from "@/components/HeaderSlot";
 import PhotoViewer from "@/components/PhotoViewer";
 import FramePicker from "@/components/FramePicker";
+import FrameArt from "@/components/FrameArt";
+import { frameClass } from "@/components/Frame";
 import ProfileFeed from "@/components/ProfileFeed";
 import TraderStats from "@/components/TraderStats";
 import { useWraithSession } from "@/components/SessionProvider";
@@ -62,6 +64,8 @@ type ProfileData = {
   coverDataUrl?: string;
   displayCurrency: DisplayCurrency;
   publicTrading: boolean;
+  /** show the portfolio value and token holdings on the public page */
+  publicBalance?: boolean;
   username?: string | null;
   /** the avatar border they picked (lib/frames.ts) */
   frame?: string;
@@ -106,6 +110,7 @@ const PROFILE_EMPTY: ProfileData = {
   coverDataUrl: "",
   displayCurrency: "USD",
   publicTrading: false,
+  publicBalance: false,
   username: null,
   frame: "none",
 };
@@ -384,6 +389,7 @@ export default function ProfilePage() {
             ? profileJson.profile.displayCurrency
             : "USD",
           publicTrading: profileJson.profile?.publicTrading === true,
+          publicBalance: profileJson.profile?.publicBalance === true,
           username: profileJson.profile?.username ?? null,
           frame: profileJson.profile?.frame ?? "none",
         };
@@ -972,6 +978,7 @@ export default function ProfilePage() {
           coverDataUrl: draft.coverDataUrl ?? "",
           displayCurrency: draft.displayCurrency,
           publicTrading: draft.publicTrading,
+          publicBalance: draft.publicTrading && draft.publicBalance === true,
           frame: draft.frame ?? "none",
         }),
       });
@@ -1302,7 +1309,7 @@ export default function ProfilePage() {
           {/* Identity row — avatar overlaps cover */}
           <div className="profile-identity">
             <div
-              className={`profile-avatar-button wx-tappable fx fr-${profile.frame || "none"}`}
+              className={`profile-avatar-button wx-tappable fx ${frameClass(profile.frame)}`}
               role="button"
               tabIndex={0}
               aria-label="View profile photo"
@@ -1311,6 +1318,7 @@ export default function ProfilePage() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {profileReady ? <img src={avatar || defaultAvatar(userId || displayName)} alt="" className="profile-avatar" /> : <span className="profile-avatar-fallback" style={{ background: "#141414" }} />}
+              {profileReady && <FrameArt id={profile.frame} />}
               </div>
             <input
               ref={photoInputRef}
@@ -2257,7 +2265,21 @@ export default function ProfilePage() {
                 />
                 <span>
                   <strong>Share my trading activity</strong>
-                  <small>Show live positions and closed trades on the public Traders page. Balances stay private.</small>
+                  <small>Show live positions and closed trades on the public Traders page. Balances stay private unless you also switch on the next option.</small>
+                </span>
+              </label>
+              <label className="profile-public-toggle" style={{ opacity: draft.publicTrading ? 1 : 0.5 }}>
+                <input
+                  type="checkbox"
+                  checked={draft.publicTrading && draft.publicBalance === true}
+                  disabled={!draft.publicTrading}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, publicBalance: event.target.checked }))
+                  }
+                />
+                <span>
+                  <strong>Show my balance</strong>
+                  <small>Show your portfolio value, cash and the tokens you hold on your public page, with a chart that builds up over time. Only your Solana wallet is counted and its address stays hidden.</small>
                 </span>
               </label>
 

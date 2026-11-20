@@ -1,5 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 import { frameOf } from "@/lib/frames";
+import FrameArt, { hasFrameArt } from "@/components/FrameArt";
+
+/** The class list of a framed element: the frame, plus whether it has art (art frames draw their own ring, the plain ones use the glowing ring in CSS). */
+export const frameClass = (id?: string | null) => { const f = frameOf(id); return `fr-${f.id}${hasFrameArt(f.id) ? " has-art" : ""}`; };
 
 /**
  * A photo with the trader's chosen border around it (lib/frames.ts has the list, app/wraith-frames.css the look). The ring and the glow are
@@ -9,8 +13,9 @@ export default function Frame({ id, thick, className, children }: { id?: string 
   const f = frameOf(id);
   const style = thick ? ({ "--w": `${thick}px` } as CSSProperties) : undefined;
   return (
-    <span className={`fr fr-${f.id}${className ? ` ${className}` : ""}`} style={style}>
+    <span className={`fr ${frameClass(f.id)}${className ? ` ${className}` : ""}`} style={style}>
       {children}
+      <FrameArt id={f.id} />
     </span>
   );
 }

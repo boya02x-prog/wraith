@@ -233,7 +233,7 @@ export function taskPoints(id: TaskId): number {
 }
 
 // ─── TRADES ──────────────────────────────────────────────────────────────────
-async function userWallets(userId: string): Promise<{ sol: Set<string>; evm: Set<string> }> {
+export async function userWallets(userId: string): Promise<{ sol: Set<string>; evm: Set<string> }> {
   const out = { sol: new Set<string>(), evm: new Set<string>() };
   if (!ObjectId.isValid(userId)) return out;
   const d = await db();

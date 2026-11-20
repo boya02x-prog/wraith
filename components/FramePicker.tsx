@@ -26,9 +26,9 @@ export default function FramePicker({ value, photo, onChange }: { value: string;
     <div className="fp">
       <div className="fp-head">
         <strong>Avatar border</strong>
-        <small>Glows around your photo on the leaderboard, your profile and in search.</small>
+        <small>Drawn around your photo on the leaderboard, your profile and in search. It moves on your profile.</small>
       </div>
-      <div className="fp-grid">{FRAMES.filter((f) => !f.event).map(tile)}</div>
+      <div className="fp-grid">{FRAMES.filter((f) => !f.event && (!f.legacy || f.id === value)).map(tile)}</div>
       <div className="fp-sub">Events</div>
       <div className="fp-grid">{FRAMES.filter((f) => f.event).map(tile)}</div>
     </div>

@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
             coverDataUrl: 1,
             displayCurrency: 1,
             publicTrading: 1,
+            publicBalance: 1,
             username: 1,
             frame: 1,
           },
@@ -100,6 +101,7 @@ export async function GET(request: NextRequest) {
           ? profile.displayCurrency
           : "USD",
         publicTrading: profile?.publicTrading === true,
+        publicBalance: profile?.publicBalance === true,
         username: profile?.username ?? null,
       },
       accountCreatedAt:
@@ -179,6 +181,7 @@ export async function PATCH(request: NextRequest) {
     "coverDataUrl",
     "displayCurrency",
     "publicTrading",
+    "publicBalance",
     "frame",
   ]);
   if (Object.keys(rawBody).some((key) => !allowedKeys.has(key))) {
@@ -258,6 +261,12 @@ export async function PATCH(request: NextRequest) {
     }
     updates.publicTrading = rawBody.publicTrading;
   }
+  if ("publicBalance" in rawBody) {
+    if (typeof rawBody.publicBalance !== "boolean") {
+      return NextResponse.json({ error: "Profile fields are invalid" }, { status: 400 });
+    }
+    updates.publicBalance = rawBody.publicBalance;
+  }
   if ("frame" in rawBody) {
     if (!isFrameId(rawBody.frame)) {
       return NextResponse.json({ error: "Unknown border" }, { status: 400 });
@@ -307,6 +316,7 @@ export async function PATCH(request: NextRequest) {
           coverDataUrl: 1,
           displayCurrency: 1,
           publicTrading: 1,
+          publicBalance: 1,
           username: 1,
           frame: 1,
         },
@@ -329,6 +339,7 @@ export async function PATCH(request: NextRequest) {
           ? profile.displayCurrency
           : "USD",
         publicTrading: profile?.publicTrading === true,
+        publicBalance: profile?.publicBalance === true,
         username: profile?.username ?? null,
       },
     });
