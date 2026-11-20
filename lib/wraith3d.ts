@@ -211,9 +211,10 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
     ghost.add(e); eyes.push(e);
   }
   // mouth
+  let mouthG: THREE.Group | null = null; // the emotes make the smile bigger
   {
     const y = FACE_Y - 0.17, z = surfaceZ(0, y) + 0.012;
-    const m = new THREE.Group(); m.position.set(0, y, z);
+    const m = new THREE.Group(); m.position.set(0, y, z); mouthG = m;
     if (opts.pose === "oops") {
       m.add(new THREE.Mesh(own(new THREE.TorusGeometry(0.075, 0.021, 10, 28)), glow));
     } else if (opts.pose === "sleep") {
@@ -363,9 +364,95 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   placeFlakes(0.7);
 
   // animation state
-  let hop = 0, hopV = 0, spin = 0, blinkAt = 2.2, blinkT = -1;
+  let blinkAt = 2.2, blinkT = -1;
   const base = ghost.position.y;
   const cur = { x: 0, y: 0 };
+
+  // ── emotes ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // A tap plays one short, fixed emote (hop, wave, spin, dance, cheer) and the next tap plays the next one. Every emote is a timeline that
+  // starts and ends at rest, so nothing can build up: a tap while one is playing queues at most ONE more. (The old tap added hop speed every
+  // time, so a few quick taps threw the ghost off the top of the screen.) Each emote returns offsets that are added on top of the idle bob.
+  type Off = { y: number; ry: number; rz: number; rx: number; sq: number; aL: number; aR: number; eL: number; eR: number; mouth: number };
+  const off: Off = { y: 0, ry: 0, rz: 0, rx: 0, sq: 1, aL: 0, aR: 0, eL: 1, eR: 1, mouth: 1 };
+  const clear01 = (x: number) => Math.min(1, Math.max(0, x));
+  const smooth = (x: number) => { const u = clear01(x); return u * u * (3 - 2 * u); };
+  const outCubic = (x: number) => 1 - Math.pow(1 - clear01(x), 3);
+  const bump = (k: number, a: number, b: number) => (k <= a || k >= b ? 0 : Math.sin(((k - a) / (b - a)) * Math.PI)); // 0 -> 1 -> 0 between a and b
+  // crouch, push off, float, land: the base of the hop and the cheer (h = how high, arms = how far the arms go up, lean = leaning back in the air)
+  const jump = (k: number, h: number, arms: number, lean: number) => {
+    if (k < 0.22) { const c = smooth(k / 0.22); off.sq = 1 - 0.13 * c; off.y = -0.07 * c; off.aL = off.aR = -0.15 * c; return; }
+    if (k < 0.72) {
+      const u = (k - 0.22) / 0.5;
+      off.y = -0.07 * (1 - u) + h * 4 * u * (1 - u);
+      off.sq = u < 0.5 ? 0.88 + 0.17 * outCubic(u * 2) : 1.05 - 0.05 * smooth((u - 0.5) * 2);
+      off.aL = off.aR = arms * Math.sin(Math.PI * u) - 0.15 * (1 - u);
+      off.rx = -lean * Math.sin(Math.PI * u);
+      off.eL = off.eR = 1 - 0.5 * Math.sin(Math.PI * u);
+      off.mouth = 1 + 0.35 * Math.sin(Math.PI * u);
+      return;
+    }
+    const v = (k - 0.72) / 0.28;
+    off.sq = 1 - 0.1 * Math.sin(Math.PI * v);
+    off.eL = off.eR = 1 - 0.25 * (1 - v);
+  };
+  const EMOTES: { name: string; dur: number; play: (k: number) => void }[] = [
+    { name: "hop", dur: 0.9, play: (k) => jump(k, 0.17, 0.6, 0.06) },
+    { name: "wave", dur: 1.5, play: (k) => {
+      const env = smooth(Math.min(k / 0.15, (1 - k) / 0.2, 1));
+      const ph = Math.sin(k * Math.PI * 2 * 3.2);
+      off.rz = -0.07 * env; off.aR = 0.4 * ph * env; off.aL = 0.12 * env; off.y = 0.03 * Math.abs(ph) * env;
+      off.eR = 1 - 0.85 * bump(k, 0.35, 0.72); // a wink
+      off.mouth = 1 + 0.2 * env;
+    } },
+    { name: "spin", dur: 1.0, play: (k) => {
+      off.ry = Math.PI * 2 * smooth(k); off.y = 0.09 * Math.sin(Math.PI * k);
+      off.sq = 1 - 0.05 * bump(k, 0, 0.25) + 0.04 * bump(k, 0.25, 0.85);
+      off.aL = off.aR = 0.5 * Math.sin(Math.PI * k); off.eL = off.eR = 1 - 0.4 * Math.sin(Math.PI * k);
+    } },
+    { name: "dance", dur: 1.6, play: (k) => {
+      const env = smooth(Math.min(k / 0.12, (1 - k) / 0.12, 1));
+      const ph = k * Math.PI * 2 * 3;
+      off.rz = 0.2 * Math.sin(ph) * env; off.ry = 0.22 * Math.sin(ph) * env; off.y = 0.07 * Math.abs(Math.sin(ph)) * env;
+      off.aR = 0.55 * Math.sin(ph) * env; off.aL = -0.55 * Math.sin(ph) * env;
+      off.sq = 1 + 0.03 * Math.cos(2 * ph) * env; off.eL = off.eR = 1 - 0.35 * env; off.mouth = 1 + 0.25 * env;
+    } },
+    { name: "cheer", dur: 1.3, play: (k) => jump(k, 0.21, 0.75, 0.2) },
+  ];
+  let emote: { i: number; t0: number; burst: boolean } | null = null;
+  let queued = false, wantStart = false, nextEmote = 0, now = 0, boop = 0;
+  const startEmote = () => { emote = { i: nextEmote, t0: now, burst: false }; nextEmote = (nextEmote + 1) % EMOTES.length; };
+
+  // the cheer throws a handful of gold pieces up from the crown; they fall back and shrink away
+  const BURST_N = 28;
+  let burst: THREE.InstancedMesh | null = null;
+  const bp: { x: number; y: number; z: number; vx: number; vy: number; vz: number; r: number; s: number }[] = [];
+  let burstAge = -1;
+  const spawnBurst = () => {
+    if (!burst) {
+      burst = new THREE.InstancedMesh(own(new THREE.PlaneGeometry(0.1, 0.16)), own(new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })), BURST_N);
+      const palette = ["#ffc83d", "#ffd96b", "#ff8447", "#fff1dc", "#ff5a7a"].map((c) => new THREE.Color(c));
+      for (let i = 0; i < BURST_N; i++) burst.setColorAt(i, palette[i % palette.length]);
+      burst.frustumCulled = false; scene.add(burst);
+    }
+    for (let i = 0; i < BURST_N; i++) {
+      const a = Math.random() * Math.PI * 2;
+      bp[i] = { x: Math.cos(a) * 0.25, y: ghost.position.y + 1.1, z: 0.3 + Math.random() * 0.5, vx: Math.cos(a) * (0.5 + Math.random() * 1.7), vy: 1.8 + Math.random() * 1.8, vz: (Math.random() - 0.5) * 1.2, r: Math.random() * 6, s: 3 + Math.random() * 6 };
+    }
+    burst.count = BURST_N; burstAge = 0;
+  };
+  const stepBurst = (dt: number) => {
+    if (!burst || burstAge < 0) return;
+    burstAge += dt;
+    const life = 1.7, d = new THREE.Object3D();
+    for (let i = 0; i < burst.count; i++) {
+      const p = bp[i];
+      p.vy -= 5.5 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      d.position.set(p.x, p.y, p.z); d.rotation.set(burstAge * p.s + p.r, burstAge * p.s * 0.7, p.r); d.scale.setScalar(Math.max(0.001, 1 - burstAge / life)); d.updateMatrix();
+      burst.setMatrixAt(i, d.matrix);
+    }
+    burst.instanceMatrix.needsUpdate = true;
+    if (burstAge > life) { burst.count = 0; burstAge = -1; }
+  };
   const crowned = opts.pose === "king" || opts.pose === "sleep";
   const zoom = opts.zoom ?? 1; // >1 moves the camera in (the hero banner is wide and short, so it wants the ghost bigger)
   const lookAtY = opts.podium ? 1.0 + (zoom - 1) : crowned ? 0.45 : -0.05;
@@ -382,26 +469,43 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
       if (confetti) confetti.count = Math.min(flakeMax, Math.round(flakes * Math.min(2, xScale)));
     },
     update(t, dt, pointer) {
+      now = t;
       cur.x += (pointer.x - cur.x) * Math.min(1, dt * 5); cur.y += (pointer.y - cur.y) * Math.min(1, dt * 5);
-      // hop on tap: a little spring
-      hopV -= 28 * dt; hop += hopV * dt; if (hop < 0) { hop = 0; hopV = 0; }
-      spin *= Math.pow(0.02, dt);
-      ghost.position.y = base + Math.sin(t * 1.8) * 0.06 + hop; // floats, never touches
-      ghost.rotation.y = cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + spin;
-      ghost.rotation.x = -cur.y * 0.14;
-      ghost.rotation.z = Math.sin(t * 1.2) * 0.02;
-      const squash = 1 + Math.sin(t * 1.8 + 1.2) * 0.012; ghost.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-      // both arms move together: the same swing, a half-beat apart, mirrored left and right
+      // which emote is playing (a tap starts one; the next tap while it plays waits for it to finish)
+      if (wantStart && !emote) { wantStart = false; startEmote(); }
+      off.y = 0; off.ry = 0; off.rz = 0; off.rx = 0; off.sq = 1; off.aL = 0; off.aR = 0; off.eL = 1; off.eR = 1; off.mouth = 1;
+      if (emote) {
+        let k = (t - emote.t0) / EMOTES[emote.i].dur;
+        if (k >= 1) {
+          if (queued) { queued = false; startEmote(); k = 0; } else { emote = null; k = 0; }
+        }
+        if (emote) {
+          EMOTES[emote.i].play(clear01(k));
+          if (EMOTES[emote.i].name === "cheer" && !emote.burst && k > 0.22) { emote.burst = true; spawnBurst(); }
+        }
+      }
+      boop = Math.max(0, boop - dt * 4.5); // every tap answers at once with a little squash, even when it has to wait its turn
+      off.sq *= 1 - 0.06 * boop * boop;
+      ghost.position.y = base + Math.sin(t * 1.8) * 0.06 + off.y; // floats, never touches
+      ghost.rotation.y = cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + off.ry;
+      ghost.rotation.x = -cur.y * 0.14 + off.rx;
+      ghost.rotation.z = Math.sin(t * 1.2) * 0.02 + off.rz;
+      const squash = (1 + Math.sin(t * 1.8 + 1.2) * 0.012) * off.sq; ghost.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
+      // both arms move together: the same swing, a half-beat apart, mirrored left and right (an arm never goes past straight up)
       const wave = Math.sin(t * 6) * 0.25;
-      armR.rotation.z = rightBase + (opts.pose === "wave" ? wave : Math.sin(t * 2.2) * 0.06);
-      armL.rotation.z = leftBase - (bothUp ? Math.sin(t * 2.2 + 1.4) * 0.06 : Math.sin(t * 2 + 1) * 0.05);
-      // blink
+      armR.rotation.z = Math.min(3.0, rightBase + (opts.pose === "wave" ? wave : Math.sin(t * 2.2) * 0.06) + off.aR);
+      armL.rotation.z = Math.max(-3.0, leftBase - (bothUp ? Math.sin(t * 2.2 + 1.4) * 0.06 : Math.sin(t * 2 + 1) * 0.05) - off.aL);
+      // blink (the emotes squint the eyes happy, or wink, on top of it)
+      let bl = 1;
       if (!closed && t > blinkAt && blinkT < 0) blinkT = t;
-      if (blinkT >= 0) { const k = (t - blinkT) / 0.14; const s = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; for (const e of eyes) e.scale.y = Math.max(0.08, s); if (k >= 1) { blinkT = -1; blinkAt = t + 2.4 + Math.random() * 2.4; } }
+      if (blinkT >= 0) { const k = (t - blinkT) / 0.14; bl = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; if (k >= 1) { blinkT = -1; blinkAt = t + 2.4 + Math.random() * 2.4; } }
+      if (eyes.length === 2) { eyes[0].scale.y = Math.max(0.08, bl * off.eL); eyes[1].scale.y = Math.max(0.08, bl * off.eR); }
+      if (mouthG) mouthG.scale.set(off.mouth, off.mouth, 1);
       if (beam) (beam.material as THREE.ShaderMaterial).uniforms.uOpacity.value = 0.4 + Math.sin(t * 0.9) * 0.03;
       placeFlakes(t);
+      stepBurst(dt);
     },
-    poke() { hopV = 7.5; spin += 0.9; },
+    poke() { boop = 1; if (emote) queued = true; else wantStart = true; },
     dispose() {
       scene.traverse((o) => { const m = o as THREE.Mesh; if (m.geometry) m.geometry.dispose(); const mat = m.material as THREE.Material | THREE.Material[] | undefined; if (mat) (Array.isArray(mat) ? mat : [mat]).forEach((x) => x.dispose()); });
       for (const d of disposables) { try { d.dispose(); } catch { /* already gone */ } }

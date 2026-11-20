@@ -123,6 +123,15 @@ export default function MobileTabBar() {
   }, []);
   useEffect(() => { if (path === "/app") setView(homeView()); }, [path]);
 
+  // The round button on the right is the search button; while the search is open it is the X (same place, one smooth morph).
+  // The header (components/Header.tsx) owns the search and tells us its state.
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    const on = (e: Event) => setSearchOpen(Boolean((e as CustomEvent).detail));
+    window.addEventListener("wraith:search-state", on);
+    return () => window.removeEventListener("wraith:search-state", on);
+  }, []);
+
   const hidden = path.startsWith("/app/token");
   const onHome = path === "/app";
   const activeKey = onHome
@@ -163,8 +172,8 @@ export default function MobileTabBar() {
   };
 
   return (
-    <div className="wx-tabbar" role="presentation">
-      <nav className={`wx-tabbar-pill${ind ? " has-ind" : ""}`} aria-label="Main" ref={pillRef}>
+    <div className={`wx-tabbar${searchOpen ? " search-open" : ""}`} role="presentation">
+      <nav className={`wx-tabbar-pill${ind ? " has-ind" : ""}`} aria-label="Main" aria-hidden={searchOpen || undefined} ref={pillRef}>
         {ind && <i className={`wx-tab-ind${animate ? " slide" : ""}`} aria-hidden="true" style={{ width: ind.w, height: ind.h, transform: `translate(${ind.x}px, ${ind.y}px)` }} />}
         {ITEMS.map((it) => (
           <Link
@@ -181,13 +190,16 @@ export default function MobileTabBar() {
       </nav>
       <button
         type="button"
-        className="wx-tabbar-search"
-        aria-label="Search tokens"
-        onClick={() => window.dispatchEvent(new CustomEvent("wraith:open-search"))}
+        className={`wx-tabbar-search${searchOpen ? " is-open" : ""}`}
+        aria-label={searchOpen ? "Close search" : "Search tokens"}
+        aria-expanded={searchOpen}
+        onClick={() => window.dispatchEvent(new CustomEvent(searchOpen ? "wraith:close-search" : "wraith:open-search"))}
       >
-        <svg {...stroke} width={24} height={24}>
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
+        {/* magnifier and X are the same three strokes: the lens shrinks away, the handle grows into one diagonal and a second diagonal draws in (styles in wraith-skin.css) */}
+        <svg className="wx-sicon" {...stroke} width={24} height={24}>
+          <circle className="si-lens" cx="11" cy="11" r="7" />
+          <path className="si-a" d="M3 3L21 21" />
+          <path className="si-b" d="M21 3L3 21" />
         </svg>
       </button>
     </div>

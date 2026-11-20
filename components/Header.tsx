@@ -676,16 +676,32 @@ function CoinSearch({
     return () => window.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Opened from the mobile tab bar's search button
+  // Opened from the mobile tab bar's search button; closed by the same button (it turns into the X while the search is open)
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<number | null>(null);
   useEffect(() => {
+    const cancelClose = () => { if (closeTimer.current) { window.clearTimeout(closeTimer.current); closeTimer.current = null; } setClosing(false); };
     const h = () => {
+      cancelClose();
       setOpen(true);
       // on phones show the recents first; the keyboard opens when the box is tapped
       if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) setTimeout(() => inputRef.current?.focus(), 60);
     };
+    const c = () => {
+      // on a phone the sheet fades out first (the round button is already turning back into the magnifier)
+      if (!window.matchMedia("(max-width: 767px)").matches) { setOpen(false); return; }
+      setClosing(true);
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+      closeTimer.current = window.setTimeout(() => { closeTimer.current = null; setOpen(false); setClosing(false); }, 170);
+    };
     window.addEventListener("wraith:open-search", h);
-    return () => window.removeEventListener("wraith:open-search", h);
+    window.addEventListener("wraith:close-search", c);
+    return () => { window.removeEventListener("wraith:open-search", h); window.removeEventListener("wraith:close-search", c); if (closeTimer.current) window.clearTimeout(closeTimer.current); };
   }, []);
+  // tells the round button in the bottom bar whether the search is open
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("wraith:search-state", { detail: open && !closing }));
+  }, [open, closing]);
 
   // ⌘K shortcut
   useEffect(() => {
@@ -893,7 +909,7 @@ function CoinSearch({
       {/* ── Dropdown ── */}
       {open && wrapDrop(
         <div
-          className="wx-cs-drop"
+          className={`wx-cs-drop${closing ? " is-closing" : ""}`}
           ref={listRef}
           style={{
             position: "absolute",
@@ -910,6 +926,8 @@ function CoinSearch({
         >
           <div
             className="wx-cs-tabs"
+            role="tablist"
+            aria-label="Search in"
             style={{
               display: "flex",
               gap: 6,
@@ -928,18 +946,10 @@ function CoinSearch({
                     setTraderResults([]);
                     setError(null);
                   }}
-                  style={{
-                    border: `1px solid ${active ? "rgba(var(--accent-rgb),.35)" : "var(--border)"}`,
-                    background: active
-                      ? "rgba(var(--accent-rgb),.12)"
-                      : "transparent",
-                    color: active ? "#ff9a70" : "#b8a59b",
-                    padding: "7px 11px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    textTransform: "capitalize",
-                    cursor: "pointer",
-                  }}
+                  className={active ? "on" : ""}
+                  role="tab"
+                  aria-selected={active}
+                  style={{ cursor: "pointer" }}
                 >
                   {mode === "people"
                     ? "Traders"
@@ -1079,7 +1089,7 @@ function CoinSearch({
             >
               Paste
             </button>
-            <button type="button" className="wx-cs-mob wx-cs-close" aria-label="Close search" onClick={() => setOpen(false)}>✕</button>
+            <button type="button" className="wx-cs-mob wx-cs-close" aria-label="Close search" onClick={() => window.dispatchEvent(new CustomEvent("wraith:close-search"))}>✕</button>
           </div>
 
           {/* Empty state — only if trending failed/returned nothing */}
@@ -1152,26 +1162,9 @@ function CoinSearch({
               )}
               {recent.length > 0 && (
                 <>
-                  <div
-                    style={{
-                      padding: "9px 14px 5px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      color: "var(--accent-text)",
-                      fontSize: 8,
-                      ...MONO,
-                      letterSpacing: ".14em",
-                    }}
-                  >
+                  <div className="wx-cs-sec">
                     <span>Recent searches</span>
-                    <button
-                      type="button"
-                      onClick={clearRecent}
-                      style={{ background: "transparent", border: 0, color: "#7d6e66", cursor: "pointer", fontSize: 9, ...MONO, letterSpacing: ".1em" }}
-                    >
-                      Clear all
-                    </button>
+                    <button type="button" onClick={clearRecent}>Clear all</button>
                   </div>
                   {recent.map((token, i) => (
                     <TokenRow
@@ -1202,17 +1195,7 @@ function CoinSearch({
                 </div>
               )}
               {trending.length > 0 && (
-                <div
-                  style={{
-                    padding: "9px 14px 5px",
-                    color: "var(--accent-text)",
-                    fontSize: 8,
-                    ...MONO,
-                    letterSpacing: ".14em",
-                  }}
-                >
-                  TRENDING NOW
-                </div>
+                <div className="wx-cs-sec"><span>Trending now</span></div>
               )}
               {trending.map((token, i) => (
                 <TokenRow

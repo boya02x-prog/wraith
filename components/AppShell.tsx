@@ -28,7 +28,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   useEffect(() => {
     const t = window.setTimeout(() => { for (const r of ["/app", "/app/traders", "/app/profile", "/app/quests"]) { try { router.prefetch(r); } catch { /* ignore */ } } }, 1200);
-    return () => window.clearTimeout(t);
+    // The home sections (Wins, Intel, Scanner) and the 3D character are separate downloads. Fetch them while the app is idle, so a tap on a
+    // tab opens at once instead of waiting for the download (the Wins tab, with its 3D ghost, was the slow one). Skipped on data saver / 2G.
+    const warm = () => {
+      try {
+        const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+        if (c?.saveData || /(^|-)2g$/.test(c?.effectiveType ?? "")) return;
+        void import("@/components/WinsBoard");
+        void import("@/components/HotCalloutsFeed");
+        void import("@/components/SignalScanner");
+        void import("@/components/Wraith3D").then((m) => m.warmWraith3D());
+      } catch { /* optional */ }
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const w = window.setTimeout(() => { if (ric) ric(warm, { timeout: 4000 }); else warm(); }, 2500);
+    return () => { window.clearTimeout(t); window.clearTimeout(w); };
   }, [router]);
   const [hasSelect, setHasSelect] = useState(false);
   const setSelect = useCallback((fn: SelectFn | null) => { select.current = fn; setHasSelect(!!fn); }, []);

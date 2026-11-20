@@ -9,10 +9,13 @@ import { ToastProvider } from "@/components/Toast";
 
 import Header from "@/components/HeaderSlot";
 import DiscoverNav from "@/components/DiscoverNav";
-const TokenBoard = dynamic(() => import("@/components/TokenBoard"), { ssr: false });
-const WinsBoard = dynamic(() => import("@/components/WinsBoard"), { ssr: false });
-const SignalScanner = dynamic(() => import("@/components/SignalScanner"), { ssr: false });
-const HotCalloutsFeed = dynamic(() => import("@/components/HotCalloutsFeed"), { ssr: false });
+// Each section's code arrives separately. While it does, a plain placeholder stands in (before, the screen stayed blank until the code was in,
+// which on the Wins tab felt like the tap did nothing). AppShell also fetches these in the background when the app is idle.
+const ViewSkel = () => <div className="wx-view-skel" aria-hidden="true"><i /><i /><i /></div>;
+const TokenBoard = dynamic(() => import("@/components/TokenBoard"), { ssr: false, loading: () => <ViewSkel /> });
+const WinsBoard = dynamic(() => import("@/components/WinsBoard"), { ssr: false, loading: () => <ViewSkel /> });
+const SignalScanner = dynamic(() => import("@/components/SignalScanner"), { ssr: false, loading: () => <ViewSkel /> });
+const HotCalloutsFeed = dynamic(() => import("@/components/HotCalloutsFeed"), { ssr: false, loading: () => <ViewSkel /> });
 const MarketCallsRail = dynamic(() => import("@/components/MarketCallsRail"), { ssr: false });
 
 // Shared across the app (scanner, wins, favorites, token navigation).

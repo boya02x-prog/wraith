@@ -1,11 +1,12 @@
 /* ═════════════════════════ Wraith skin: the last stylesheet loaded ═════════════════════════
-   Earlier files each had their own idea of the look (a condensed display face, typewriter labels, 8px boxes, outlines on everything).
-   This layer sits on top and settles it, built from what the app already had so it stays Wraith and not somebody else's app:
-     • ONE text face (Plus Jakarta Sans, loaded in layout.tsx), quiet sentence-case labels, bold numbers
-     • rectangles with ONE corner size (12px controls, 14px cards): no pills
-     • the lit edge across the top of a card (the signature the scanner and market cards already had) on every card
-     • underline tabs with an ember underline (the Market / Scanner / Wins / Intel row) for every tab row
-     • ember (orange) outlines for secondary actions, a solid ember button only for the one main action on a screen
+   Earlier files each had their own idea of the look (a condensed display face, typewriter labels, outlines and glows on everything).
+   This layer sits on top and settles it. The rules it follows:
+     • ONE text face (Plus Jakarta Sans, loaded in layout.tsx), bold numbers, quiet sentence-case labels
+     • FLAT tonal surfaces: a card is just a lighter shade than the page, with NO outline, NO glow and NO gradient (the outlined, glowing
+       box on every screen is what read as "AI made"); each step up is a little lighter: page < card < inner/controls < pressed
+     • rectangles with one corner scale (no pills): badges 6px, chips 8-10px, controls 12px, cards 14px, tab bar 20px
+     • tab rows (Market / Scanner / Wins / Intel, periods, search tabs) are plain text with a flat ember underline
+     • controls are filled (no outline); the chosen chip is an ember tint; solid ember only for the one main action on a screen
    To undo the whole redesign, remove its import from layout.tsx. */
 
 html:root {
@@ -15,11 +16,18 @@ html:root {
   --wr-mono: var(--font-sans);
   --radius-control: 12px; /* the app-wide button radius (globals.css, .wraith-dashboard button) */
   --radius-card: 14px;
-  --sk-card: linear-gradient(180deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .022));
-  --sk-line: rgba(255, 255, 255, .08);
-  --sk-line-2: rgba(255, 255, 255, .16);
-  --sk-shadow: 0 10px 26px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .05);
-  --sk-text-2: rgba(255, 255, 255, .68);
+  /* the surface steps every older stylesheet already reads (var(--surface) ...): lighter than the page, outlines almost gone */
+  --surface: #131315;
+  --surface-2: #1a1a1d;
+  --surface-3: #232327;
+  --border: rgba(255, 255, 255, .05);
+  --border-strong: rgba(255, 255, 255, .1);
+  --sk-card: #131315;
+  --sk-inner: #1a1a1d;
+  --sk-fill: rgba(255, 255, 255, .07);
+  --sk-fill-2: rgba(255, 255, 255, .11);
+  --sk-line: rgba(255, 255, 255, .06);
+  --sk-text-2: rgba(255, 255, 255, .7);
   --sk-text-3: rgba(255, 255, 255, .46);
   --sk-up: #3ddc97;
   --sk-down: #ff6b62;
@@ -33,7 +41,7 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
   font-family: var(--font-code), "IBM Plex Mono", ui-monospace, monospace !important;
 }
 
-/* ── labels: sentence case, quiet, no typewriter tracking ── */
+/* ═══ type ═══ */
 .fp-age, .fp-call-gain small, .fp-mc, .tc-pnl small, .tc-gains small, .tc-foot small, .ts-gains small, .wr-radar-label,
 .profile-summary-card .profile-stat-card > span, .wb-win small, .q-stat span, .hc-tk small, .hc-pos small, .ms-sub, .wb-row small, .wb-stats small,
 .profile-chart-label span, .profile-portfolio-period > span {
@@ -41,8 +49,6 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
   font-size: 12.5px !important; color: var(--sk-text-3) !important;
 }
 .tc-gains b, .tc-foot b, .ts-gains b, .ts-list dd, .fp-mc { font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: 0 !important; }
-
-/* ── numbers and titles that used the condensed face: now the same face, heavy ── */
 .wraith-dashboard .profile-summary-card .profile-portfolio-value {
   font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: -.035em !important; line-height: 1 !important;
   font-size: clamp(42px, 12.5vw, 56px) !important;
@@ -57,31 +63,33 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 .tc-pnl strong.up { color: var(--sk-up) !important; }
 .tc-pnl strong.down { color: var(--sk-down) !important; }
 
-/* eyebrows ("WRAITH COMMUNITY"): small, accent, not shouting */
-.profile-eyebrow, .q-eyebrow, .wx-kicker {
-  font-family: var(--font-sans) !important; font-size: 12px !important; font-weight: 800 !important; letter-spacing: .09em !important;
-  text-transform: uppercase; color: var(--accent-text) !important;
+/* the little orange capital-letter labels ("WRAITH COMMUNITY", "MARKET CAP", "PERFORMANCE") were the loudest part of the template look:
+   now they are plain section labels, sentence case, grey (CSS can only re-case the ones that are real uppercase text via first-letter) */
+.profile-eyebrow, .q-eyebrow {
+  display: block; font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 0 !important;
+  text-transform: lowercase !important; color: var(--sk-text-2) !important;
 }
-.profile-portfolio-head .profile-eyebrow { color: var(--sk-text-2) !important; letter-spacing: 0 !important; text-transform: none; font-size: 15px !important; font-weight: 700 !important; }
+.profile-eyebrow::first-letter, .q-eyebrow::first-letter { text-transform: uppercase; }
+.wx-kicker {
+  font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0 !important;
+  text-transform: none !important; color: var(--sk-text-3) !important;
+}
+.profile-portfolio-head .profile-eyebrow { font-size: 15px !important; }
 
-/* ═══ cards: one shape, one edge ═══
-   Soft filled surface, a hairline, 14px corners, and the lit edge across the top that the scanner and market cards already had. */
-.wraith-dashboard .tc, .wraith-dashboard .wb-card, .wraith-dashboard .wb-win, .wraith-dashboard .wb-stats > div,
-.wraith-dashboard .profile-summary-card .profile-stat-card, .wraith-dashboard .wb-wins {
-  position: relative; overflow: hidden; background: var(--sk-card) !important; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; box-shadow: var(--sk-shadow) !important;
+/* ═══ cards: flat, one corner, no outline, no glow ═══ */
+html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win, .wb-stats > div, .wb-wins, .profile-panel, .ts-panel, .wp-head, .wp-block, .callout-card, .la, .mn, .hc-side section, .wx-chart-card, .wx-pricebar, .wx-scanner-layout, .evm-trades, .wx-safety, .wx-panel .la, .wx-panel .mn, .fb-compose, .profile-summary-card .profile-stat-card) {
+  background: var(--surface) !important; background-image: none !important; border-color: transparent !important; box-shadow: none !important; border-radius: 14px !important;
 }
-.wraith-dashboard .profile-panel { background: var(--sk-card) !important; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; box-shadow: var(--sk-shadow) !important; }
-.wraith-dashboard .sg-card, .wraith-dashboard .wx-tcard { border-radius: 14px !important; }
-.tc::before, .wb-card::before, .wb-win::before, .wb-stats > div::before, .profile-summary-card .profile-stat-card::before, .wb-wins::before {
-  content: ""; position: absolute; left: 0; top: 0; height: 1px; width: 70%; border-radius: 1px; pointer-events: none; z-index: 2;
-  background: linear-gradient(90deg, rgba(var(--tint, 255, 123, 61), .85), transparent);
-}
-.tc.podium-1 { --tint: 255, 201, 74; }
-.wb-card.up, .wb-win, .wb-wins { --tint: 61, 220, 151; }
-.wb-card.down { --tint: 255, 107, 98; }
-.wraith-dashboard .tc:hover, .wraith-dashboard .wb-card:hover, .wraith-dashboard .wb-win:hover { border-color: rgba(var(--tint, 255, 123, 61), .38) !important; }
-.wraith-dashboard .tc.podium-1 { background: linear-gradient(180deg, rgba(255, 201, 74, .12), rgba(255, 255, 255, .025)) !important; }
-.wraith-dashboard .wb-wins { background: linear-gradient(180deg, rgba(61, 220, 151, .11), rgba(61, 220, 151, 0) 220px), var(--sk-card) !important; padding: 18px 14px !important; }
+/* the lit orange edge across the top of a card is gone everywhere */
+html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win, .wb-stats > div, .wb-wins, .profile-summary-card .profile-stat-card)::before { content: none !important; display: none !important; }
+/* a card inside a card steps one shade up */
+html:root :is(.profile-summary-card .profile-stat-card, .wb-win, .hc-card .hc-pos, .callout-position) { background: var(--surface-2) !important; }
+html:root :is(.sg-card, .wx-tcard, .hc-card, .tc, .wb-card, .wb-win):hover { background: var(--surface-2) !important; transform: none; box-shadow: none !important; }
+/* the few cards that mean something keep a flat tint (no gradient) */
+html:root .tc.podium-1 { background: #1c1a13 !important; }
+html:root .hc-card.hot { background: #121a15 !important; border-color: transparent !important; }
+html:root .wb-wins { background: #111a15 !important; padding: 18px 14px !important; }
+html:root .wb-wins .wb-win { background: rgba(255, 255, 255, .05) !important; }
 .hc-mc { border-radius: 8px !important; }
 .tc-main { gap: 10px !important; }
 .tc-avatar { width: 44px !important; height: 44px !important; flex-basis: 44px !important; }
@@ -91,57 +99,64 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 .tc-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
 .tc-tags i {
   font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 700 !important;
-  border: 1px solid var(--sk-line) !important; background: rgba(255, 255, 255, .05) !important; color: var(--sk-text-2) !important; border-radius: 6px !important; padding: 2px 8px !important;
+  border: 0 !important; background: var(--surface-3) !important; color: var(--sk-text-2) !important; border-radius: 6px !important; padding: 3px 8px !important;
 }
 .tc-foot b { font-size: 15px !important; }
+.tc-foot, .tc-body { border-color: var(--sk-line) !important; }
+.tc > .tc-ghost { color: rgba(255, 255, 255, .035) !important; }
+.tc.podium-1 > .tc-ghost { color: rgba(255, 201, 74, .06) !important; }
 
-/* ═══ tabs: the underline row (Market / Scanner / Wins / Intel) everywhere ═══ */
+/* ═══ tabs: plain text with a flat ember underline (Market / Scanner / Wins / Intel, periods, search) ═══ */
 html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) {
   background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--sk-line) !important; border-radius: 0 !important; padding: 0 !important; gap: 0 !important; box-shadow: none !important;
 }
-html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button {
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button,
+html:root .wx-cs-drop .wx-cs-tabs button {
   position: relative; border-radius: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 11px 16px !important;
   font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-3) !important;
-  transition: color .18s;
+  white-space: nowrap; transition: color .18s;
 }
-html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button:hover { color: #fff !important; }
-html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on { color: #fff !important; background: transparent !important; }
-html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on::after {
-  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), .6);
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button:hover,
+html:root .wx-cs-drop .wx-cs-tabs button:hover { color: #fff !important; }
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on,
+html:root .wx-cs-drop .wx-cs-tabs button.on { color: #fff !important; background: transparent !important; }
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on::after,
+html:root .wx-cs-drop .wx-cs-tabs button.on::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent);
 }
 html:root .wraith-dashboard .wx-board-bar .wx-seg.lg { display: flex; width: 100%; }
 html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { flex: 1 1 auto; text-align: center; }
-/* filter chips: small rectangles; the chosen one is outlined in ember */
+/* filter chips: filled, no outline; the chosen one is an ember tint */
 .trader-tabs { background: transparent !important; border: 0 !important; padding: 0 !important; gap: 8px !important; box-shadow: none !important; }
 .wraith-dashboard .trader-tabs button {
-  border-radius: 10px !important; border: 1px solid var(--sk-line) !important; background: rgba(255, 255, 255, .04) !important; color: var(--sk-text-2) !important; padding: 9px 14px !important;
+  border-radius: 10px !important; border: 0 !important; background: var(--sk-fill) !important; color: var(--sk-text-2) !important; padding: 10px 14px !important;
   font-family: var(--font-sans) !important; font-size: 13.5px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; box-shadow: none !important;
 }
-.wraith-dashboard .trader-tabs button.on { border-color: rgba(var(--accent-rgb), .65) !important; background: rgba(var(--accent-rgb), .14) !important; color: var(--accent-text) !important; }
-.wraith-dashboard .tc-layout { border: 1px solid var(--sk-line) !important; border-radius: 10px !important; background: transparent !important; padding: 3px !important; gap: 2px !important; }
+.wraith-dashboard .trader-tabs button.on { background: rgba(var(--accent-rgb), .18) !important; color: var(--accent-text) !important; }
+.wraith-dashboard .tc-layout { border: 0 !important; border-radius: 10px !important; background: var(--sk-fill) !important; padding: 3px !important; gap: 2px !important; }
 .wraith-dashboard .tc-layout button { border-radius: 7px !important; border: 0 !important; background: transparent !important; }
-.wraith-dashboard .tc-layout button.on { background: rgba(255, 255, 255, .1) !important; }
+.wraith-dashboard .tc-layout button.on { background: var(--sk-fill-2) !important; }
 
-/* ═══ buttons ═══ */
+/* ═══ buttons: filled, no outline ═══ */
 .profile-edit-button {
   border-radius: 12px !important; height: 46px; min-height: 46px; font-family: var(--font-sans) !important; font-weight: 700 !important; font-size: 14.5px !important; letter-spacing: 0 !important;
-  border: 1px solid var(--sk-line-2) !important; background: rgba(255, 255, 255, .04) !important; color: #fff !important; box-shadow: none !important;
+  border: 0 !important; background: var(--surface-3) !important; color: #fff !important; box-shadow: none !important;
 }
-.profile-edit-button:hover { border-color: rgba(var(--accent-rgb), .6) !important; }
+.profile-edit-button:hover { background: #2b2b30 !important; }
 .profile-btn-pair { display: flex !important; gap: 10px !important; width: 100%; }
 .profile-btn-pair .profile-edit-button { flex: 1; }
-.profile-btn-pair .profile-edit-button:last-child { background: var(--accent) !important; border-color: var(--accent) !important; color: #1a0d05 !important; font-weight: 800 !important; box-shadow: 0 8px 22px rgba(255, 123, 61, .25) !important; }
-/* Follow / Following (components/TraderFollowButton.tsx): an ember outline, so a screen of them is not a wall of orange */
+.profile-btn-pair .profile-edit-button:last-child { background: var(--accent) !important; color: #1a0d05 !important; font-weight: 800 !important; box-shadow: none !important; }
+/* Follow / Following (components/TraderFollowButton.tsx): an ember tint, so a screen of them is not a wall of orange */
 .tfb {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; min-width: 112px !important; width: auto !important; padding: 0 16px;
-  border: 1px solid rgba(var(--accent-rgb), .55); border-radius: 10px !important; background: transparent; color: var(--accent-text); font: 800 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
-  box-shadow: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background .18s, color .18s, border-color .18s, opacity .18s, transform .1s;
+  border: 0 !important; border-radius: 10px !important; background: rgba(var(--accent-rgb), .16); color: var(--accent-text); font: 800 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  box-shadow: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background .18s, color .18s, opacity .18s, transform .1s;
 }
-.tfb:hover { background: rgba(var(--accent-rgb), .12); }
+.tfb:hover { background: rgba(var(--accent-rgb), .24); }
 .tfb:active { transform: scale(.97); }
 .tfb.is-compact { min-height: 36px; min-width: 92px !important; padding: 0 12px; }
-.tfb.is-following { border-color: var(--sk-line-2); background: rgba(255, 255, 255, .04); color: var(--sk-text-2); }
-.tfb.is-loading { border-color: var(--sk-line); background: rgba(255, 255, 255, .03); color: transparent; }
+.tfb.is-following { background: var(--surface-3); color: var(--sk-text-2); }
+.tfb.is-loading { background: var(--sk-fill); color: transparent; }
 .tfb:disabled { cursor: wait; opacity: .7; }
 
 /* ═══ profile header: name, handle, bio, then counts and buttons ═══ */
@@ -157,16 +172,23 @@ html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { flex: 1 1 auto; te
   .profile-hero .profile-social-counts { margin: 18px 0 0 !important; gap: 32px !important; }
   .profile-hero .profile-btn-pair { margin: 16px 0 0 !important; }
 }
-/* the tile row under the portfolio value */
+/* the "Portfolio value" row: the label and its info dot on the first line, the four periods share the second line (they were squeezed and
+   broke into two lines each on a narrow phone) */
+html:root .profile-summary-card .profile-portfolio-head { display: flex !important; flex-wrap: wrap !important; align-items: center; gap: 6px 8px !important; }
+html:root .profile-summary-card .profile-portfolio-head .profile-eyebrow { white-space: nowrap; }
+@media (max-width: 767px) {
+  html:root .wraith-dashboard .profile-periods { order: 9; flex: 1 1 100% !important; width: 100% !important; margin: 6px 0 0 !important; display: flex !important; }
+  html:root .wraith-dashboard .profile-periods button { flex: 1 1 0 !important; min-width: 0 !important; padding: 10px 0 !important; text-align: center; }
+}
 .profile-portfolio-period { display: flex !important; align-items: center; gap: 10px; margin-top: 10px; }
 .profile-portfolio-period strong { font-size: 16px !important; font-weight: 800 !important; }
-/* (the older phone rules fight over padding and borders of these tiles with very specific selectors, so these are written to win: each tile is its own card) */
+/* the tile row under the portfolio value (the older phone rules fight over padding and borders of these tiles with very specific selectors, so these win) */
 html:root .wraith-dashboard .profile-summary-card .profile-stat-grid {
   display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; margin-top: 14px; padding: 0 !important; border: 0 !important; background: transparent !important;
 }
 html:root .wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 @media (max-width: 640px) { html:root .wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
-html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-stat-card { padding: 14px !important; gap: 4px !important; min-width: 0; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; }
+html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-stat-card { padding: 14px !important; gap: 4px !important; min-width: 0; border: 0 !important; border-radius: 14px !important; }
 .profile-summary-card .profile-stat-card > strong { font-size: clamp(15px, 4.6vw, 19px) !important; font-weight: 800 !important; letter-spacing: -.02em !important; white-space: nowrap; }
 .profile-summary-card .profile-stat-card > span, .profile-summary-card .profile-stat-card > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -183,29 +205,36 @@ html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-
 .wb-tier-label { font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 800 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-2) !important; }
 .wb-tier-label b { color: var(--sk-up) !important; }
 .wb-tier-label.t10x b { color: var(--sk-gold) !important; }
-.wb-tier-label i { font-family: var(--font-sans); font-weight: 800; background: rgba(255, 255, 255, .08) !important; border: 1px solid var(--sk-line); color: #fff !important; padding: 1px 8px !important; border-radius: 6px !important; }
-.wb-tier-label::after { background: rgba(255, 255, 255, .08) !important; }
+.wb-tier-label i { font-family: var(--font-sans); font-weight: 800; background: var(--sk-fill-2) !important; border: 0 !important; color: #fff !important; padding: 2px 8px !important; border-radius: 6px !important; }
+.wb-tier-label::after { background: var(--sk-line) !important; }
 .wb-win { padding: 13px 14px !important; }
 .wb-win-rank { font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 800 !important; color: var(--sk-text-3) !important; }
 .wb-win-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
 .wb-win-id span { font-size: 12.5px !important; color: var(--sk-text-3) !important; }
 .wb-win-path b, .wb-win-now b { font-size: 14.5px !important; font-weight: 800 !important; }
-.wb-win-mult { border: 1px solid rgba(61, 220, 151, .4) !important; background: rgba(61, 220, 151, .14) !important; color: #86ffc6 !important; font-size: 15px !important; font-weight: 800 !important; border-radius: 8px !important; padding: 5px 11px !important; }
-.wb-wins-more { border-radius: 12px !important; height: 44px !important; border: 1px solid var(--sk-line-2) !important; background: transparent !important; color: #fff !important; font-size: 14px !important; font-weight: 800 !important; }
+.wb-win-mult { border: 0 !important; background: rgba(61, 220, 151, .16) !important; color: #86ffc6 !important; font-size: 15px !important; font-weight: 800 !important; border-radius: 8px !important; padding: 5px 11px !important; }
+.wb-wins-more { border-radius: 12px !important; height: 44px !important; border: 0 !important; background: var(--sk-fill) !important; color: #fff !important; font-size: 14px !important; font-weight: 800 !important; }
+
+/* on a 360px phone the "called at -> peak" numbers were cut off: a little less padding and type there */
+@media (max-width: 380px) {
+  html:root .wb-wins { padding: 14px 8px !important; }
+  html:root .wb-win { padding: 12px 11px !important; }
+  .wb-win-path b, .wb-win-now b { font-size: 13.5px !important; }
+}
 
 /* the Wins banner: a 14px card like the rest; on a computer it is taller so the character is not lost in a long strip */
-.gs { border-radius: 14px !important; border: 1px solid var(--sk-line); }
+.gs { border-radius: 14px !important; border: 0 !important; box-shadow: none !important; }
 @media (min-width: 900px) { .gs { height: 320px !important; } }
 
 /* ═══ top bar: cash module, deposit, bell ═══ */
-.embedded-wallet-header-chip { border: 1px solid var(--sk-line) !important; border-radius: 12px !important; background: rgba(255, 255, 255, .035) !important; box-shadow: none !important; }
+.embedded-wallet-header-chip { border: 0 !important; border-radius: 12px !important; background: var(--surface-2) !important; box-shadow: none !important; }
 .embedded-wallet-header-value > span { font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 600 !important; color: var(--sk-text-3) !important; }
 .embedded-wallet-header-value > strong { font-family: var(--font-sans) !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
 .embedded-wallet-header-deposit {
   border: 0 !important; border-radius: 9px !important; background: var(--accent) !important; color: #1a0d05 !important; font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: 0 !important; box-shadow: none !important;
 }
-.embedded-wallet-header-withdraw { border: 1px solid var(--sk-line-2) !important; border-radius: 9px !important; background: transparent !important; color: #fff !important; font-family: var(--font-sans) !important; font-weight: 800 !important; }
-.wx-bell { border: 1px solid var(--sk-line) !important; border-radius: 12px !important; background: rgba(255, 255, 255, .035) !important; box-shadow: none !important; }
+.embedded-wallet-header-withdraw { border: 0 !important; border-radius: 9px !important; background: var(--surface-3) !important; color: #fff !important; font-family: var(--font-sans) !important; font-weight: 800 !important; }
+.wx-bell { border: 0 !important; border-radius: 12px !important; background: var(--surface-2) !important; box-shadow: none !important; }
 .wraith-header-avatar { border-radius: 50% !important; }
 
 /* ═══ share studio: the same shapes as the rest of the app (rectangles, not capsules) ═══ */
@@ -217,8 +246,8 @@ html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-
 .shs .shs-bgbtn canvas { border-radius: 8px; }
 .shs .shs-menu { border-radius: 14px; }
 .shs .shs-menu button { border-radius: 10px !important; }
-.shs .shs-share { background: var(--accent); box-shadow: 0 8px 22px rgba(255, 123, 61, .28); }
-.shs .shs-card { border-radius: 22px; box-shadow: 0 30px 70px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08), 0 0 70px rgba(255, 123, 61, .09); }
+.shs .shs-share { background: var(--accent); box-shadow: none; }
+.shs .shs-card { border-radius: 22px; box-shadow: 0 30px 70px rgba(0, 0, 0, .7); }
 
 /* ═══ ranking header: the crowned Wraith sits at the right of the title ═══ */
 .traders-heading { position: relative; }
@@ -228,23 +257,33 @@ html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-
 @media (min-width: 900px) { .traders-mascot { height: 130px; top: -26px; right: 8px; } }
 
 /* ═══ one shape system for the rest of the app ═══
-   Older stylesheets still ask for capsules (999px) on dozens of small things. Everything now follows one rule, smaller thing = smaller corner:
+   Older stylesheets still ask for capsules (999px) on dozens of small things. Everything follows one rule, smaller thing = smaller corner:
    badges 6px, info chips 8px, filter chips and small buttons 10px, floating bars and cards 14px (tab bar 20px). Circles stay for avatars and dots only. */
 html:root :is(.wx-badge, .wx-src, .wx-age-chip, .wx-scan-sig, .sg-tag, .sg-count, .sg-lp, .sg-live, .hc-x, .hc-mc, .pw-kind, .cm-on, .pt-pill, .pt-row .now, .tn-pill, .ttd-badge, .q-badge, .ew-hold, .wb-spot, .wp-badge, .tc-live em, .ts-tags span, .trader-card-open > span:not(:first-child), .wx-tp-record, .sg-rail-row .end b, .ad-nav a b, .ad-steps span, .ws-eyebrow, .ws-chips span, .ws-mock-bar .pill) { border-radius: 6px !important; }
 html:root :is(.fi-token, .wx-tp-item, .wx-tp-tg, .wp-chip, .wx-flow-pill, .ws-chain, .profile-network-pill, .profile-count, .profile-wallet-status, .wraith-dashboard .wx-ca) { border-radius: 8px !important; }
-html:root :is(.hc-filters button, .ss-chips button, .sg-filters button, .pw-tabs button, .dt .dt-tabs button, .sg-rail-tabs button, .wx-cs-drop .wx-cs-tabs button, .hc-btn, .wp-retry, .wx-testbar button, .ad-pill, .wx-notif-prefs button, .wx-cs-paste, .wx-cs-close, .ps-ref, .ps-seg button, .ps-play button, .callout-heart-btn, .callout-action-btn, .fb-post, .wx-chart-latest, .wx-draw-del) { border-radius: 10px !important; }
+html:root :is(.hc-filters button, .ss-chips button, .sg-filters button, .pw-tabs button, .dt .dt-tabs button, .sg-rail-tabs button, .hc-btn, .wp-retry, .wx-testbar button, .ad-pill, .wx-notif-prefs button, .wx-cs-paste, .wx-cs-close, .ps-ref, .ps-seg button, .ps-play button, .callout-heart-btn, .callout-action-btn, .fb-post, .wx-chart-latest, .wx-draw-del) { border-radius: 10px !important; }
 html:root :is(.fb-pill, .wx-tool-hint, .la-chip, .wx-pricebar .la-chip, .ss-search, .ps-seg, .wx-cs-inputrow) { border-radius: 14px !important; }
-html:root .hc-filters button { padding: 7px 14px !important; font-size: 13px !important; font-weight: 700 !important; }
-html:root .hc-filters button.on { border-color: rgba(var(--accent-rgb), .65) !important; background: rgba(var(--accent-rgb), .14) !important; color: var(--accent-text) !important; }
+/* the small badges and chips lose their outlines too: just a tone */
+html:root :is(.wx-badge, .wx-src, .wx-age-chip, .sg-tag, .sg-count, .pw-kind, .wp-chip, .fi-token, .wx-tp-item, .profile-network-pill, .profile-count, .profile-wallet-status, .wx-ca) { border-color: transparent !important; }
+html:root :is(.wx-src, .wx-age-chip, .sg-count, .wx-ca) { background: var(--sk-fill) !important; color: var(--sk-text-2) !important; }
+/* filter chips everywhere (Intel, scanner, search): filled; the chosen one an ember tint */
+html:root :is(.hc-filters button, .ss-chips button, .sg-filters button, .pw-tabs button, .sg-rail-tabs button, .hc-btn, .wx-notif-prefs button) {
+  border: 0 !important; background: var(--sk-fill) !important; color: var(--sk-text-2) !important; box-shadow: none !important;
+}
+html:root :is(.hc-filters button.on, .ss-chips button.on, .sg-filters button.on, .pw-tabs button.on, .sg-rail-tabs button.on, .wx-notif-prefs button.on) { background: rgba(var(--accent-rgb), .18) !important; color: var(--accent-text) !important; }
+html:root .hc-filters button { padding: 8px 14px !important; font-size: 13px !important; font-weight: 700 !important; }
 html:root .hc-x { font-size: 12px !important; padding: 4px 9px !important; }
 html:root .hc-mc { font-size: 12px !important; font-weight: 800 !important; padding: 4px 9px !important; }
-/* cards in every screen: the same corner and the same hairline */
-html:root :is(.sg-card, .wb-stats > div, .wb-card, .profile-stat, .profile-stat-card, .profile-summary-card, .tc, .ts-panel, .wp-head, .wp-block, .callout-card, .hc-card, .la, .mn, .hc-side section, .wx-chart-card, .wx-pricebar, .wx-scanner-layout, .evm-trades, .wx-safety, .wx-panel .la, .wx-panel .mn, .wsk-card, .wsk-cover, .fb-compose) { border-radius: 14px !important; }
-html:root .hc-card { border-color: var(--sk-line) !important; background-color: transparent; }
-html:root .hc-card:hover { border-color: rgba(var(--accent-rgb), .38) !important; }
+html:root .wx-search { background: var(--surface-2) !important; border-color: transparent !important; box-shadow: none !important; }
+html:root .wx-search:focus-within { box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), .6) !important; }
+html:root .wx-btn, html:root .wx-icon-btn { border-color: transparent !important; }
+html:root .la-chip { border: 0 !important; background: rgba(255, 186, 85, .12) !important; }
+html:root .wx-bar > i { box-shadow: none !important; }
+/* the in-card dividers stay, as hairlines between rows */
+html:root .wx-chart-toolbar { border-top: 0 !important; }
 
 /* market cards on a mid-width window: the numbers never split across two lines; the little chart gives up space first */
-.wx-kicker, .wx-tcard-mc strong, .wx-tcard-chg { white-space: nowrap; }
+.wx-tcard-mc strong, .wx-tcard-chg { white-space: nowrap; }
 .wx-tcard-mc .wx-spark { flex: 0 1 72px !important; min-width: 0 !important; }
 .wx-tcard-mc { gap: 6px; }
 .wx-badge { white-space: nowrap; }
@@ -258,11 +297,57 @@ html:root :is(.mc-sec > header strong, .sg-rail-title, .sg-title, .wd-label, .ew
 html:root .hc-side h3 { font-size: 13.5px !important; color: var(--sk-text-2) !important; margin-bottom: 10px !important; }
 html:root .hc-side h3 svg { width: 15px; height: 15px; }
 
-/* bottom tab bar (phones): a rounded bar, not a capsule; the sliding highlight is the same shape as the buttons */
+/* ═══ chart: a plain surface (the glows are gone). While it loads, the loading scene and the legend row above it are one dark block:
+   before, the legend row showed the dotted glow backdrop above a solid black loader, which looked like the loader did not cover everything ═══ */
+html:root .wx-chartroot { background: radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1.3px) 0 0 / 22px 22px, var(--bg) !important; }
+html:root .wx-chartroot:has(.wx-cskel) { background: var(--bg) !important; }
+html:root .wx-chartroot:has(.wx-cskel) .wx-legend { visibility: hidden; }
+html:root .wx-cskel { border-radius: 0 !important; }
+
+/* ═══ search: the same flat language (tabs underlined, quiet labels, a filled field) ═══ */
+html:root .wx-cs-sec { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 6px; font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: var(--sk-text-2); letter-spacing: 0; text-transform: none; }
+html:root .wx-cs-sec button { background: transparent; border: 0; color: var(--sk-text-3); font: 600 13px var(--font-sans); letter-spacing: 0; cursor: pointer; padding: 4px 0; }
+html:root .wx-cs-drop .wx-cs-tabs { display: flex; gap: 0 !important; padding: 8px 12px 0 !important; border-bottom: 1px solid var(--sk-line); }
+html:root .wx-cs-drop .wx-search-group-label, html:root .wx-cs-rq-head span, html:root .wx-cs-rq-head { font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-2) !important; }
+html:root .wx-cs-inputrow { border: 0 !important; background: var(--surface-2) !important; box-shadow: none !important; }
+html:root .wx-cs-paste { border: 0 !important; background: var(--surface-3) !important; }
+html:root .wx-cs-rq-ico { border: 0 !important; background: var(--surface-2); }
+@keyframes wx-cs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wx-cs-out { from { opacity: 1; } to { opacity: 0; transform: translateY(6px); } }
+@keyframes wx-cs-row { from { clip-path: inset(0 0 0 100% round 20px); opacity: .4; } to { clip-path: inset(0 0 0 0 round 20px); opacity: 1; } }
 @media (max-width: 767px) {
-  html:root .wx-tabbar-pill { border-radius: 20px !important; }
-  html:root .wx-tabbar-pill a { border-radius: 15px !important; }
-  html:root .wx-tab-ind { border-radius: 15px !important; background: rgba(var(--accent-rgb), .16) !important; box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .3); }
-  html:root .wx-tabbar-pill a.on { background: rgba(var(--accent-rgb), .16); }
-  html:root .wx-tabbar-search { border-radius: 20px !important; }
+  html:root .wx-cs-drop { animation: wx-cs-in .24s cubic-bezier(.2, .8, .2, 1) backwards; }
+  html:root .wx-cs-drop.is-closing { animation: wx-cs-out .17s ease-in forwards; pointer-events: none; }
+  /* the field takes the place of the tab bar (same height, same bottom offset, same corner); the round button at the right stays where it was and becomes the X */
+  html:root .wx-cs-inputrow {
+    position: fixed !important; order: 0 !important; left: 12px; right: calc(12px + 58px + 10px); bottom: calc(10px + var(--sai-bottom, 0px)); margin: 0 !important; height: 58px; box-sizing: border-box;
+    padding: 0 10px 0 16px !important; border-radius: 20px !important; background: var(--surface-2) !important; z-index: 30; animation: wx-cs-row .3s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  body:not(:has(.wx-tabbar)) .wx-cs-inputrow { right: 12px; }
+  body:has(.wx-tabbar) .wx-cs-close { display: none !important; }
+  html:root .wx-cs-drop::after { height: calc(96px + var(--sai-bottom, 0px)) !important; }
+  html:root .wx-cs-drop .wx-cs-tabs { padding-top: max(10px, var(--sai-top, 0px)) !important; }
+  html:root .wx-cs-drop .wx-cs-tabs button { padding: 12px 16px !important; font-size: 15px !important; }
 }
+
+/* ═══ bottom tab bar (phones): a rounded bar, not a capsule; the search button turns into the X (and back) in the same place ═══ */
+@media (max-width: 767px) {
+  html:root .wx-tabbar-pill { border-radius: 20px !important; transition: opacity .22s ease, transform .3s cubic-bezier(.2, .8, .2, 1); }
+  html:root .wx-tabbar-pill a { border-radius: 15px !important; }
+  html:root .wx-tab-ind { border-radius: 15px !important; background: rgba(var(--accent-rgb), .18) !important; box-shadow: none !important; }
+  html:root .wx-tabbar-pill a.on { background: rgba(var(--accent-rgb), .18); }
+  html:root .wx-tabbar-search { border-radius: 20px !important; border: 0 !important; background: rgba(34, 34, 38, .94) !important; box-shadow: none; transition: background .25s ease; }
+  html:root .wx-tabbar.search-open { z-index: 100001; }
+  html:root .wx-tabbar.search-open .wx-tabbar-pill { opacity: 0; transform: translateY(14px) scale(.96); pointer-events: none; }
+  html:root .wx-tabbar-search.is-open { background: var(--surface-3) !important; }
+}
+.wx-sicon { overflow: visible; transition: transform .38s cubic-bezier(.3, 1.2, .4, 1); }
+.wx-sicon .si-lens { transform-origin: 11px 11px; transition: transform .3s cubic-bezier(.3, 1.2, .4, 1), opacity .2s ease; }
+/* the handle of the magnifier is the first stroke of the X: it grows from its short length to the whole diagonal; the second stroke draws in over it */
+.wx-sicon .si-a { stroke-dasharray: 6.2 100; stroke-dashoffset: -19.3; transition: stroke-dasharray .34s cubic-bezier(.3, 1, .4, 1), stroke-dashoffset .34s cubic-bezier(.3, 1, .4, 1); }
+.wx-sicon .si-b { stroke-dasharray: 25.5 100; stroke-dashoffset: 26; opacity: 0; transition: stroke-dashoffset .3s cubic-bezier(.3, 1, .4, 1) .06s, opacity 0s linear .36s; }
+.is-open .wx-sicon { transform: rotate(90deg); }
+.is-open .wx-sicon .si-lens { transform: scale(.15); opacity: 0; }
+.is-open .wx-sicon .si-a { stroke-dasharray: 25.5 100; stroke-dashoffset: 0; }
+.is-open .wx-sicon .si-b { stroke-dashoffset: 0; opacity: 1; transition: stroke-dashoffset .3s cubic-bezier(.3, 1, .4, 1) .06s, opacity 0s; }
+@media (prefers-reduced-motion: reduce) { .wx-sicon, .wx-sicon * { transition: none !important; } html:root .wx-cs-drop, html:root .wx-cs-inputrow { animation: none !important; } }
