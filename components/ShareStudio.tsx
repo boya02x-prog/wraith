@@ -222,7 +222,7 @@ function paintBg(g: CanvasRenderingContext2D, w: number, h: number, bg: string, 
 
 // ───────────────────────── the cards ─────────────────────────
 type CardData = {
-  name: string; username: string | null; bio: string; value: number | null; followers: number; following: number;
+  name: string; username: string | null; bio: string; value: number | null; bigText?: string; bigCaption?: string; followers: number; following: number;
   total: number; realized: number; un: number; volume: number; pct: number | null; period: string;
   showAvatar: boolean; showStats: boolean; ref: string; im: Imgs; fmt: (n: number) => string; sym: string;
 };
@@ -304,14 +304,19 @@ function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg:
   g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 26;
   if (kind === "bio") {
     g.fillStyle = "#fff";
-    const txt = d.value !== null ? whole(d.value, d.fmt) : "—";
+    const txt = d.bigText ?? (d.value !== null ? whole(d.value, d.fmt) : "—");
     fitFont(g, txt, W - 140, 250); g.fillText(txt, cx, py + 330);
     g.restore(); g.save();
+    let bioY = py + 440;
+    if (d.bigCaption) { // someone else's card: the headline is a stat (win rate), so say what it is
+      g.fillStyle = "rgba(255,255,255,.6)"; g.font = `700 44px ${FONT}`; g.fillText(d.bigCaption, cx, py + 410, W - 160);
+      bioY = py + 520;
+    }
     g.fillStyle = "rgba(255,255,255,.68)"; g.font = `600 50px ${FONT}`;
     const lines = wrapLines(g, d.bio || "Trading on Wraith", W - 200, 2);
-    lines.forEach((l, i) => g.fillText(l, cx, py + 440 + i * 68, W - 160));
+    lines.forEach((l, i) => g.fillText(l, cx, bioY + i * 68, W - 160));
     g.restore();
-    if (d.showStats) cols([[String(d.following), "FOLLOWING"], [String(d.followers), "FOLLOWERS"]], py + 700);
+    if (d.showStats) cols([[d.following.toLocaleString("en-US"), "FOLLOWING"], [d.followers.toLocaleString("en-US"), "FOLLOWERS"]], py + 700);
   } else {
     const mood = d.total > 0 ? "up" : d.total < 0 ? "down" : "flat";
     const rgb = mood === "up" ? "55,213,138" : mood === "down" ? "255,93,77" : "255,255,255";
@@ -371,12 +376,16 @@ function Thumb({ id, im }: { id: string; im: Imgs }) {
 
 // ───────────────────────── the studio ─────────────────────────
 export default function ShareStudio({
-  name, username, avatar, bio, value, trades, fmt, followers, following, unrealized, volumeItems, onClose,
+  name, username, avatar, bio, value, bioBig, shareText, trades, fmt, followers, following, unrealized, volumeItems, onClose,
 }: {
   name: string;
   username: string | null;
   avatar: string;
   bio?: string;
+  /** Someone else's card: their wallet is private, so the Bio card's headline is this stat (e.g. win rate) instead of a portfolio value. */
+  bioBig?: { text: string; caption?: string };
+  /** What goes with the picture when it is shared; your invite code is added. Default is the "my card" wording. */
+  shareText?: string;
   value: number | null; // portfolio value now, display currency
   trades: ShareTrade[]; // realized profit or loss of each closed trade
   fmt: (n: number) => string; // money formatter (already in the display currency)
@@ -467,16 +476,17 @@ export default function ShareStudio({
     const realized = trades.filter((t) => t.ts >= since).reduce((a, t) => a + t.usd, 0);
     const volume = (volumeItems ?? []).filter((t) => t.ts >= since).reduce((a, t) => a + t.usd, 0);
     const un = unrealized ?? 0;
-    const start = value !== null ? value - realized - un : null;
+    // % of what the account was worth at the start of the period; with no wallet value (someone else's card) it is the return on what they traded
+    const start = value !== null ? value - realized - un : volume;
     return { realized, un, volume, total: realized + un, pct: start && start > 0 ? ((realized + un) / start) * 100 : null };
   }, [trades, volumeItems, unrealized, value, rangeInfo]);
   const sym = useMemo(() => fmt(0).replace(/[0-9.,\s]/g, "") || "$", [fmt]);
 
   const data: CardData = useMemo(() => ({
-    name, username, bio: bio ?? "", value, followers: followers ?? 0, following: following ?? 0,
+    name, username, bio: bio ?? "", value, bigText: bioBig?.text, bigCaption: bioBig?.caption, followers: followers ?? 0, following: following ?? 0,
     total: stats.total, realized: stats.realized, un: stats.un, volume: stats.volume, pct: stats.pct, period: rangeInfo.label,
     showAvatar, showStats, ref, im, fmt, sym,
-  }), [name, username, bio, value, followers, following, stats, rangeInfo, showAvatar, showStats, ref, im, fmt, sym]);
+  }), [name, username, bio, value, bioBig, followers, following, stats, rangeInfo, showAvatar, showStats, ref, im, fmt, sym]);
 
   // build the background once per change, then draw the cards (and the adjust preview) on top of it
   useEffect(() => {
@@ -563,7 +573,8 @@ export default function ShareStudio({
     if (!blob) { flash("Could not make the image"); return; }
     const file = new File([blob], `wraith-${idx === 0 ? "bio" : "profit"}.png`, { type: "image/png" });
     try {
-      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text: ref ? `Trade with me on Wraith. Code ${ref}` : "My Wraith card" }); return; }
+      const text = shareText ? (ref ? `${shareText} Join with my code ${ref}.` : shareText) : (ref ? `Trade with me on Wraith. Code ${ref}` : "My Wraith card");
+      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
     } catch { return; /* the share sheet was closed */ }
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
     window.setTimeout(() => URL.revokeObjectURL(a.href), 4000);

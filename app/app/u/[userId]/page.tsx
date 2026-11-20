@@ -11,6 +11,9 @@ import FollowListModal from "@/components/FollowListModal";
 import PnlChart from "@/components/PnlChart";
 import TraderStats from "@/components/TraderStats";
 import { useCash } from "@/lib/cash";
+import { Link2 } from "lucide-react";
+import ShareStudio from "@/components/ShareStudio";
+import { traderShareData } from "@/lib/traderShare";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import TierGlyph from "@/components/TierGlyph";
 import { GLYPH_PALETTE } from "@/lib/tierGlyph";
@@ -85,7 +88,8 @@ export default function PublicTraderPage() {
   const [copied, setCopied] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(false);
   const [followModalTab, setFollowModalTab] = useState<"followers" | "following">("followers");
-  const { money } = useCash();
+  const { money, perSol, fmt: cashFmt } = useCash();
+  const [shareOpen, setShareOpen] = useState(false);
   const router = useRouter();
   // your own public page is just your profile: go there instead of showing yourself as a stranger with a Follow button
   useEffect(() => {
@@ -138,6 +142,19 @@ export default function PublicTraderPage() {
     return new Date(oldest).toLocaleDateString("en-US", { month: "short", year: "numeric" });
   }, [data]);
 
+  // the share card for this trader (their wallet is private, so it is built from their public trades); needs the SOL price to turn sizes into cash
+  const share = useMemo(() => (data && perSol ? traderShareData(data.closedTrades, data.openPositions, perSol) : null), [data, perSol]);
+  // Android app: a screenshot of this profile pops the card up on its own (MainActivity.java sends the event, like Fomo)
+  useEffect(() => {
+    if (!share) return;
+    const open = () => {
+      try { localStorage.setItem("wraith_shot_ok", "1"); } catch { /* blocked */ } // this phone reports screenshots: no need to ask for photo access
+      setShareOpen(true);
+    };
+    window.addEventListener("wraith-screenshot", open);
+    return () => window.removeEventListener("wraith-screenshot", open);
+  }, [share]);
+
   const trader = data?.trader;
 
   if (loading) {
@@ -170,6 +187,24 @@ export default function PublicTraderPage() {
   return (
     <main className="wraith-dashboard profile-page">
       <Header />
+      {shareOpen && share && (
+        <ShareStudio
+          name={trader.displayName}
+          username={trader.username}
+          avatar={trader.avatarDataUrl || defaultAvatar(userId)}
+          bio={trader.bio}
+          value={null}
+          bioBig={share.bioBig}
+          shareText={`Check out ${trader.displayName} on Wraith.`}
+          trades={share.trades}
+          volumeItems={share.volumeItems}
+          unrealized={share.unrealized}
+          fmt={cashFmt}
+          followers={trader.followerCount}
+          following={trader.followingCount}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       <div className="pub-shell">
 
         {/* ── Hero (Fomo-style) ── */}
@@ -251,8 +286,18 @@ export default function PublicTraderPage() {
                 {copied ? (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 ) : (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                  <Link2 size={15} strokeWidth={2.2} />
                 )}
+              </button>
+              <button
+                type="button"
+                className="pub-icon-btn"
+                title={share ? "Share card" : "Share card (loading prices)"}
+                aria-label="Share card"
+                disabled={!share}
+                onClick={() => setShareOpen(true)}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
               </button>
               <TraderFollowButton
                 traderId={trader.userId}
