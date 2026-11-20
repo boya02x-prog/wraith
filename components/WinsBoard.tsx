@@ -32,6 +32,7 @@ const TIERS: { key: string; label: string; min: number; max: number }[] = [
   { key: "2x", label: "2x to 3x", min: 2, max: 3 },
 ];
 
+const CALLS_FIRST = 24;
 const mult = (c: LoggedCall) => (c.spottedMcap > 0 ? c.lastMcap / c.spottedMcap : 1);
 const peakMult = (c: LoggedCall) => (c.spottedMcap > 0 ? Math.max(c.peakMcap, c.lastMcap) / c.spottedMcap : 1);
 
@@ -47,6 +48,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
   const [filter, setFilter] = useState<Filter>("all");
   const [checking, setChecking] = useState(false);
   const [showAllWins, setShowAllWins] = useState(false);
+  const [showAllCalls, setShowAllCalls] = useState(false); // the list of every call starts with the first 24 cards: building all of them at once made the screen slow to open
 
   const refresh = useCallback(async () => {
     // 1) Shared server record: identical for every user, refreshed server-side.
@@ -216,8 +218,9 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
           <span>{calls.length ? "Try another filter." : "Open the Scanner. Strong signals are saved here automatically and tracked from that moment."}</span>
         </div>
       ) : (
+        <>
         <div className="wb-grid">
-          {shown.map((c) => {
+          {(showAllCalls ? shown : shown.slice(0, CALLS_FIRST)).map((c) => {
             const m = mult(c);
             const pk = peakMult(c);
             const up = m >= 1;
@@ -242,6 +245,10 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
             );
           })}
         </div>
+        {shown.length > CALLS_FIRST && (
+          <button type="button" className="wb-wins-more" onClick={() => setShowAllCalls((v) => !v)}>{showAllCalls ? "Show fewer" : `Show all ${shown.length} calls`}</button>
+        )}
+        </>
       )}
     </section>
   );

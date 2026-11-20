@@ -1,7 +1,7 @@
 "use client";
 
 import StatusBar from "@/components/StatusBar";
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { cacheTokenNav } from "@/lib/tokenNav";
@@ -40,9 +40,25 @@ export interface MemeTrend {
 
 type View = "market" | "scanner" | "wins" | "intel";
 
+function savedView(): View {
+  try {
+    const v = localStorage.getItem("wraith_home_view");
+    if (v === "market" || v === "scanner" || v === "wins" || v === "intel") return v;
+    if (v === "callouts") return "intel"; // old saved value from before the rename
+  } catch {
+    /* storage unavailable */
+  }
+  return "market";
+}
+const noSubscribe = () => () => undefined;
+
 export default function Home() {
   const router = useRouter();
-  const [view, setView] = useState<View>("market");
+  // Arriving from another screen (tapping Wins on the Traders screen, say) the saved section is read before the first paint, so Market never flashes
+  // up first. While the page is first built on the server and hydrated, the answer has to be Market (that is what the server drew); the effect below
+  // then moves to the saved one.
+  const clientRender = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const [view, setView] = useState<View>(() => (clientRender ? savedView() : "market"));
   const [selected, setSelected] = useState<MemeTrend | null>(null);
 
   useEffect(() => {
@@ -67,14 +83,15 @@ export default function Home() {
   useEffect(() => {
     const h = (e: Event) => {
       const v = (e as CustomEvent).detail;
-      if (v === "market" || v === "scanner" || v === "wins" || v === "intel") setView(v);
+      // a transition: the tab bar has already moved its highlight, and the (heavy) new section is built in small slices, so the tap never freezes the phone
+      if (v === "market" || v === "scanner" || v === "wins" || v === "intel") startTransition(() => setView(v));
     };
     window.addEventListener("wraith:view", h);
     return () => window.removeEventListener("wraith:view", h);
   }, []);
 
   const changeView = useCallback((next: View) => {
-    setView(next);
+    startTransition(() => setView(next));
     try {
       localStorage.setItem("wraith_home_view", next);
     } catch {

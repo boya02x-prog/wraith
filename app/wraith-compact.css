@@ -620,9 +620,16 @@ button.wp-back { background: transparent; border: 0; padding: 4px 0; cursor: poi
 /* the screen is animated through ONE wrapper (.wx-route, in AppShell) that stays put while the page inside it changes. Animating the page itself made a token
    screen slide in twice: once as its loading skeleton, and again when the real page replaced the skeleton. */
 body.wx-enter .wx-route { animation: wx-page-in .18s ease-out both; }
-.wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: wx-page-in .22s ease-out both; }
+/* ONE entrance for every tab screen (Market, Scanner, Wins, Intel, Traders): the whole screen eases in, once, the same way, whichever tab you come from.
+   Nothing inside a tab screen runs its own entrance on top (that is what made every tab feel different). */
+@keyframes wx-tab-in { from { opacity: .4; transform: translate3d(0, 10px, 0); } to { opacity: 1; transform: none; } }
+.wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll, .traders-shell { animation: wx-tab-in .24s cubic-bezier(.22, 1, .36, 1) both; }
+.wx-market-layout :is(.wx-table, .wx-side-list, .wx-side-scroll),
+.traders-shell :is(.trader-card:not(.trader-card-skeleton), .trader-tabs, .traders-heading),
+.traders-grid > :not(.trader-card-skeleton),
+.hc-scroll .hc-card { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  body.wx-enter .wx-route, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: none !important; }
+  body.wx-enter .wx-route, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll, .traders-shell { animation: none !important; }
 }
 
 /* ───────────────────────────────────────────────────────────────────────

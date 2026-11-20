@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { markTabTap } from "@/lib/tabNav";
 
 /**
  * App-style floating bottom navigation for phones (≤767px, CSS-controlled).
@@ -134,13 +135,17 @@ export default function MobileTabBar() {
 
   const hidden = path.startsWith("/app/token");
   const onHome = path === "/app";
-  const activeKey = onHome
+  // The tab you just tapped is highlighted at once, also when it is another screen (Traders) that has to load first; the real state takes over
+  // as soon as the screen or the section changes.
+  const [tap, setTap] = useState<{ key: string; path: string; view: string } | null>(null);
+  const tapped = tap && tap.path === path && tap.view === view ? tap.key : null; // only while nothing has changed since the tap
+  const activeKey = tapped ?? (onHome
     ? view
     : path.startsWith("/app/traders")
       ? "traders"
       : path.startsWith("/app/profile")
         ? "profile"
-        : "";
+        : "");
 
   // the highlight is one pill that slides to the active icon instead of jumping
   const pillRef = useRef<HTMLElement | null>(null);
@@ -161,6 +166,8 @@ export default function MobileTabBar() {
   if (hidden) return null;
 
   const pick = (it: Item) => {
+    markTabTap(it.href); // RouteFade: this is a tab switch, so the screen eases in like every other tab (no sideways slide)
+    setTap({ key: it.key, path, view: it.view ?? view }); // the section it is about to show (for a screen of its own, the one on now)
     if (!it.view) return;
     setView(it.view); // move the highlight at once, before the screen has switched
     try {
