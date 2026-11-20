@@ -4,6 +4,7 @@
 // Auth: Vercel cron sends "Authorization: Bearer $CRON_SECRET"; external cron can use ?key=$CRON_SECRET.
 // Free option if your host only runs daily crons: ping this URL every minute from cron-job.org.
 import { labStep } from "@/lib/autoLab";
+import { isLiveServer } from "@/lib/liveServer";
 import { isSitePrivate } from "@/lib/siteAccess";
 import { after, NextRequest, NextResponse } from "next/server";
 import { callGet } from "@/lib/internalCall";
@@ -89,6 +90,11 @@ export async function GET(req: NextRequest) {
     }
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     return NextResponse.json({ gid, thread, signals: process.env.TELEGRAM_GROUP_SIGNALS, telegram: await r.json() });
+  }
+  if (!isLiveServer() && req.nextUrl.searchParams.get("force") !== "1") {
+    // A dev server shares the database with the live site (including the "ran recently" slot below) but has no phone-push key. Running the job here
+    // starved the live site's runs and pushed to the browser instead of the phone. Only the deployed site runs it; add &force=1 to run it here on purpose.
+    return NextResponse.json({ ok: true, skipped: true, reason: "not the live server" });
   }
   if (!process.env.TELEGRAM_BOT_TOKEN) {
     // No Telegram bot configured: phone push notifications still run.

@@ -913,8 +913,9 @@ body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s
 .wx-yzoom { display: inline-flex; gap: 4px; }
 .wx-yzoom .wx-icon-btn { width: 30px; font-size: 16px; font-weight: 800; line-height: 1; }
 
-/* price-axis drag strip (right edge of the chart): the only part that captures a vertical finger drag */
-.wx-axis-grip { position: absolute; z-index: 4; top: 0; right: 26px; bottom: 28px; width: 46px; touch-action: none; cursor: ns-resize; }
+/* price-axis drag strip (right edge of the chart): the only part that captures a vertical finger drag. It covers the WHOLE axis, flush
+   with the right edge (--wx-axis-w is the measured axis width, set by TokenChart); anything left uncovered scrolls the page instead. */
+.wx-axis-grip { position: absolute; z-index: 4; top: 0; right: 0; bottom: 28px; width: calc(var(--wx-axis-w, 68px) + 4px); min-width: 60px; touch-action: none; cursor: ns-resize; overscroll-behavior: contain; }
 .hl-bar { display: none !important; }
 .hl-row { padding-top: 12px; padding-bottom: 12px; }
 

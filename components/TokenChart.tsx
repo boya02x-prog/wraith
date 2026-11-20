@@ -366,10 +366,21 @@ export default function TokenChart({
       setAway((prev) => (prev === away ? prev : away));
     };
     chart.timeScale().subscribeVisibleLogicalRangeChange(onRange);
+    // Keep the price-axis drag strip exactly as wide as the axis (it grows with the labels) and flush with the right edge, so a finger
+    // anywhere on the axis stretches the candles and never scrolls the page. The strip used to stop 26px short of the edge.
+    const syncAxis = () => {
+      try {
+        const w = chart.priceScale("right").width();
+        if (w > 0) host.parentElement?.style.setProperty("--wx-axis-w", `${Math.round(w)}px`);
+      } catch { /* chart gone */ }
+    };
+    chart.timeScale().subscribeSizeChange(syncAxis);
+    syncAxis();
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
+      try { chart.timeScale().unsubscribeSizeChange(syncAxis); } catch { /* chart gone */ }
       chart.unsubscribeCrosshairMove(onMove);
       chartRef.current = null;
       mainRef.current = null;
