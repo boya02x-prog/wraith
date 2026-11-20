@@ -22,6 +22,7 @@ import { Lock as LockIcon,
   CircleDollarSign,
   EyeOff,
   Fingerprint,
+  FlaskConical,
   Gift,
   KeyRound,
   LayoutDashboard,
@@ -35,6 +36,7 @@ import { Lock as LockIcon,
   X,
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAutoAccess } from "@/hooks/useAutoAccess";
 import { useLinkWithPasskey, useMfaEnrollment, usePrivy, useUser as usePrivyUser } from "@privy-io/react-auth";
 import StyledSelect from "./StyledSelect";
 import EmbeddedWalletBalanceChip from "./EmbeddedWalletBalanceChip";
@@ -3055,6 +3057,7 @@ export default function Header({ onSelectMeme }: HeaderProps) {
   const { data: session, status: sessionStatus, logout } = useWraithSession();
   const { tier, canUse } = useWraithTier();
   const { settings: launchCfg } = useLaunchSettings();
+  const autoAllowed = useAutoAccess(session?.user?.id);
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   // avatarReady = we know what the account's saved photo is (from this browser's last visit or from the server).
   // Until then the header shows a neutral placeholder instead of flashing the default ghost.
@@ -3563,6 +3566,14 @@ export default function Header({ onSelectMeme }: HeaderProps) {
                   icon={Gift}
                   label="Quests & airdrop"
                   href="/app/quests"
+                  onClick={() => setUserMenuOpen(false)}
+                />
+              )}
+              {autoAllowed && (
+                <ProfileMenuItem
+                  icon={FlaskConical}
+                  label="Auto-trader (beta)"
+                  href="/app/auto"
                   onClick={() => setUserMenuOpen(false)}
                 />
               )}

@@ -10,6 +10,7 @@ import Header from "@/components/HeaderSlot";
 import DateTimeField from "@/components/DateTimeField";
 import AdminGasWallets from "@/components/AdminGasWallets";
 import AdminLab from "@/components/AdminLab";
+import AdminAutoAccess from "@/components/AdminAutoAccess";
 import AdminChecklist from "@/components/AdminChecklist";
 import { refreshLaunchSettings } from "@/hooks/useLaunchSettings";
 import { LAUNCH_ITEMS, MINT_RE, resolveSettings, type LaunchSettings, type RoadmapItem } from "@/lib/launchSettings";
@@ -259,6 +260,8 @@ export default function AdminPage() {
       <AdminGasWallets />
 
       <AdminLab />
+
+      <AdminAutoAccess />
 
       <section className="q-card ad-card" id="launch">
         <h2><Rocket size={16} /> Launch OMEN</h2>
