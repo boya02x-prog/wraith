@@ -6,7 +6,8 @@
 //   TURNSTILE_SECRET_KEY             that widget's secret key
 // A visitor passes the check once; the server then hands out a signed cookie ("this browser passed at time T") that lasts HUMAN_HOURS. The
 // cookie is HMAC-signed with a key only the server has (same idea as lib/appSession.ts), so it cannot be forged or edited.
-// The Android app is not asked (it is Wraith's own client, and Google sign-in there hops between the app and Chrome).
+// Only desktop browsers are asked. Phones (Android and iPhone browsers) and the Android app are never shown it: a phone sees the "download the
+// app" screen instead, and Google sign-in in the app hops between the app and Chrome, which the check would break.
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -17,6 +18,9 @@ const PREFIX = "h1.";
 export const turnstileSiteKey = () => process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || process.env.TURNSTILE_SITE_KEY || "";
 const turnstileSecret = () => process.env.TURNSTILE_SECRET_KEY || "";
 export const humanGateOn = () => Boolean(turnstileSiteKey() && turnstileSecret());
+
+/** A phone, a tablet or the Wraith app: these are never asked (see above). The check is for desktop browsers only. */
+export const skipHumanCheck = (userAgent: string | null | undefined) => /Android|iPhone|iPad|iPod|Mobile|WraithApp|Capacitor|CriOS|FxiOS/i.test(userAgent ?? "");
 
 function secret(): string | null {
   return process.env.WRAITH_SESSION_SECRET || process.env.PRIVY_APP_SECRET || null;

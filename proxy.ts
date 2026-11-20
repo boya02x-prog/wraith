@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { isOwnSessionFormat, readSession } from "@/lib/appSession";
 import { isSitePrivate } from "@/lib/siteAccess";
-import { HUMAN_COOKIE, humanGateOn, readHuman } from "@/lib/humanGate";
+import { HUMAN_COOKIE, humanGateOn, readHuman, skipHumanCheck } from "@/lib/humanGate";
 
 const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms", "/docs", "/verify"]);
 const PUBLIC_PAGE_PREFIXES = ["/docs/"]; // the documentation: one page per topic, readable without an account
@@ -49,8 +49,8 @@ async function route(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // "Checking that you are human" before the app opens (Cloudflare Turnstile). Off until the two keys exist (lib/humanGate.ts); the Android app is not asked.
-  if ((pathname === "/app" || pathname.startsWith("/app/")) && request.method === "GET" && humanGateOn() && !/WraithApp/.test(request.headers.get("user-agent") ?? "")) {
+  // "Checking that you are human" before the app opens (Cloudflare Turnstile). Off until the two keys exist (lib/humanGate.ts); desktop browsers only.
+  if ((pathname === "/app" || pathname.startsWith("/app/")) && request.method === "GET" && humanGateOn() && !skipHumanCheck(request.headers.get("user-agent"))) {
     if (!(await readHuman(request.cookies.get(HUMAN_COOKIE)?.value))) {
       const to = new URL("/verify", request.url);
       to.searchParams.set("next", `${pathname}${search}`);

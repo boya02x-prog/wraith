@@ -141,7 +141,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const rim = new THREE.DirectionalLight(0xff6a2a, 2.6); rim.position.set(-4, 3, -3); scene.add(rim);
   const fill = new THREE.DirectionalLight(0x86a6ff, 0.55); fill.position.set(-4, 1, 4); scene.add(fill);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04, 0.1, 100, { size: 128 }).texture;
   pmrem.dispose();
   scene.environment = envTex; scene.environmentIntensity = 0.42;
   own(envTex);

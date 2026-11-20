@@ -39,7 +39,10 @@ export function warmWraith3D() {
 }
 
 type Opts = { pose: Pose; podium: 0 | 3; confetti: number; spotlight: boolean; zoom: number; shiftX: number };
-type Shared = { canvas: HTMLCanvasElement; renderer: WebGLRenderer; sc: WraithScene; lost: boolean };
+type Shared = { canvas: HTMLCanvasElement; renderer: WebGLRenderer; sc: WraithScene; lost: boolean; dpr?: number };
+// A phone is where the 3D was laggy: a phone-sized screen or a touch screen gets a lower resolution ceiling and 30 frames a second (a steady 30
+// looks smoother than a 60 that keeps dropping), and every device lowers its resolution by itself if it cannot keep up (see the loop below).
+const isPhone = () => { try { return window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 700; } catch { return false; } };
 const kept = new Map<string, Shared>();
 const building = new Map<string, Promise<Shared | null>>();
 
@@ -107,15 +110,18 @@ export default function Wraith3D({
     const wasKept = kept.has(key);
     if (wasKept) setWarm(true);
     void (async () => {
-      const sh = await build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, 380);
+      const sh = await build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 650 : 380);
       const host = wrap.current;
       if (!alive || !sh || !host) return;
       const { canvas, renderer, sc } = sh;
       host.appendChild(canvas);
+      const phone = isPhone();
+      const maxDpr = phone ? 1.25 : 1.75;
+      let dpr = Math.min(sh.dpr ?? window.devicePixelRatio ?? 1, maxDpr, window.devicePixelRatio || 1);
       const fit = () => {
         const r = host.getBoundingClientRect();
         if (r.width < 4 || r.height < 4) return;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setPixelRatio(dpr);
         renderer.setSize(r.width, r.height, false);
         sc.resize(r.width, r.height);
       };
@@ -134,14 +140,22 @@ export default function Wraith3D({
         host.addEventListener("pointerup", rest);
         host.addEventListener("pointerdown", tap);
       }
-      let last = performance.now(), shown = false;
+      let last = performance.now(), shown = false, slow = 0, since = performance.now();
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
         if (!visible || document.hidden) { last = now; return; }
-        const dt = Math.min(0.05, (now - last) / 1000); last = now;
+        if (phone && now - last < 30) return; // 30 frames a second on a phone
+        const frame = now - last;
+        const dt = Math.min(0.05, frame / 1000); last = now;
         sc.update(now / 1000, dt, ptr);
         renderer.render(sc.scene, sc.camera);
         if (!shown) { shown = true; setLive(true); }
+        // can this device keep up? If it keeps missing the frame budget, draw at a lower resolution (a quarter step at a time, never below 0.75)
+        if (frame > (phone ? 46 : 26)) slow++;
+        if (now - since > 1500) {
+          if (slow > 14 && dpr > 0.75) { dpr = Math.max(0.75, +(dpr - 0.25).toFixed(2)); sh.dpr = dpr; fit(); }
+          slow = 0; since = now;
+        }
       };
       raf = requestAnimationFrame(loop);
       stop = () => {

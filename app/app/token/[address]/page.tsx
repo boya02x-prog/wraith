@@ -186,12 +186,21 @@ export default function TokenPage() {
   );
 
   if (isEvm) {
+    // the phone layout (bottom bar + Buy / Sell sheet) is only known after mount: show the page skeleton until then instead of the wide layout
+    if (isMobile === null) {
+      return (
+        <div className="wraith-dashboard wraith-token-page wx-page">
+          <Header onSelectMeme={go} />
+          <TokenPageSkeleton address={address} />
+        </div>
+      );
+    }
     return (
       <ToastProvider>
         <div className="wraith-dashboard wraith-token-page wx-page">
           <Header onSelectMeme={go} />
-          <EvmTokenView address={address} sidebar={sidebar} />
-          <StatusBar />
+          <EvmTokenView address={address} sidebar={sidebar} mobile={isMobile} />
+          {!isMobile && <StatusBar />}
         </div>
       </ToastProvider>
     );

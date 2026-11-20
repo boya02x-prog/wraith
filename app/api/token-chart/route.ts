@@ -69,7 +69,7 @@ const ONCHAIN_BUDGET_MS = 12_000;
 
 const cache = new Map<string, { candles: Candle[]; source: string; ts: number }>();
 const lastGood = new Map<string, { candles: Candle[]; source: string; ts: number }>();
-const inflight = new Map<string, Promise<{ candles: Candle[]; source: string } | null>>();
+const inflight = new Map<string, Promise<{ candles: Candle[]; source: string; replace?: boolean } | null>>();
 // After every provider failed for a token, answer "nothing yet" for a short while instead of hitting them all again on the
 // next poll (the chart polls every few seconds, which is what used up the GeckoTerminal budget).
 const EMPTY_TTL_MS = 20_000;
@@ -268,15 +268,16 @@ async function deriveFromFiner(mint: string, tfKey: string, sec: number): Promis
 }
 
 // ── cleaning ────────────────────────────────────────────────────────────
-function clean(rows: Candle[], sec: number): Candle[] {
+function clean(rows: Candle[], sec: number, clamp = true): Candle[] {
   const byT = new Map<number, Candle>();
   for (const r of rows) {
     if (![r.t, r.o, r.h, r.l, r.c].every(Number.isFinite) || r.o <= 0 || r.h <= 0 || r.l <= 0 || r.c <= 0) continue;
     const t = Math.floor(r.t / (sec * 1000)) * sec * 1000;
     const body = { hi: Math.max(r.o, r.c), lo: Math.min(r.o, r.c) };
-    // A single bad print can make a wick 1000x the body and flatten the whole chart.
-    const h = r.h > body.hi * 100 ? body.hi : Math.max(r.h, body.hi);
-    const l = r.l < body.lo / 100 ? body.lo : Math.min(r.l, body.lo);
+    // A single bad print can make a wick 1000x the body and flatten the whole chart. (Not applied to candles rebuilt from finer ones: a token
+    // that goes 150x in a day and falls back really did print that high, and cutting it made the daily chart disagree with the hourly one.)
+    const h = clamp && r.h > body.hi * 100 ? body.hi : Math.max(r.h, body.hi);
+    const l = clamp && r.l < body.lo / 100 ? body.lo : Math.min(r.l, body.lo);
     byT.set(t, { t, o: r.o, h, l, c: r.c, v: Number.isFinite(r.v) && r.v > 0 ? r.v : 0 });
   }
   const sorted = [...byT.values()].sort((a, b) => a.t - b.t);
@@ -409,6 +410,81 @@ async function load(mint: string, tf: Tf, onCurve = false): Promise<{ candles: C
   return null;
 }
 
+// ── coarse candles rebuilt from finer ones ─────────────────────────────
+// Jupiter's own 1-day candles disagree with its 4-hour and 1-hour candles for older days. Checked on live tokens: a day whose hourly candles
+// run from 5e-5 up to 1.7e-4 came back as one flat 4e-6 candle. So the chart showed a different "highest" on every timeframe (146K on 4h,
+// 82K on 1h, 34K on 1D for the same token). The finer candles are the better record, so a 4h or 1D candle is rebuilt from the hourly ones
+// wherever they cover it, which also makes every timeframe agree with the hourly chart. Older days the hourly data does not reach keep the
+// provider's candle only if its candles matched the hourly ones where both exist; if they did not, the doubtful old part is dropped.
+const FINE_FOR: Record<string, { key: string; limit: number }> = { "4h": { key: "1h", limit: 300 }, "1d": { key: "1h", limit: 720 } };
+
+async function loadFine(mint: string, spec: { key: string; limit: number }, curve: boolean): Promise<Candle[] | null> {
+  const ck = `${mint}:${spec.key}:${spec.limit}`;
+  const hit = cache.get(ck);
+  if (hit && Date.now() - hit.ts < 60_000) return hit.candles;
+  const job = inflight.get(ck) ?? load(mint, { ...TF[spec.key], limit: spec.limit }, curve).finally(() => inflight.delete(ck));
+  inflight.set(ck, job);
+  const r = await job;
+  if (!r) return null;
+  cache.set(ck, { ...r, ts: Date.now() });
+  return r.candles;
+}
+
+function median(a: number[]): number {
+  const s = [...a].sort((x, y) => x - y);
+  return s.length ? s[Math.floor(s.length / 2)] : 0;
+}
+
+function rebuildFromFine(coarse: Candle[], fine: Candle[], sec: number): { candles: Candle[]; replace: boolean } {
+  const step = sec * 1000;
+  const sortedFine = [...fine].sort((a, b) => a.t - b.t);
+  const firstFine = sortedFine[0].t;
+  const firstBucket = Math.floor(firstFine / step) * step;
+  const buckets = new Map<number, Candle>();
+  for (const c of sortedFine) {
+    const t = Math.floor(c.t / step) * step;
+    const cur = buckets.get(t);
+    if (!cur) buckets.set(t, { t, o: c.o, h: c.h, l: c.l, c: c.c, v: c.v });
+    else { cur.h = Math.max(cur.h, c.h); cur.l = Math.min(cur.l, c.l); cur.c = c.c; cur.v += c.v; }
+  }
+  // where both are complete, does the provider's coarse candle agree with the hourly ones?
+  const errs: number[] = [];
+  for (const c of coarse) {
+    const b = buckets.get(c.t);
+    if (b && c.t >= firstFine && c.h > 0 && b.h > 0 && isReal(c)) errs.push(Math.abs(Math.log(c.h / b.h)));
+  }
+  const reliable = errs.length < 2 || median(errs) < Math.log(1.4);
+  const out: Candle[] = [];
+  const seen = new Set<number>();
+  for (const c of [...coarse].sort((a, b) => a.t - b.t)) {
+    const b = buckets.get(c.t);
+    if (b) {
+      seen.add(c.t);
+      const partial = c.t < firstFine; // the first bucket starts before the hourly data does
+      out.push(partial && reliable ? { ...c, h: Math.max(c.h, b.h), l: Math.min(c.l, b.l) } : b);
+    } else if (c.t >= firstBucket || reliable) {
+      out.push(c);
+    }
+  }
+  for (const [t, b] of buckets) if (!seen.has(t)) out.push(b);
+  out.sort((a, b) => a.t - b.t);
+  return { candles: out, replace: !reliable && coarse.some((c) => c.t < firstBucket) };
+}
+
+async function loadFull(mint: string, tfKey: string, tf: Tf, curve: boolean): Promise<{ candles: Candle[]; source: string; replace?: boolean } | null> {
+  const spec = FINE_FOR[tfKey];
+  if (!spec) return load(mint, tf, curve);
+  const [coarse, fine] = await Promise.all([
+    load(mint, tf, curve),
+    Promise.race([loadFine(mint, spec, curve), new Promise<null>((res) => setTimeout(() => res(null), 7000))]).catch(() => null),
+  ]);
+  if (!fine || fine.length < MIN_GOOD) return coarse;
+  const { candles, replace } = rebuildFromFine(coarse?.candles ?? [], fine, tf.sec);
+  const cleaned = clean(candles, tf.sec, false);
+  if (!cleaned.length) return coarse;
+  return { candles: cleaned, source: coarse?.source ?? "derived-1h", replace };
+}
+
 // ── persistent history (MongoDB) ────────────────────────────────────────
 // Every good provider result is merged into Mongo. After a restart / on a cold instance / when a provider is
 // rate-limited, the chart opens instantly from here and refreshes in the background.
@@ -433,7 +509,7 @@ async function readSaved(key: string): Promise<{ candles: Candle[]; source: stri
 }
 /** A candle a provider reported, as opposed to the flat zero-volume filler clean() puts in empty slots. */
 const isReal = (c: Candle) => !(c.v === 0 && c.o === c.h && c.h === c.l && c.l === c.c);
-function persist(key: string, fresh: Candle[], source: string) {
+function persist(key: string, fresh: Candle[], source: string, replace = false) {
   void (async () => {
     try {
       const db = await getDb();
@@ -441,7 +517,7 @@ function persist(key: string, fresh: Candle[], source: string) {
       const prev = await col.findOne({ _id: key as never });
       const byT = new Map<number, Candle>();
       // only real candles are kept: filler is rebuilt on the way out, and saving it made old gaps look like real flat hours
-      if (prev && Array.isArray(prev.candles)) for (const c of prev.candles as Candle[]) if (isReal(c)) byT.set(c.t, c);
+      if (!replace && prev && Array.isArray(prev.candles)) for (const c of prev.candles as Candle[]) if (isReal(c)) byT.set(c.t, c);
       for (const c of fresh) if (isReal(c)) byT.set(c.t, c);
       const merged = [...byT.values()].sort((a, b) => a.t - b.t).slice(-SAVED_KEEP);
       await col.updateOne({ _id: key as never }, { $set: { candles: merged, source, ts: Date.now(), at: new Date() } }, { upsert: true });
@@ -482,9 +558,9 @@ export async function GET(req: NextRequest) {
   // Stale-while-revalidate: anything we've seen in the last 30 min is served instantly, refreshed in the background.
   if (hit && (fromSaved || Date.now() - hit.ts < STALE_MS)) {
     if (!inflight.has(key)) {
-      const bg = load(mint, tf, req.nextUrl.searchParams.get("curve") === "1")
+      const bg = loadFull(mint, tfKey in TF ? tfKey : "15m", tf, req.nextUrl.searchParams.get("curve") === "1")
         .then((r) => {
-          if (r) { cache.set(key, { ...r, ts: Date.now() }); persist(key, r.candles, r.source); }
+          if (r) { cache.set(key, { ...r, ts: Date.now() }); persist(key, r.candles, r.source, r.replace); }
           return r;
         })
         .catch(() => null)
@@ -504,7 +580,7 @@ export async function GET(req: NextRequest) {
   const t0 = Date.now();
   let job = inflight.get(key);
   if (!job) {
-    job = load(mint, tf, req.nextUrl.searchParams.get("curve") === "1")
+    job = loadFull(mint, tfKey in TF ? tfKey : "15m", tf, req.nextUrl.searchParams.get("curve") === "1")
       .catch((e) => {
         console.error("[token-chart] load threw", e);
         return null;
@@ -519,7 +595,7 @@ export async function GET(req: NextRequest) {
     const entry = { ...result, ts: Date.now() };
     emptyUntil.delete(key);
     cache.set(key, entry);
-    if (result.source !== "sparse" || !lastGood.has(key)) persist(key, result.candles, result.source);
+    if (result.source !== "sparse" || !lastGood.has(key)) persist(key, result.candles, result.source, result.replace);
     // Never let a thin result overwrite a richer one we already served.
     const prev = lastGood.get(key);
     if (!prev || result.candles.length >= prev.candles.length * 0.5 || result.source !== "sparse") {

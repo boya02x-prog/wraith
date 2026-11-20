@@ -4,8 +4,10 @@
 // View-only token page for non-Solana (EVM) tokens: live stats, chart, recent swaps.
 // Trading on these chains is handled separately (cross-chain buy from the unified cash balance).
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Bookmark, Check, Copy, ExternalLink, Globe, Link2, Send } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Activity, Bookmark, Check, Copy, ExternalLink, Flame, Globe, Link2, Search, Send } from "lucide-react";
+import { usePresence } from "@/lib/usePresence";
+import SheetBoundary from "@/components/SheetBoundary";
 import TokenChart from "@/components/TokenChart";
 import DexLogo from "@/components/DexLogo";
 import ChainLogo from "@/components/ChainLogo";
@@ -45,8 +47,15 @@ function ChainBadge({ chain }: { chain: ChainInfo }) {
   return <span className="wx-net-logo" title={chain.name}><ChainLogo chain={chain.key} size={20} /></span>;
 }
 
-export default function EvmTokenView({ address, sidebar }: { address: string; sidebar?: ReactNode }) {
+export default function EvmTokenView({ address, sidebar, mobile = false }: { address: string; sidebar?: ReactNode; mobile?: boolean }) {
   const [chainParam, setChainParam] = useState<string | null | undefined>(undefined);
+  // phone layout (the same as a Solana token): the bottom bar (Market / Search / Buy / Sell) and the Buy / Sell sheet
+  const [mTab, setMTab] = useState<"chart" | "market">("chart");
+  const [sheet, setSheet] = useState<null | "buy" | "sell">(null);
+  const lastSheet = useRef<"buy" | "sell">("buy"); // kept while the sheet slides away
+  if (sheet) lastSheet.current = sheet;
+  const shownSheet = sheet ?? lastSheet.current;
+  const sheetPres = usePresence(!!sheet, 210);
   const [snap, setSnap] = useState<Snap | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -174,10 +183,20 @@ export default function EvmTokenView({ address, sidebar }: { address: string; si
   const tg = social("telegram");
   const dexUrl = `https://dexscreener.com/${snap.chain}/${snap.pairAddress}`;
 
-  return (
-    <div className="wx-workspace">
-      {sidebar && <aside className="wx-sidebar">{sidebar}</aside>}
-      <div className="wx-center">
+  const stats = (
+    <div className="wx-about-slot">
+      <div className="wx-stats">
+        <div className="wx-stat"><span>Liquidity</span><b>{fmtUsd(snap.liquidity)}</b></div>
+        <div className="wx-stat"><span>Volume 24h</span><b>{fmtUsd(snap.volume.h24)}</b><small>1h {fmtUsd(snap.volume.h1)}</small></div>
+        <div className="wx-stat"><span>Holders</span><b>{holderCount != null ? fmtCount(holderCount) : "—"}</b></div>
+        <div className="wx-stat"><span>Txns 24h</span><b>{fmtCount(tx24)}</b><small>{fmtCount(snap.txns.h24.buys)} buys · {fmtCount(snap.txns.h24.sells)} sells</small></div>
+        <div className="wx-stat"><span>Age</span><b>{fmtAge(snap.createdAt)}</b></div>
+        <div className="wx-stat"><span>Price</span><b>{fmtPrice(snap.priceUsd)}</b></div>
+      </div>
+    </div>
+  );
+
+  const panel = (
         <div className="wx-panel">
           <header className="wx-token-head">
             <div className="wx-token-id">
@@ -239,7 +258,51 @@ export default function EvmTokenView({ address, sidebar }: { address: string; si
           </section>
 
           <EvmDetailTabs address={address} snap={snap} trades={trades} onHolderCount={setHolderCount} />
+          {mobile && stats}
         </div>
+  );
+
+  if (mobile) {
+    return (
+      <>
+        <div className="wx-mobile-body">
+          <div style={{ display: mTab === "market" ? "none" : "block", height: "100%" }}>{panel}</div>
+          <div style={{ display: mTab === "market" ? "flex" : "none", height: "100%", flexDirection: "column" }}>{sidebar}</div>
+        </div>
+        <div className="wx-mbar" role="toolbar" aria-label="Trade">
+          <button type="button" className="wx-mbar-nav" onClick={() => setMTab(mTab === "market" ? "chart" : "market")}>
+            {mTab === "market" ? <Activity size={18} /> : <Flame size={18} />}
+            <span>{mTab === "market" ? "Chart" : "Market"}</span>
+          </button>
+          <button type="button" className="wx-mbar-nav wx-mbar-search" aria-label="Search tokens and traders" onClick={() => window.dispatchEvent(new CustomEvent("wraith:open-search"))}>
+            <Search size={18} />
+            <span>Search</span>
+          </button>
+          <button type="button" className="wx-mbar-buy" onClick={() => setSheet("buy")}>Buy</button>
+          <button type="button" className="wx-mbar-sell" onClick={() => setSheet("sell")}>Sell</button>
+        </div>
+        {sheetPres.mounted && (
+          <div className={`wx-sheet-back${sheetPres.out ? " out" : ""}`} onClick={() => setSheet(null)}>
+            <div className={`wx-sheet${sheetPres.out ? " out" : ""}`} role="dialog" aria-label={shownSheet === "buy" ? "Buy" : "Sell"} onClick={(e) => e.stopPropagation()}>
+              <div className="wx-sheet-grab" aria-hidden="true" />
+              <button type="button" className="wx-sheet-x" onClick={() => setSheet(null)} aria-label="Close">×</button>
+              <SheetBoundary label={shownSheet === "buy" ? "Buy" : "Sell"}>
+                <DockFrame>
+                  <EvmBuyPanel key={shownSheet} initialMode={shownSheet} chainKey={chain.key} tokenAddress={address} symbol={snap.symbol} priceUsd={snap.priceUsd} mcap={snap.marketCap ?? snap.fdv} imageUrl={snap.imageUrl} />
+                </DockFrame>
+              </SheetBoundary>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <div className="wx-workspace">
+      {sidebar && <aside className="wx-sidebar">{sidebar}</aside>}
+      <div className="wx-center">
+        {panel}
       </div>
 
       <aside className="wx-dock">
@@ -254,16 +317,7 @@ export default function EvmTokenView({ address, sidebar }: { address: string; si
             twitter={tw}
             telegram={tg}
           />
-          <div className="wx-about-slot">
-            <div className="wx-stats">
-              <div className="wx-stat"><span>Liquidity</span><b>{fmtUsd(snap.liquidity)}</b></div>
-              <div className="wx-stat"><span>Volume 24h</span><b>{fmtUsd(snap.volume.h24)}</b><small>1h {fmtUsd(snap.volume.h1)}</small></div>
-              <div className="wx-stat"><span>Holders</span><b>{holderCount != null ? fmtCount(holderCount) : "—"}</b></div>
-              <div className="wx-stat"><span>Txns 24h</span><b>{fmtCount(tx24)}</b><small>{fmtCount(snap.txns.h24.buys)} buys · {fmtCount(snap.txns.h24.sells)} sells</small></div>
-              <div className="wx-stat"><span>Age</span><b>{fmtAge(snap.createdAt)}</b></div>
-              <div className="wx-stat"><span>Price</span><b>{fmtPrice(snap.priceUsd)}</b></div>
-            </div>
-          </div>
+          {stats}
         </DockFrame>
       </aside>
     </div>

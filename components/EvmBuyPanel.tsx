@@ -28,7 +28,7 @@ const SELL_PRESETS = [25, 50, 100];
 
 type Phase = "idle" | "quoting" | "approving" | "sending" | "bridging" | "done" | "error";
 
-export default function EvmBuyPanel({ chainKey, tokenAddress, symbol, priceUsd, mcap, imageUrl }: { chainKey: string; tokenAddress: string; symbol: string; priceUsd: number; mcap?: number | null; imageUrl?: string | null }) {
+export default function EvmBuyPanel({ chainKey, tokenAddress, symbol, priceUsd, mcap, imageUrl, initialMode }: { chainKey: string; tokenAddress: string; symbol: string; priceUsd: number; mcap?: number | null; imageUrl?: string | null; initialMode?: "buy" | "sell" }) {
   const { authenticated, login } = usePrivy();
   const { wallets } = useWallets();
   const { wallets: solWallets } = useSolanaWallets();
@@ -40,7 +40,7 @@ export default function EvmBuyPanel({ chainKey, tokenAddress, symbol, priceUsd, 
   const cash = useCashSources(chainKey);
   const { evmAddress: evm, solAddress, sources, loaded: cashLoaded } = cash;
 
-  const [mode, setMode] = useState<"buy" | "sell">("buy");
+  const [mode, setMode] = useState<"buy" | "sell">(initialMode ?? "buy");
   const [cur, setCur] = useState<DisplayCurrency>("USD");
   const [rate, setRate] = useState<number | null>(1);
   const [amountCash, setAmountCash] = useState("10");
