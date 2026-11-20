@@ -1,0 +1,81 @@
+/* ═════════════ Avatar borders ("frames") ═════════════
+   A trader picks one in Edit profile; it is drawn around their photo wherever it shows (components/Frame.tsx). The look is a thin ring (a masked
+   gradient, slowly turning), a small gap, and a soft glow behind. Everything is drawn OUTSIDE the photo so the photo keeps its size.
+   Each frame only sets three things: --ring (the gradient), --glow (the colour of the soft light) and optionally --spin (the animation). */
+
+/* .fr wraps a photo (components/Frame.tsx); .fx puts the same ring on an element that already has its own size and shape (the big profile photo) */
+.fr, .fx {
+  --w: 3px;
+  --ring: transparent;
+  --glow: transparent;
+  --spin: none;
+  isolation: isolate;
+}
+.fr { position: relative; display: inline-block; flex: none; line-height: 0; vertical-align: middle; border-radius: 50%; }
+.fx { overflow: visible !important; }
+.fr > img, .fr > span, .fr > div { border-radius: 50%; }
+.fr::before, .fr::after, .fx::before, .fx::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+/* the ring: a gradient shown only in a thin band (the mask cuts out the middle) */
+.fr::before, .fx::before {
+  inset: calc(var(--w) * -1.7); padding: var(--w); background: var(--ring); z-index: 2; animation: var(--spin);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+/* the glow */
+.fr::after, .fx::after { inset: calc(var(--w) * -2.2); background: var(--glow); filter: blur(11px); opacity: .75; z-index: -1; animation: fr-pulse 2.8s ease-in-out infinite; }
+.fr-none::before, .fr-none::after, .fx.fr-none::before, .fx.fr-none::after { display: none; }
+
+@keyframes fr-rot { to { transform: rotate(360deg); } }
+@keyframes fr-pulse { 0%, 100% { opacity: .5; transform: scale(.96); } 50% { opacity: .9; transform: scale(1.04); } }
+@keyframes fr-flicker { 0%, 100% { opacity: .85; } 20% { opacity: .55; } 40% { opacity: 1; } 60% { opacity: .65; } 80% { opacity: .95; } }
+@keyframes fr-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes fr-beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.06); } 28% { transform: scale(1); } 42% { transform: scale(1.05); } 70% { transform: scale(1); } }
+
+.fr-ember   { --ring: conic-gradient(#ff7b3d, #ffc59e, #ff7b3d, #d9531a, #ff7b3d); --glow: radial-gradient(closest-side, rgba(255, 123, 61, .75), transparent); --spin: fr-rot 7s linear infinite; }
+.fr-gold    { --ring: conic-gradient(#fff3b0, #ffc94a, #a86f12, #ffc94a, #fff3b0); --glow: radial-gradient(closest-side, rgba(255, 201, 74, .7), transparent); --spin: fr-rot 6s linear infinite; }
+.fr-neon    { --ring: conic-gradient(#22e5ff, #7a5cff, #ff2bd6, #7a5cff, #22e5ff); --glow: radial-gradient(closest-side, rgba(70, 150, 255, .75), transparent); --spin: fr-rot 3s linear infinite; }
+.fr-aurora  { --ring: conic-gradient(#3ddc97, #38bdf8, #a78bfa, #38bdf8, #3ddc97); --glow: radial-gradient(closest-side, rgba(80, 200, 190, .7), transparent); --spin: fr-rot 5s linear infinite; }
+.fr-inferno { --ring: conic-gradient(#ffe45c, #ff7b3d, #ff2d1a, #8a1200, #ff2d1a, #ff7b3d, #ffe45c); --glow: radial-gradient(closest-side, rgba(255, 70, 30, .85), transparent); --spin: fr-rot 4s linear infinite; }
+.fr-inferno::after { animation: fr-flicker 1.3s linear infinite; filter: blur(13px); }
+.fr-ghost   { --ring: conic-gradient(#ffffff, #8fb3ff, #ffffff, #cfe0ff, #ffffff); --glow: radial-gradient(closest-side, rgba(190, 215, 255, .75), transparent); --spin: fr-rot 12s linear infinite; }
+.fr-matrix  { --ring: repeating-conic-gradient(#2bff88 0 7deg, transparent 7deg 14deg); --glow: radial-gradient(closest-side, rgba(43, 255, 136, .6), transparent); --spin: fr-rot 9s linear infinite; }
+.fr-royal   { --ring: conic-gradient(#7c3aed, #ffc94a, #7c3aed, #ffc94a, #7c3aed); --glow: radial-gradient(closest-side, rgba(150, 110, 240, .7), transparent); --spin: fr-rot 5s linear infinite; }
+.fr-prism   { --ring: conic-gradient(#ff3b3b, #ffb13b, #f6ff3b, #3bff7a, #3bd7ff, #6b5bff, #ff3bd0, #ff3b3b); --glow: radial-gradient(closest-side, rgba(255, 94, 168, .6), transparent); --spin: fr-rot 3.5s linear infinite; }
+.fr-ice     { --ring: conic-gradient(#eefcff, #8fe3ff, #ffffff, #5cc8ff, #eefcff); --glow: radial-gradient(closest-side, rgba(140, 225, 255, .7), transparent); --spin: fr-rot 8s linear infinite; }
+.fr-toxic   { --ring: conic-gradient(#c6ff2e, #2eff7a, #c6ff2e, #7dff00, #c6ff2e); --glow: radial-gradient(closest-side, rgba(170, 255, 50, .7), transparent); --spin: fr-rot 4s linear infinite; }
+
+/* events */
+.fr-blackfriday { --ring: repeating-conic-gradient(#ffd24a 0 12deg, #0b0b0c 12deg 24deg); --glow: radial-gradient(closest-side, rgba(255, 210, 74, .7), transparent); --spin: fr-rot 6s linear infinite; }
+.fr-winter  { --ring: repeating-conic-gradient(#ff3b3b 0 9deg, transparent 9deg 18deg, #3bff7a 18deg 27deg, transparent 27deg 36deg, #3bb5ff 36deg 45deg, transparent 45deg 54deg); --glow: radial-gradient(closest-side, rgba(255, 120, 120, .55), transparent); --spin: fr-rot 14s linear infinite, fr-blink 1.4s ease-in-out infinite; }
+.fr-newyear { --ring: conic-gradient(#fff2b0, #ffc94a, #ff9d2e, #ffc94a, #fff2b0); --glow: radial-gradient(closest-side, rgba(255, 224, 138, .8), transparent); --spin: fr-rot 2.4s linear infinite; }
+.fr-valentine { --ring: conic-gradient(#ff5c93, #ffb3cc, #ff5c93, #d9266b, #ff5c93); --glow: radial-gradient(closest-side, rgba(255, 92, 147, .75), transparent); --spin: fr-rot 6s linear infinite; }
+.fr-valentine::before { animation: fr-rot 6s linear infinite, fr-beat 1.6s ease-in-out infinite; }
+.fr-halloween { --ring: conic-gradient(#ff8a1f, #7c2bff, #ff8a1f, #7c2bff, #ff8a1f); --glow: radial-gradient(closest-side, rgba(255, 138, 31, .7), transparent); --spin: fr-rot 4s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fr::before, .fr::after, .fx::before, .fx::after { animation: none !important; }
+}
+
+/* ── the picker in Edit profile ── */
+.fp { display: grid; gap: 10px; margin: 6px 0 14px; }
+.fp-head { display: grid; gap: 3px; }
+.fp-head strong { font: 800 15px/1.2 var(--font-sans); color: #fff; }
+.fp-head small { font: 600 12.5px/1.4 var(--font-sans); color: rgba(255, 255, 255, 0.52); }
+.fp-sub { margin-top: 4px; font: 700 12.5px/1 var(--font-sans); color: rgba(255, 255, 255, 0.5); }
+.fp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.fp-tile {
+  position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; padding: 14px 4px 10px; border: 0; border-radius: 12px;
+  background: var(--surface-2, #1a1a1d); color: #fff; cursor: pointer; text-align: center;
+}
+.fp-tile:hover { background: var(--surface-3, #232327); }
+.fp-tile.on { background: rgba(var(--accent-rgb, 255, 123, 61), 0.18); }
+.fp-tile.locked { opacity: 0.45; cursor: not-allowed; }
+.fp-av { width: 46px; height: 46px; margin-bottom: 8px; }
+.fp-av img { width: 100%; height: 100%; object-fit: cover; background: var(--surface-3, #232327); }
+.fp-tile b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 12.5px/1.2 var(--font-sans); }
+.fp-tile small { max-width: 100%; font: 600 10.5px/1.25 var(--font-sans); color: rgba(255, 255, 255, 0.5); }
+.fp-check { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent, #ff7b3d); color: #1a0b03; }
+
+/* an element given .fx no longer clips its photo (the ring is drawn outside it), so the photo rounds itself */
+.fx > img, .fx > span { border-radius: 50% !important; }
+[data-zoom] { cursor: zoom-in; }

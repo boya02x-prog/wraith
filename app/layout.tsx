@@ -9,6 +9,8 @@ import "./wraith-responsive.css";
 import "./wraith-mobile.css";
 import "./wraith-compact.css";
 import "./wraith-skin.css";
+import "./wraith-frames.css";
+import "./wraith-traders.css";
 import WalletProvider from "@/components/WalletProvider";
 import BootSplash from "@/components/BootSplash";
 import NativePush from "@/components/NativePush";

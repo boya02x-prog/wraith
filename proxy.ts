@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPrivyAccessToken } from "@/lib/privyServer";
 import { isOwnSessionFormat, readSession } from "@/lib/appSession";
 import { isSitePrivate } from "@/lib/siteAccess";
+import { HUMAN_COOKIE, humanGateOn, readHuman } from "@/lib/humanGate";
 
-const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms", "/docs"]);
+const PUBLIC_PATHS = new Set(["/login", "/", "/privacy", "/terms", "/docs", "/verify"]);
 const PUBLIC_PAGE_PREFIXES = ["/docs/"]; // the documentation: one page per topic, readable without an account
 const PUBLIC_API_PATHS = new Set(["/api/native-prices", "/api/landing", "/api/banner", "/api/settings"]);
 const PUBLIC_API_PREFIXES = [
   "/api/auth/",
+  "/api/human", // the "are you human" check (lib/humanGate.ts)
   "/api/telegram/bot",
   "/api/telegram/setup", // protected by TELEGRAM_SETUP_KEY inside the route
   "/api/cron/", // protected by CRON_SECRET inside the route
@@ -45,6 +47,15 @@ async function route(request: NextRequest) {
     PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   ) {
     return NextResponse.next();
+  }
+
+  // "Checking that you are human" before the app opens (Cloudflare Turnstile). Off until the two keys exist (lib/humanGate.ts); the Android app is not asked.
+  if ((pathname === "/app" || pathname.startsWith("/app/")) && request.method === "GET" && humanGateOn() && !/WraithApp/.test(request.headers.get("user-agent") ?? "")) {
+    if (!(await readHuman(request.cookies.get(HUMAN_COOKIE)?.value))) {
+      const to = new URL("/verify", request.url);
+      to.searchParams.set("next", `${pathname}${search}`);
+      return NextResponse.redirect(to);
+    }
   }
 
   const hasSession = Boolean(await sessionUser(request.cookies.get(PRIVY_SESSION_COOKIE)?.value));

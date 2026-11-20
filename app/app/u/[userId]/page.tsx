@@ -54,6 +54,7 @@ type TraderDetails = {
     xHandle: string;
     avatarDataUrl: string;
     coverDataUrl?: string;
+    frame?: string;
     followerCount: number;
     followingCount: number;
     tier?: TierKey;
@@ -211,15 +212,16 @@ export default function PublicTraderPage() {
         <div className="pub-hero">
           <div
             className="pub-cover"
+            data-zoom
             style={
               { backgroundImage: `url("${trader.coverDataUrl || defaultCover(userId)}")`, backgroundSize: "cover", backgroundPosition: "center" }
             }
           />
 
           <div className="pub-identity">
-            <div className="pub-avatar">
+            <div className={`pub-avatar fx fr-${trader.frame || "none"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={trader.avatarDataUrl || defaultAvatar(userId)} alt="" className="pub-avatar-img" />
+              <img data-zoom src={trader.avatarDataUrl || defaultAvatar(userId)} alt="" className="pub-avatar-img" />
             </div>
 
             <div className="pub-id-name">

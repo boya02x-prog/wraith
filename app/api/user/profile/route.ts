@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongoClient";
 import { ObjectId } from "mongodb";
 import { isDisplayCurrency } from "@/lib/currencies";
+import { frameOf, frameOpen, isFrameId } from "@/lib/frames";
 
 const MAX_BODY_BYTES = 1_300_000;
 const MAX_AVATAR_CHARS = 400_000;
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
             displayCurrency: 1,
             publicTrading: 1,
             username: 1,
+            frame: 1,
           },
         },
       ),
@@ -93,6 +95,7 @@ export async function GET(request: NextRequest) {
         avatarDataUrl: profile?.avatarDataUrl ?? "",
         avatarUrl: profile?.avatarUrl ?? "",
         coverDataUrl: profile?.coverDataUrl ?? "",
+        frame: frameOf(profile?.frame).id,
         displayCurrency: isDisplayCurrency(profile?.displayCurrency)
           ? profile.displayCurrency
           : "USD",
@@ -176,6 +179,7 @@ export async function PATCH(request: NextRequest) {
     "coverDataUrl",
     "displayCurrency",
     "publicTrading",
+    "frame",
   ]);
   if (Object.keys(rawBody).some((key) => !allowedKeys.has(key))) {
     return NextResponse.json(
@@ -254,6 +258,22 @@ export async function PATCH(request: NextRequest) {
     }
     updates.publicTrading = rawBody.publicTrading;
   }
+  if ("frame" in rawBody) {
+    if (!isFrameId(rawBody.frame)) {
+      return NextResponse.json({ error: "Unknown border" }, { status: 400 });
+    }
+    // an event border can only be picked while its event is on (keeping the one you already wear is always fine)
+    const def = frameOf(rawBody.frame);
+    if (def.event && !frameOpen(def)) {
+      const current = await getDb()
+        .then((d) => d.collection("profiles").findOne({ userId: session.user.id }, { projection: { _id: 0, frame: 1 } }))
+        .catch(() => null);
+      if (current?.frame !== def.id) {
+        return NextResponse.json({ error: `${def.event.name} borders can only be picked during the event.` }, { status: 400 });
+      }
+    }
+    updates.frame = def.id;
+  }
   if (Object.keys(updates).length === 1) {
     return NextResponse.json(
       { error: "No profile fields provided" },
@@ -288,6 +308,7 @@ export async function PATCH(request: NextRequest) {
           displayCurrency: 1,
           publicTrading: 1,
           username: 1,
+          frame: 1,
         },
       },
     );
@@ -303,6 +324,7 @@ export async function PATCH(request: NextRequest) {
         avatarDataUrl: profile?.avatarDataUrl ?? "",
         avatarUrl: profile?.avatarUrl ?? "",
         coverDataUrl: profile?.coverDataUrl ?? "",
+        frame: frameOf(profile?.frame).id,
         displayCurrency: isDisplayCurrency(profile?.displayCurrency)
           ? profile.displayCurrency
           : "USD",

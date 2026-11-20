@@ -10,11 +10,14 @@ export const YOU: DocPage[] = [
       { t: "h2", text: "The top" },
       { t: "ul", items: [
         "**Avatar, name and @handle**, a short **bio**, and how many people you **follow** and how many follow **you** (tap either number for the list).",
-        "**Edit profile** changes your photo, cover, name, handle and bio. **Share** opens the [Share studio](/docs/share).",
+        "**Edit profile** changes your photo, cover, name, handle, bio and **avatar border**. **Share** opens the [Share studio](/docs/share).",
+        "**Tap a photo to see it large.** Your photo and cover open full screen; the same works for other traders' photos and covers, in search results and on the leaderboard, and for token pictures in search. Pinch to zoom, drag down or tap outside to close.",
         "**Joined** and your number of trades, plus your linked X account if you added one.",
       ] },
       { t: "h2", text: "Portfolio value" },
       { t: "p", text: "The big number is what you have in total: your wallet's value and your open positions. Below it you see your profit or loss for the period you picked with **24h, 7d, 30d or All**. The chart shows your **realized** profit and loss (from trades you closed) over time." },
+      { t: "h2", text: "Avatar border" },
+      { t: "p", text: "In **Edit profile** you can pick a border for your photo: a thin ring with a soft glow that is drawn around it on the leaderboard, in Hot shots, on your profile and in search. There are twelve to choose from (Ember, Gold, Neon, Aurora, Inferno, Spectral, Matrix, Royal, Prism, Frost and Toxic, or plain) and **event borders** (Black Friday, Winter lights, New Year, Valentine and Halloween) that can be picked only while their event is on. Once you pick an event border you keep it. Press **Save** to apply. Borders are only decoration and do not change your ranking." },
       { t: "h2", text: "The four tiles" },
       { t: "table", head: ["Tile", "Meaning"], rows: [
         ["Realized P&L", "Profit or loss from trades you have closed in the period"],
@@ -34,7 +37,7 @@ export const YOU: DocPage[] = [
     lead: "Follow the traders you trust and see what they do.",
     blocks: [
       { t: "ul", items: [
-        "Press **Follow** on a leaderboard card, a podium card or a profile. It turns into **Following**; press it again to unfollow.",
+        "Press **Follow** on a leaderboard card, a Hot shots poster or a profile. It turns into **Following**; press it again to unfollow.",
         "The **Following** filter on the [Leaderboard](/docs/leaderboard) shows only the people you follow.",
         "On the Market screen, the **Called by traders you follow** panel shows their latest calls.",
         "You can get a notification when someone you follow trades or posts a call. See [Notifications, push and Telegram](/docs/notifications).",
@@ -58,12 +61,13 @@ export const YOU: DocPage[] = [
       { t: "h2", text: "Choose what shows" },
       { t: "p", text: "The sliders button at the top right opens **Show on card**: switch the **avatar**, the **stats** and the **Wraith** mascot on or off." },
       { t: "h2", text: "Backgrounds" },
-      { t: "p", text: "Press **Background**. Two tabs:" },
+      { t: "p", text: "Press **Background**. Three tabs:" },
       { t: "table", head: ["Tab", "What is there"], rows: [
-        ["Presets", "Backgrounds drawn by Wraith. **Money rain**, **Gold rush**, **Candles** and **Matrix** move. The others are still: Wraith, your own avatar blurred, Ember, Violet, Mint, Glitch, Ghost wall and Graphite"],
-        ["Yours", "**Photo or video** from your phone. A photo is kept in the app; a video plays as the background for as long as the studio is open"],
+        ["Clips", "Movie scenes, anime and memes from **GIPHY**. Search for anything (the chips under the box are quick searches such as Wolf of Wall Street, Scarface or Anime laugh) and tap a clip to use it as the background. They are limited to PG-13. The tab appears once the clip service is switched on"],
+        ["Presets", "Backgrounds drawn by Wraith. **Synthwave**, **Neon city**, **Inferno**, **Aurora**, **Money rain**, **Gold rush**, **Candles** and **Matrix** move. The others are still: Wraith, your own avatar blurred, Ember and Graphite"],
+        ["Yours", "**Photo or video** from your phone, plus the clips you used lately. A photo is kept in the app; a video plays as the background for as long as the studio is open"],
       ] },
-      { t: "p", text: "With a photo or a video you can press **Adjust** (the crop button) to drag it into place, pinch to zoom, and darken it with the slider so the numbers stay readable." },
+      { t: "p", text: "With a photo, a video or a clip you can press **Adjust** (the crop button) to drag it into place, pinch to zoom, and darken it with the slider so the numbers stay readable." },
       { t: "callout", kind: "note", title: "Moving backgrounds", text: "A moving background plays in the preview. The picture you save or share is the frame on screen at the moment you press the button." },
       { t: "h2", text: "Save and Share" },
       { t: "table", head: ["Button", "What it does"], rows: [

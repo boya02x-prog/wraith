@@ -5,7 +5,8 @@
 // "wraith-screenshot" event (see MainActivity.java and app/app/profile/page.tsx).
 // Every card is drawn on a canvas, so what you see is exactly the picture that gets shared. Numbers come from the profile page; nothing is made up.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronDown, Crop, Download, ImagePlus, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Crop, Download, ImagePlus, Search, SlidersHorizontal, X } from "lucide-react";
+import { drawScene } from "@/lib/shareScenes";
 
 export type ShareTrade = { ts: number; usd: number }; // realized profit (+) or loss (-) of one closed trade, or the size of one trade, in display currency
 type Range = "24h" | "7d" | "30d";
@@ -21,12 +22,15 @@ const RANGES: { id: Range; label: string; ms: number }[] = [
   { id: "30d", label: "Past 30 Days", ms: 30 * 86400e3 },
 ];
 const PRESETS: { id: string; label: string }[] = [
-  { id: "wraith", label: "Wraith" }, { id: "avatar", label: "Your avatar" }, { id: "moneyrain", label: "Money rain" }, { id: "coins", label: "Gold rush" },
-  { id: "candles", label: "Candles" }, { id: "matrix", label: "Matrix" }, { id: "ember", label: "Ember" }, { id: "violet", label: "Violet" },
-  { id: "mint", label: "Mint" }, { id: "glitch", label: "Glitch" }, { id: "ghosts", label: "Ghost wall" }, { id: "graphite", label: "Graphite" },
+  { id: "wraith", label: "Wraith" }, { id: "avatar", label: "Your avatar" }, { id: "synthwave", label: "Synthwave" }, { id: "citynight", label: "Neon city" },
+  { id: "inferno", label: "Inferno" }, { id: "aurora", label: "Aurora" }, { id: "moneyrain", label: "Money rain" }, { id: "coins", label: "Gold rush" },
+  { id: "candles", label: "Candles" }, { id: "matrix", label: "Matrix" }, { id: "ember", label: "Ember" }, { id: "graphite", label: "Graphite" },
 ];
+/** Quick searches for the Clips tab (movie scenes, anime and memes from GIPHY). */
+const CLIP_CHIPS = ["Money", "Wolf of Wall Street", "Scarface", "Anime laugh", "Peaky Blinders", "Breaking Bad", "Lambo", "To the moon", "Rich", "Diamond hands", "Pump it", "Rug pull"];
+type GifItem = { id: string; title: string; thumb: string; mp4: string };
 /** The backgrounds that move (the card preview plays them; the picture you save or share is the frame on screen at that moment). */
-const MOVING = new Set(["moneyrain", "coins", "candles", "matrix"]);
+const MOVING = new Set(["moneyrain", "coins", "candles", "matrix", "synthwave", "citynight", "inferno", "aurora"]);
 type Clip = { id: string; url: string }; // a video the person added: kept for as long as the studio is open (a phone cannot keep videos in the page's storage)
 const W = 1080, H = 1620;
 const FONT = `"Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif`;
@@ -97,6 +101,7 @@ function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: strin
   // fine film grain on top of the soft colour fields: it is what makes a gradient look printed instead of flat
   const grain = (n: number, a: number) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(255,255,255,${R() * a})`; const s = 1.6 * u + 0.6; g.fillRect(R() * w, R() * h, s, s); } };
   const blob = (x: number, y: number, r: number, rgb: string, a: number) => glow(g, x * w, y * h, r * w, rgb, a);
+  if (drawScene(g, w, h, id, t, R)) return; // the code-made moving scenes (lib/shareScenes.ts)
   switch (id) {
     case "ember": { // warm colour fields
       g.fillStyle = "#0a0504"; g.fillRect(0, 0, w, h);
@@ -466,7 +471,9 @@ export default function ShareStudio({
   const [idx, setIdx] = useState(0);
   const [menu, setMenu] = useState<null | "range" | "show">(null);
   const [sheet, setSheet] = useState(false);
-  const [tab, setTab] = useState<"yours" | "presets">("presets");
+  const [tab, setTab] = useState<"clips" | "yours" | "presets">("presets");
+  const [gifQ, setGifQ] = useState("");
+  const [gif, setGif] = useState<{ q: string; items: GifItem[]; busy: boolean; ok: boolean | null; next: number }>({ q: "", items: [], busy: false, ok: null, next: 0 });
   const [adjusting, setAdjusting] = useState(false);
   const [note, setNote] = useState("");
   const [ref, setRef] = useState("");
@@ -538,7 +545,9 @@ export default function ShareStudio({
     const clip = clips.find((c) => `video:${c.id}` === bg);
     if (!clip) { setBg("wraith"); return; }
     const v = document.createElement("video");
-    v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto"; v.src = clip.url;
+    v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto";
+    if (/^https?:/i.test(clip.url)) v.crossOrigin = "anonymous"; // a clip from the web: asked for with CORS so the picture drawn from it can still be saved
+    v.src = clip.url;
     v.addEventListener("loadedmetadata", () => { videoDims.current = { width: v.videoWidth, height: v.videoHeight }; });
     void v.play().catch(() => undefined);
     videoRef.current = v;
@@ -624,6 +633,23 @@ export default function ShareStudio({
     setBg(id); setFrame(FRESH);
     if ((id.startsWith("photo:") || id.startsWith("video:")) && darken === 0) setDarken(0.2); // photos and clips are busy: a little darker keeps the numbers readable
   };
+  // movie / anime clips from GIPHY, through our own route (the key stays on the server)
+  const findClips = useCallback(async (q: string, more = false) => {
+    setGif((g0) => ({ ...g0, busy: true, q: more ? g0.q : q }));
+    try {
+      const offset = more ? gif.next : 0;
+      const r = await fetch(`/api/clips?q=${encodeURIComponent(q)}&offset=${offset}`);
+      const d = (await r.json()) as { configured?: boolean; items?: GifItem[]; next?: number };
+      if (!r.ok || d.configured === false) { setGif((g0) => ({ ...g0, busy: false, ok: false })); return; }
+      setGif((g0) => ({ q: more ? g0.q : q, items: more ? [...g0.items, ...(d.items ?? []).filter((n) => !g0.items.some((o) => o.id === n.id))] : d.items ?? [], busy: false, ok: true, next: d.next ?? offset + 24 }));
+    } catch { setGif((g0) => ({ ...g0, busy: false, ok: g0.ok ?? false })); }
+  }, [gif.next]);
+  const useClip = (it: GifItem) => {
+    const id = `gif${it.id}`;
+    setClips((cur) => { const next = [{ id, url: it.mp4 }, ...cur.filter((c) => c.id !== id)]; for (const gone of next.slice(6)) URL.revokeObjectURL(gone.url); return next.slice(0, 6); });
+    selectBg(`video:${id}`); setSheet(false);
+  };
+  useEffect(() => { if (sheet && tab === "clips" && gif.ok === null && !gif.busy) void findClips(""); }, [sheet, tab, gif.ok, gif.busy, findClips]);
   const onFile = async (f?: File | null) => {
     if (!f) return;
     if (f.type.startsWith("video/")) { // a video: played from the phone's own file, not copied anywhere
@@ -776,11 +802,38 @@ export default function ShareStudio({
               <button type="button" className="shs-link" onClick={startAdjust}><Crop size={18} /> Adjust</button>
             </div>
             <div className="shs-seg">
-              <button type="button" className={tab === "yours" ? "on" : ""} onClick={() => setTab("yours")}>Yours</button>
+              <button type="button" className={tab === "clips" ? "on" : ""} onClick={() => setTab("clips")}>Clips</button>
               <button type="button" className={tab === "presets" ? "on" : ""} onClick={() => setTab("presets")}>Presets</button>
+              <button type="button" className={tab === "yours" ? "on" : ""} onClick={() => setTab("yours")}>Yours</button>
             </div>
+            {tab === "clips" && (
+              <div className="shs-clipbar">
+                <form onSubmit={(e) => { e.preventDefault(); void findClips(gifQ.trim()); }}>
+                  <Search size={16} aria-hidden="true" />
+                  <input value={gifQ} onChange={(e) => setGifQ(e.target.value)} placeholder="Movie scenes, anime, memes" enterKeyHint="search" autoComplete="off" spellCheck={false} aria-label="Search clips" />
+                </form>
+                <div className="shs-chips">
+                  {CLIP_CHIPS.map((c) => <button key={c} type="button" className={gif.q.toLowerCase() === c.toLowerCase() ? "on" : ""} onClick={() => { setGifQ(c); void findClips(c); }}>{c}</button>)}
+                </div>
+              </div>
+            )}
             <div className="shs-grid">
-              {tab === "yours" ? (
+              {tab === "clips" ? (
+                <>
+                  {gif.ok === false && <p className="shs-clipnote">Clips are not switched on yet. They need a GIPHY key on the server.</p>}
+                  {gif.ok === true && !gif.items.length && !gif.busy && <p className="shs-clipnote">Nothing found. Try another word.</p>}
+                  {gif.items.map((it) => (
+                    <button key={it.id} type="button" className={`shs-tile${bg === `video:gif${it.id}` ? " sel" : ""}`} onClick={() => useClip(it)} aria-label={it.title || "Use this clip"}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={it.thumb} alt="" loading="lazy" />
+                      {bg === `video:gif${it.id}` && <i><Check size={14} /></i>}
+                    </button>
+                  ))}
+                  {gif.busy && <p className="shs-clipnote">Loading…</p>}
+                  {gif.ok === true && gif.items.length >= 24 && !gif.busy && <button type="button" className="shs-more" onClick={() => void findClips(gif.q, true)}>More</button>}
+                  {gif.ok === true && <p className="shs-clipnote shs-giphy">Powered by GIPHY</p>}
+                </>
+              ) : tab === "yours" ? (
                 <>
                   <label className="shs-tile add"><ImagePlus size={26} /><span>Photo or video</span>
                     <input type="file" accept="image/*,video/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void onFile(f); }} />

@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import NotificationBell from "@/components/NotificationBell";
 import WakingGhost from "@/components/WakingGhost";
+import Frame from "@/components/Frame";
 import { appLockEnabled, appLockSupported, biometricReady, biometricVerify, disableAppLock, enableAppLock } from "@/components/AppLock";
 import { PIN_HASH_KEY, PIN_ENABLED_KEY, PIN_TIMEOUT_KEY, clearLocalPin, clearServerPin, hashPin, newSalt, pushLockPin, pushLockTimeout, saveLocalPin, storedSalt, syncLockFromAccount } from "@/lib/pinLockSync";
 import Link from "next/link";
@@ -88,6 +89,7 @@ type TraderSearchResult = {
   bio: string;
   xHandle: string;
   avatarDataUrl: string;
+  frame?: string;
   isBookmarked: boolean;
   isFollowing?: boolean;
   profitSol: number;
@@ -271,7 +273,7 @@ function TokenRow({
       <span className="wx-sr-av">
         {token.icon ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={token.icon} alt="" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <img data-zoom src={token.icon} alt="" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
         ) : (
           <b>{token.symbol[0]}</b>
         )}
@@ -1332,18 +1334,21 @@ function CoinSearch({
                     textDecoration: "none",
                   }}
                 >
-                  <div
-                    style={{
-                      width: 38,
-                      height: 38,
-                      flexShrink: 0,
-                      borderRadius: "50%",
-                      background: trader.avatarDataUrl
-                        ? `url("${trader.avatarDataUrl}") center/cover`
-                        : "linear-gradient(135deg,#f05a24,#7b2f1a)",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
+                  <Frame id={trader.frame} thick={2}>
+                    <div
+                      data-zoom={trader.avatarDataUrl ? "1" : undefined}
+                      style={{
+                        width: 38,
+                        height: 38,
+                        flexShrink: 0,
+                        borderRadius: "50%",
+                        background: trader.avatarDataUrl
+                          ? `url("${trader.avatarDataUrl}") center/cover`
+                          : "linear-gradient(135deg,#f05a24,#7b2f1a)",
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                  </Frame>
                   <span style={{ minWidth: 0, display: "grid", gap: 3 }}>
                     <span
                       style={{

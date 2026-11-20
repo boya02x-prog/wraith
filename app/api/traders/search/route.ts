@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
             displayName: 1,
             avatarDataUrl: 1,
             avatarUrl: 1,
+            frame: 1,
           },
         },
       )
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
         username: p.username ?? null,
         displayName: p.displayName || "Wraith trader",
         avatarDataUrl: p.avatarDataUrl || p.avatarUrl || "",
+        frame: p.frame || "none",
         followerCount: followerMap.get(p.userId) ?? 0,
       })),
     });

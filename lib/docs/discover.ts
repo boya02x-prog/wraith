@@ -136,8 +136,10 @@ export const DISCOVER: DocPage[] = [
     title: "Leaderboard",
     lead: "Who is making money on Wraith, and what they are good at.",
     blocks: [
-      { t: "h2", text: "The podium" },
-      { t: "p", text: "When you look at **Top gains**, the first three traders are shown on a podium: second place on the left, first place in the middle with a crown, third place on the right. Each shows the gain for the period you chose, their win rate and number of trades, and a **Follow** button. Tap a trader to open their profile." },
+      { t: "h2", text: "Hot shots" },
+      { t: "p", text: "The banner at the top shows the five best traders of the period you chose (**this week** on 7D, **today** on 24H, **this month** on 30D, or **of all time**). On a phone the posters swipe sideways; on a bigger screen the first one is large and the next four sit beside it. Each poster shows the trader's cover picture, their photo with the border they picked, the gain in big type, their win rate, number of trades and best trade, and a **Follow** button. Tap the poster to open their profile, or tap their photo to see it large." },
+      { t: "h2", text: "Most followed and Top earners" },
+      { t: "p", text: "Under the banner two lists show who people follow the most and who has earned the most. **Most followed** counts followers. **Top earners** is each trader's all-time realized profit. Wallet balances are private in Wraith, so \"richest\" is measured by what a trader has made, which is public. A list stays hidden until there is someone to show. Tap **Show all** to see the full ten." },
       { t: "h2", text: "Choose the period and the order" },
       { t: "table", head: ["Control", "Options"], rows: [
         ["Period", "**All** (all time), **24H**, **7D**, **30D**"],
@@ -145,7 +147,7 @@ export const DISCOVER: DocPage[] = [
         ["Most active", "Ranked by number of trades"],
         ["Live now", "Traders with open positions right now, most positions first"],
         ["Following", "Only the traders you follow"],
-        ["Grid or list", "The two small buttons on the right switch the layout for the cards below the podium"],
+        ["Grid or list", "The two small buttons on the right switch the layout for the cards below the banner"],
       ] },
       { t: "h2", text: "Reading a trader card" },
       { t: "ul", items: [
@@ -164,6 +166,7 @@ export const DISCOVER: DocPage[] = [
         ["Grinder", "20 or more closed trades"],
         ["On fire", "A streak of 4 or more winning trades"],
       ] },
+      { t: "p", text: "A trader's **avatar border** (the glowing ring around their photo) is a cosmetic they choose themselves. It has no effect on the ranking. See [Your profile](/docs/profile)." },
       { t: "callout", kind: "note", text: "Only traders who turned on **Share my trading activity** in their profile settings appear here. Their wallets stay private; the ranking uses their trades on Wraith." },
     ],
   },

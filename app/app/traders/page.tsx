@@ -7,7 +7,9 @@ import { LayoutGrid, List, Users } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import DiscoverNav from "@/components/DiscoverNav";
 import TraderFollowButton from "@/components/TraderFollowButton";
-import PhotoViewer from "@/components/PhotoViewer";
+import HotShots from "@/components/HotShots";
+import TraderBoards from "@/components/TraderBoards";
+import Frame, { frameGlow } from "@/components/Frame";
 import Radar from "@/components/Radar";
 import { useCash } from "@/lib/cash";
 import { readLast, writeLast } from "@/lib/lastGood";
@@ -21,6 +23,8 @@ type Trader = {
   bio: string;
   xHandle: string;
   avatarDataUrl: string;
+  frame?: string;
+  hasCover?: boolean;
   closedTradeCount: number;
   openPositionCount: number;
   profitSol: number;
@@ -32,11 +36,11 @@ type Trader = {
 };
 
 type Period = "d1" | "d7" | "d30" | "all";
-const PERIODS: { key: Period; label: string; long: string }[] = [
-  { key: "all", label: "All", long: "All-time" },
-  { key: "d1", label: "24H", long: "Daily" },
-  { key: "d7", label: "7D", long: "Weekly" },
-  { key: "d30", label: "30D", long: "Monthly" },
+const PERIODS: { key: Period; label: string; long: string; when: string }[] = [
+  { key: "all", label: "All", long: "All-time", when: "of all time" },
+  { key: "d1", label: "24H", long: "Daily", when: "today" },
+  { key: "d7", label: "7D", long: "Weekly", when: "this week" },
+  { key: "d30", label: "30D", long: "Monthly", when: "this month" },
 ];
 
 function Ghost({ className }: { className?: string }) {
@@ -62,47 +66,6 @@ function Spark({ curve }: { curve: number[] }) {
   );
 }
 
-function Crown({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 32 22" aria-hidden="true">
-      <path d="M3 19 5.5 6.5 11.5 12.5 16 3l4.5 9.5 6-6L29 19Z" fill="currentColor" />
-      <rect x="3" y="19" width="26" height="3" rx="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-/** The top three get their own block: second on the left, first in the middle (taller, with a crown), third on the right. Gold, silver and bronze are only used here. */
-function Podium({ list, pnlOf, money }: { list: Trader[]; pnlOf: (t: Trader) => number; money: ReturnType<typeof useCash>["money"] }) {
-  const slots = [1, 0, 2];
-  return (
-    <div className="tp" aria-label="Top three traders">
-      {slots.map((i) => {
-        const t = list[i];
-        if (!t) return <span key={i} className="tp-empty" aria-hidden="true" />;
-        const rank = i + 1;
-        const pnl = pnlOf(t);
-        const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
-        const wr = t.stats?.winRate;
-        return (
-          <article key={t.userId} className={`tp-card r${rank}`}>
-            <Link className="tp-main" href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`}>
-              {rank === 1 && <Crown className="tp-crown" />}
-              <span className="tp-av">
-                {t.avatarDataUrl ? <Image src={t.avatarDataUrl} alt="" width={72} height={72} unoptimized /> : <span className="tp-fb">{t.displayName.slice(0, 1).toUpperCase()}</span>}
-                <i className="tp-medal">{rank}</i>
-              </span>
-              <b className="tp-name">{t.displayName}</b>
-              <strong className={`tp-gain ${tone}`}>{money(pnl, true)}</strong>
-              <small className="tp-sub">{wr == null ? `${t.closedTradeCount} trades` : `${wr.toFixed(0)}% win · ${t.closedTradeCount} trades`}</small>
-            </Link>
-            <span className="tp-follow"><TraderFollowButton traderId={t.userId} compact initialFollowing={t.isFollowing === true} statusKnown={typeof t.isFollowing === "boolean"} /></span>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function TradersPage() {
   const [traders, setTraders] = useState<Trader[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +73,6 @@ export default function TradersPage() {
   const [stale, setStale] = useState(false);
   const [sort, setSort] = useState<"pnl" | "active" | "open" | "following">("pnl");
   const [period, setPeriod] = useState<Period>("d7");
-  const [viewer, setViewer] = useState<string | null>(null);
   const [layout, setLayout] = useState<"grid" | "list">(() => {
     try { return localStorage.getItem("wraith:traders-layout") === "list" ? "list" : "grid"; } catch { return "grid"; }
   });
@@ -169,10 +131,13 @@ export default function TradersPage() {
   }, []);
 
   const periodMeta = PERIODS.find((p) => p.key === period)!;
-  // on the real leaderboard (top gains) the first three are shown as a podium, the rest follow as cards
-  const podiumOn = sort === "pnl" && sorted.length > 0;
-  const podiumBase = podiumOn ? 3 : 0;
-  const rest = podiumOn ? sorted.slice(3) : sorted;
+  // the banner shows the period's five best (whatever chip is chosen, except Following); on the Top gains list those five are not repeated in the cards
+  const byGain = useMemo(() => [...traders].sort((a, b) => gain(b, period) - gain(a, period)), [traders, period]);
+  const bannerOn = sort !== "following" && byGain.length > 0;
+  const bannerN = Math.min(5, byGain.length);
+  const skipTop = bannerOn && sort === "pnl" ? bannerN : 0;
+  const rest = skipTop ? sorted.slice(skipTop) : sorted;
+  const podiumBase = skipTop;
 
   return (
     <main className="wraith-dashboard profile-page">
@@ -200,7 +165,6 @@ export default function TradersPage() {
             ))}
           </div>
         </section>
-        {viewer && <PhotoViewer src={viewer} onClose={() => setViewer(null)} />}
         {stale && traders.length > 0 && <div className="profile-message" style={{ fontSize: 12 }}>Offline: showing the last saved ranking.</div>}
         {error && !traders.length && <div className="profile-message is-error">{error}</div>}
         {loading ? (
@@ -217,7 +181,8 @@ export default function TradersPage() {
           </div>
         ) : traders.length ? (
           <>
-          {podiumOn && <Podium list={sorted.slice(0, 3)} pnlOf={(t) => gain(t, period)} money={money} />}
+          {bannerOn && <HotShots list={byGain} when={periodMeta.when} gainLabel={periodMeta.key === "all" ? "all-time gain" : `${periodMeta.label.toLowerCase()} gain`} pnlOf={(t) => gain(t as Trader, period)} money={money} />}
+          {bannerOn && <TraderBoards />}
           {rest.length > 0 && <div className={`traders-grid${layout === "list" ? " is-list" : ""}`}>
             {rest.map((trader, i) => {
               const index = i + podiumBase;
@@ -226,15 +191,17 @@ export default function TradersPage() {
               const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
               const podium = index < 3 ? ` podium-${index + 1}` : "";
               return (
-                <article className={`tc${podium}`} key={trader.userId}>
+                <article className={`tc${podium}`} key={trader.userId} style={frameGlow(trader.frame)}>
                   <Ghost className="tc-ghost" />
                   <div className="tc-main">
                     <span className="tc-rank">{index + 1}</span>
-                    {trader.avatarDataUrl ? (
-                      <Image className="tc-avatar wx-tappable" src={trader.avatarDataUrl} alt="" width={46} height={46} unoptimized onClick={() => setViewer(trader.avatarDataUrl)} />
-                    ) : (
-                      <span className="tc-avatar tc-avatar-fallback">{trader.displayName.slice(0, 1).toUpperCase()}</span>
-                    )}
+                    <Frame id={trader.frame} thick={2.5}>
+                      {trader.avatarDataUrl ? (
+                        <Image className="tc-avatar" data-zoom src={trader.avatarDataUrl} alt="" width={46} height={46} unoptimized />
+                      ) : (
+                        <span className="tc-avatar tc-avatar-fallback">{trader.displayName.slice(0, 1).toUpperCase()}</span>
+                      )}
+                    </Frame>
                     <Link className="tc-id" href={`/app/u/${encodeURIComponent(trader.username ?? trader.userId)}`}>
                       <strong>{trader.displayName}</strong>
                       <span className="tc-tags">

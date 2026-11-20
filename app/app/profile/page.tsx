@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import PhotoViewer from "@/components/PhotoViewer";
+import FramePicker from "@/components/FramePicker";
 import ProfileFeed from "@/components/ProfileFeed";
 import TraderStats from "@/components/TraderStats";
 import { useWraithSession } from "@/components/SessionProvider";
@@ -62,6 +63,8 @@ type ProfileData = {
   displayCurrency: DisplayCurrency;
   publicTrading: boolean;
   username?: string | null;
+  /** the avatar border they picked (lib/frames.ts) */
+  frame?: string;
 };
 type Trade = {
   id: string;
@@ -104,6 +107,7 @@ const PROFILE_EMPTY: ProfileData = {
   displayCurrency: "USD",
   publicTrading: false,
   username: null,
+  frame: "none",
 };
 
 function shortAddress(address: string) {
@@ -381,6 +385,7 @@ export default function ProfilePage() {
             : "USD",
           publicTrading: profileJson.profile?.publicTrading === true,
           username: profileJson.profile?.username ?? null,
+          frame: profileJson.profile?.frame ?? "none",
         };
         const liveTrades: Trade[] = Array.isArray(tradesJson.trades)
           ? tradesJson.trades
@@ -967,6 +972,7 @@ export default function ProfilePage() {
           coverDataUrl: draft.coverDataUrl ?? "",
           displayCurrency: draft.displayCurrency,
           publicTrading: draft.publicTrading,
+          frame: draft.frame ?? "none",
         }),
       });
       const payload = await response.json();
@@ -1296,7 +1302,7 @@ export default function ProfilePage() {
           {/* Identity row — avatar overlaps cover */}
           <div className="profile-identity">
             <div
-              className="profile-avatar-button wx-tappable"
+              className={`profile-avatar-button wx-tappable fx fr-${profile.frame || "none"}`}
               role="button"
               tabIndex={0}
               aria-label="View profile photo"
@@ -2233,6 +2239,12 @@ export default function ProfilePage() {
                   </small>
                 )}
               </div>
+
+              <FramePicker
+                value={draft.frame ?? "none"}
+                photo={draft.avatarDataUrl || session?.user?.image || defaultAvatar(userId || displayName)}
+                onChange={(id) => setDraft((current) => ({ ...current, frame: id }))}
+              />
 
               {/* Public toggle */}
               <label className="profile-public-toggle">

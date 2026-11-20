@@ -10,6 +10,7 @@ import type { MemeTrend } from "@/app/app/page";
 import { useWraithSession } from "@/components/SessionProvider";
 import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
 import ReferralPrompt from "@/components/ReferralPrompt";
+import PhotoZoomHost from "@/components/PhotoZoomHost";
 
 type SelectFn = (meme: MemeTrend) => void;
 type ShellCtx = { setSelect: (fn: SelectFn | null) => void };
@@ -69,6 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Header onSelectMeme={hasSelect ? onSelect : undefined} />
       </div>
       <ReferralPrompt />
+      <PhotoZoomHost />
       {/* the one element that slides / fades when the screen changes (see RouteFade and the .wx-route rules): it stays mounted while pages swap inside it */}
       <div className="wx-route">{children}</div>
     </Ctx.Provider>

@@ -95,21 +95,28 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // hasCover tells the page whether a cover picture exists without shipping it (a cover can be 700 KB; it is fetched on its own from
+    // /api/traders/<id>/cover, and only for the few people the Hot shots banner shows)
     const profiles = await db
       .collection("profiles")
-      .find(profileFilter, {
-        projection: {
-          _id: 0,
-          userId: 1,
-          username: 1,
-          displayName: 1,
-          bio: 1,
-          avatarDataUrl: 1,
-          avatarUrl: 1,
+      .aggregate([
+        { $match: profileFilter },
+        { $sort: search ? { displayName: 1 } : { updatedAt: -1 } },
+        { $limit: followingOnly ? 500 : search || savedOnly ? 25 : 30 },
+        {
+          $project: {
+            _id: 0,
+            userId: 1,
+            username: 1,
+            displayName: 1,
+            bio: 1,
+            avatarDataUrl: 1,
+            avatarUrl: 1,
+            frame: 1,
+            hasCover: { $gt: [{ $strLenCP: { $ifNull: ["$coverDataUrl", ""] } }, 0] },
+          },
         },
-      })
-      .sort(search ? { displayName: 1 } : { updatedAt: -1 })
-      .limit(followingOnly ? 500 : search || savedOnly ? 25 : 30)
+      ])
       .toArray();
 
     const traders = await Promise.all(
@@ -160,6 +167,8 @@ export async function GET(request: NextRequest) {
           bio: profile.bio || "",
           xHandle: xLink?.username || "",
           avatarDataUrl: profile.avatarDataUrl || profile.avatarUrl || "",
+          frame: profile.frame || "none",
+          hasCover: profile.hasCover === true,
           isBookmarked: savedIds.includes(profile.userId),
           isFollowing: followingIds.includes(profile.userId),
           closedTradeCount: closed.length,

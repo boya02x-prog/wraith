@@ -1,0 +1,102 @@
+/* ═════════════ Leaderboard: Hot shots banner + the two boards ═════════════
+   Flat, like the rest of the app (see wraith-skin.css): tonal cards, no outlines. The only colour that glows is the border a trader picked
+   for themselves (wraith-frames.css), which also tints the edge of their poster and row (--frc, set by frameGlow()). */
+
+/* ── Hot shots: posters ── */
+.hs { margin: 2px 0 22px; }
+.hs-head { display: flex; align-items: center; gap: 8px; margin: 0 2px 12px; color: var(--sk-gold, #ffc94a); }
+.hs-head h2 { margin: 0; color: #fff; font: 800 20px/1.1 var(--font-sans); letter-spacing: -0.02em; }
+.hs-head em { margin-left: 5px; font-style: normal; font-weight: 700; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); }
+
+/* phones: swipe sideways, one poster and a peek of the next */
+.hs-rail { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px 0 6px; }
+.hs-rail::-webkit-scrollbar { display: none; }
+.hs-card {
+  position: relative; flex: 0 0 min(80%, 320px); height: 340px; display: flex; flex-direction: column; justify-content: space-between;
+  padding: 14px; border-radius: 16px; overflow: hidden; scroll-snap-align: center; background: #131315; isolation: isolate; color: #fff;
+}
+.hs-art { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; transform: scale(1.06); }
+.hs-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8, 8, 10, 0.3) 0%, rgba(8, 8, 10, 0.08) 28%, rgba(8, 8, 10, 0.6) 60%, rgba(8, 8, 10, 0.96) 100%); }
+.hs-card::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 70px -26px var(--frc, transparent); }
+.hs-hit { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.hs-rank {
+  position: absolute; z-index: 3; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 6px 9px; border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); font: 800 13px/1 var(--font-sans); pointer-events: none;
+}
+.hs-card.r1 .hs-rank { background: #ffc94a; color: #1a1205; }
+.hs-top, .hs-foot { position: relative; z-index: 2; pointer-events: none; }
+.hs-top { display: flex; align-items: center; gap: 12px; padding-right: 54px; }
+.hs-av { pointer-events: auto; width: 62px; height: 62px; margin: 5px; }
+.hs-card.r1 .hs-av { width: 76px; height: 76px; }
+.hs-av img { width: 100%; height: 100%; object-fit: cover; background: var(--surface-3, #232327); cursor: zoom-in; }
+.hs-id { min-width: 0; display: grid; gap: 3px; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7); }
+.hs-id b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 18px/1.15 var(--font-sans); letter-spacing: -0.015em; }
+.hs-id small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12.5px/1.2 var(--font-sans); color: rgba(255, 255, 255, 0.72); }
+.hs-foot { display: grid; gap: 12px; }
+.hs-gain { display: grid; gap: 3px; }
+.hs-gain strong { font: 800 34px/1 var(--font-sans); letter-spacing: -0.035em; text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6); }
+.hs-card.r1 .hs-gain strong { font-size: 42px; }
+.hs-gain strong.up { color: var(--sk-up, #3ddc97); }
+.hs-gain strong.down { color: var(--sk-down, #ff6b62); }
+.hs-gain strong.flat { color: #fff; }
+.hs-gain small { font: 600 12.5px/1 var(--font-sans); color: rgba(255, 255, 255, 0.66); }
+.hs-stats { display: flex; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.hs-stats li { display: grid; gap: 3px; }
+.hs-stats b { font: 800 15px/1 var(--font-sans); }
+.hs-stats small { font: 600 11px/1 var(--font-sans); color: rgba(255, 255, 255, 0.58); }
+.hs-follow { pointer-events: auto; display: block; }
+.hs-follow > span { display: flex !important; width: 100%; }
+html:root .hs-follow .tfb {
+  width: 100% !important; min-width: 0 !important; min-height: 40px; background: rgba(255, 255, 255, 0.16) !important; color: #fff !important; border: 0 !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+
+/* from tablet up: the first poster is large, the next four sit beside it */
+@media (min-width: 900px) {
+  .hs-rail { display: grid; gap: 12px; overflow: visible; scroll-snap-type: none; padding: 0; height: 392px; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .hs-card { flex: none; height: auto; min-width: 0; }
+  .hs-card.r1 { grid-row: 1 / 3; padding: 20px; }
+  .hs-n1 { grid-template-columns: 1fr; grid-template-rows: 1fr; height: 320px; }
+  .hs-n1 .r1 { grid-row: auto; }
+  .hs-n2 { grid-template-columns: 1.35fr 1fr; grid-template-rows: 1fr; }
+  .hs-n2 .r1 { grid-row: auto; }
+  .hs-n3 { grid-template-columns: 1.35fr 1fr; }
+  .hs-n4 .r4 { grid-column: 2 / 4; }
+  .hs-card:not(.r1) { padding: 12px 14px; }
+  .hs-card:not(.r1) .hs-top { padding-right: 46px; gap: 10px; }
+  .hs-card:not(.r1) .hs-av { width: 44px; height: 44px; margin: 3px; }
+  .hs-card:not(.r1) .hs-id b { font-size: 15px; }
+  .hs-card:not(.r1) .hs-stats { display: none; }
+  .hs-card:not(.r1) .hs-foot { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+  .hs-card:not(.r1) .hs-gain strong { font-size: 25px; }
+  html:root .hs-card:not(.r1) .hs-follow .tfb { min-height: 32px; padding: 0 14px; }
+}
+
+/* ── Most followed / Top earners ── */
+.bd-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0 0 22px; }
+@media (min-width: 760px) { .bd-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bd { padding: 14px 12px 8px; border-radius: 14px; background: var(--surface, #131315); }
+.bd-head { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px; color: var(--sk-gold, #ffc94a); }
+.bd-head h3 { margin: 0; color: #fff; font: 800 16px/1.1 var(--font-sans); letter-spacing: -0.01em; }
+.bd-head small { margin-left: auto; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1 var(--font-sans); }
+.bd-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.bd-row { position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 9px 4px; border-radius: 10px; }
+.bd-row::before { content: ""; position: absolute; inset: 0; border-radius: 10px; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--frc, transparent) 16%, transparent), transparent 62%); }
+.bd-row + .bd-row { box-shadow: inset 0 1px 0 var(--sk-line, rgba(255, 255, 255, 0.06)); }
+.bd-n { width: 20px; flex: none; text-align: center; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 800 14px/1 var(--font-sans); }
+.bd-n.n1 { color: #ffc94a; }
+.bd-n.n2 { color: #cfd6e4; }
+.bd-n.n3 { color: #d8955a; }
+.bd-av { width: 40px; height: 40px; margin: 3px; }
+.bd-av img { width: 100%; height: 100%; object-fit: cover; background: var(--surface-3, #232327); cursor: zoom-in; }
+.bd-id { position: relative; flex: 1; min-width: 0; display: grid; gap: 2px; color: inherit; text-decoration: none; }
+.bd-id b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font: 750 14.5px/1.2 var(--font-sans); }
+.bd-id small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1.2 var(--font-sans); }
+.bd-val { position: relative; flex: none; color: #fff; font: 800 14px/1 var(--font-sans); white-space: nowrap; }
+.bd-more { width: 100%; margin-top: 2px; padding: 11px; border: 0; border-radius: 10px; background: transparent; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 700 13px var(--font-sans); cursor: pointer; }
+.bd-more:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* the cards of the full list: a soft inner glow in the colour of the border their owner picked, and room for the ring around the photo */
+html:root .tc[style*="--frc"] { position: relative; }
+html:root .tc[style*="--frc"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 56px -30px var(--frc); }
+.tc-main .fr { margin: 0 3px; }
