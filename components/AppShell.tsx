@@ -55,7 +55,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <Header onSelectMeme={hasSelect ? onSelect : undefined} />
       </div>
       <ReferralPrompt />
-      {children}
+      {/* the one element that slides / fades when the screen changes (see RouteFade and the .wx-route rules): it stays mounted while pages swap inside it */}
+      <div className="wx-route">{children}</div>
     </Ctx.Provider>
   );
 }

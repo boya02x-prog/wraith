@@ -1,17 +1,24 @@
 /* ═════════════════════════ Wraith skin: the last stylesheet loaded ═════════════════════════
    Earlier files each had their own idea of the look (a condensed display face, typewriter labels, 8px boxes, outlines on everything).
-   This layer sits on top and settles it: ONE text face (Plus Jakarta Sans, loaded in layout.tsx), quiet sentence-case labels, bold numbers,
-   rounder controls, soft filled cards instead of outlined boxes. To undo the whole redesign, remove its import from layout.tsx. */
+   This layer sits on top and settles it, built from what the app already had so it stays Wraith and not somebody else's app:
+     • ONE text face (Plus Jakarta Sans, loaded in layout.tsx), quiet sentence-case labels, bold numbers
+     • rectangles with ONE corner size (12px controls, 14px cards): no pills
+     • the lit edge across the top of a card (the signature the scanner and market cards already had) on every card
+     • underline tabs with an ember underline (the Market / Scanner / Wins / Intel row) for every tab row
+     • ember (orange) outlines for secondary actions, a solid ember button only for the one main action on a screen
+   To undo the whole redesign, remove its import from layout.tsx. */
 
 html:root {
   --font-display: var(--font-sans);
   --font-mono: var(--font-sans);
   --wr-display: var(--font-sans);
   --wr-mono: var(--font-sans);
-  --radius-control: 14px;
-  --radius-card: 22px;
-  --sk-card: linear-gradient(180deg, rgba(255, 255, 255, .068), rgba(255, 255, 255, .03));
-  --sk-shadow: 0 14px 34px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .075);
+  --radius-control: 12px; /* the app-wide button radius (globals.css, .wraith-dashboard button) */
+  --radius-card: 14px;
+  --sk-card: linear-gradient(180deg, rgba(255, 255, 255, .052), rgba(255, 255, 255, .022));
+  --sk-line: rgba(255, 255, 255, .08);
+  --sk-line-2: rgba(255, 255, 255, .16);
+  --sk-shadow: 0 10px 26px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 255, 255, .05);
   --sk-text-2: rgba(255, 255, 255, .68);
   --sk-text-3: rgba(255, 255, 255, .46);
   --sk-up: #3ddc97;
@@ -57,61 +64,88 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 }
 .profile-portfolio-head .profile-eyebrow { color: var(--sk-text-2) !important; letter-spacing: 0 !important; text-transform: none; font-size: 15px !important; font-weight: 700 !important; }
 
-/* ── segmented controls and chips: one pill style ── */
-.wraith-dashboard .wx-seg, .tc-periods, .profile-periods, .tc-layout {
-  background: rgba(255, 255, 255, .065) !important; border: 0 !important; border-radius: 999px !important; padding: 4px !important; gap: 2px !important; box-shadow: none !important;
+/* ═══ cards: one shape, one edge ═══
+   Soft filled surface, a hairline, 14px corners, and the lit edge across the top that the scanner and market cards already had. */
+.wraith-dashboard .tc, .wraith-dashboard .wb-card, .wraith-dashboard .wb-win, .wraith-dashboard .wb-stats > div,
+.wraith-dashboard .profile-summary-card .profile-stat-card, .wraith-dashboard .wb-wins {
+  position: relative; overflow: hidden; background: var(--sk-card) !important; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; box-shadow: var(--sk-shadow) !important;
 }
-.trader-tabs { background: transparent !important; border: 0 !important; padding: 0 !important; gap: 8px !important; box-shadow: none !important; }
-.wraith-dashboard .wx-seg button, .tc-periods button, .profile-periods button, .trader-tabs button, .tc-layout button {
-  border-radius: 999px !important; font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important;
-  font-size: 14px !important; color: var(--sk-text-2); border: 0 !important; background: transparent; box-shadow: none !important; transition: background .18s, color .18s;
+.wraith-dashboard .profile-panel { background: var(--sk-card) !important; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; box-shadow: var(--sk-shadow) !important; }
+.wraith-dashboard .sg-card, .wraith-dashboard .wx-tcard { border-radius: 14px !important; }
+.tc::before, .wb-card::before, .wb-win::before, .wb-stats > div::before, .profile-summary-card .profile-stat-card::before, .wb-wins::before {
+  content: ""; position: absolute; left: 0; top: 0; height: 1px; width: 70%; border-radius: 1px; pointer-events: none; z-index: 2;
+  background: linear-gradient(90deg, rgba(var(--tint, 255, 123, 61), .85), transparent);
 }
-.trader-tabs button { background: rgba(255, 255, 255, .065) !important; padding: 10px 18px !important; }
-.wraith-dashboard .wx-seg button.on, .tc-periods button.on, .profile-periods button.on, .tc-layout button.on { background: rgba(255, 255, 255, .16) !important; color: #fff !important; }
-.trader-tabs button.on { background: var(--accent) !important; color: #1a0d05 !important; }
-
-/* ── buttons ── */
-.profile-edit-button {
-  border-radius: 999px !important; height: 50px; min-height: 50px; font-family: var(--font-sans) !important; font-weight: 800 !important; font-size: 15px !important;
-  letter-spacing: 0 !important; border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; box-shadow: none !important;
-}
-.profile-btn-pair { display: flex !important; gap: 10px !important; width: 100%; }
-.profile-btn-pair .profile-edit-button { flex: 1; }
-.profile-btn-pair .profile-edit-button:last-child {
-  background: linear-gradient(180deg, #ff9a5e, #ff7b3d) !important; color: #1a0d05 !important;
-  box-shadow: 0 10px 26px rgba(255, 123, 61, .3), inset 0 1px 0 rgba(255, 255, 255, .4) !important;
-}
-/* Follow / Following (components/TraderFollowButton.tsx) */
-.tfb {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; min-width: 128px !important; width: auto !important; padding: 0 18px;
-  border: 0; border-radius: 999px !important; background: var(--accent); color: #1a0d05; font: 800 13.5px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
-  box-shadow: 0 8px 20px rgba(255, 123, 61, .26); user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: background .18s, color .18s, opacity .18s, transform .1s;
-}
-.tfb:active { transform: scale(.96); }
-.tfb.is-compact { min-height: 38px; min-width: 104px !important; padding: 0 14px; }
-.tfb.is-following { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; }
-.tfb.is-loading { background: rgba(255, 255, 255, .06); color: transparent; box-shadow: none; }
-.tfb:disabled { cursor: wait; opacity: .7; }
-
-/* ── cards: soft filled surfaces, big radius, no outlines ── */
-.wraith-dashboard .tc, .wraith-dashboard .wb-card, .wraith-dashboard .wb-win, .wraith-dashboard .wb-stats > div, .wraith-dashboard .profile-panel {
-  background: var(--sk-card) !important; border: 0 !important; border-radius: 22px !important; box-shadow: var(--sk-shadow) !important;
-}
-.wraith-dashboard .wb-win { border-radius: 20px !important; }
-.wraith-dashboard .wb-stats > div { border-radius: 20px !important; }
-.wraith-dashboard .tc.podium-1 { background: linear-gradient(180deg, rgba(255, 201, 74, .14), rgba(255, 255, 255, .03)) !important; }
-.tc-main { gap: 12px !important; }
-.tc-avatar { width: 48px !important; height: 48px !important; flex-basis: 48px !important; }
+.tc.podium-1 { --tint: 255, 201, 74; }
+.wb-card.up, .wb-win, .wb-wins { --tint: 61, 220, 151; }
+.wb-card.down { --tint: 255, 107, 98; }
+.wraith-dashboard .tc:hover, .wraith-dashboard .wb-card:hover, .wraith-dashboard .wb-win:hover { border-color: rgba(var(--tint, 255, 123, 61), .38) !important; }
+.wraith-dashboard .tc.podium-1 { background: linear-gradient(180deg, rgba(255, 201, 74, .12), rgba(255, 255, 255, .025)) !important; }
+.wraith-dashboard .wb-wins { background: linear-gradient(180deg, rgba(61, 220, 151, .11), rgba(61, 220, 151, 0) 220px), var(--sk-card) !important; padding: 18px 14px !important; }
+.hc-mc { border-radius: 8px !important; }
+.tc-main { gap: 10px !important; }
+.tc-avatar { width: 44px !important; height: 44px !important; flex-basis: 44px !important; }
+.tc-id { flex: 1 1 70px !important; min-width: 70px !important; }
+/* the ranking grid fits as many cards as have room (it was forced to four across, which squeezed the names out on a 1000px window) */
+@media (min-width: 901px) { html:root .traders-grid:not(.is-list) { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; gap: 12px !important; } }
 .tc-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
 .tc-tags i {
   font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 700 !important;
-  border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: var(--sk-text-2) !important; border-radius: 999px !important; padding: 3px 10px !important;
+  border: 1px solid var(--sk-line) !important; background: rgba(255, 255, 255, .05) !important; color: var(--sk-text-2) !important; border-radius: 6px !important; padding: 2px 8px !important;
 }
 .tc-foot b { font-size: 15px !important; }
 
-/* ── profile header: name, handle, bio, then counts and buttons ── */
-.profile-hero .profile-cover { border-radius: 26px !important; }
+/* ═══ tabs: the underline row (Market / Scanner / Wins / Intel) everywhere ═══ */
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) {
+  background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--sk-line) !important; border-radius: 0 !important; padding: 0 !important; gap: 0 !important; box-shadow: none !important;
+}
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button {
+  position: relative; border-radius: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 11px 16px !important;
+  font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-3) !important;
+  transition: color .18s;
+}
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button:hover { color: #fff !important; }
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on { color: #fff !important; background: transparent !important; }
+html:root .wraith-dashboard :is(.tc-periods, .profile-periods, .wb-head .wx-seg, .wx-board-bar .wx-seg.lg) button.on::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), .6);
+}
+html:root .wraith-dashboard .wx-board-bar .wx-seg.lg { display: flex; width: 100%; }
+html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { flex: 1 1 auto; text-align: center; }
+/* filter chips: small rectangles; the chosen one is outlined in ember */
+.trader-tabs { background: transparent !important; border: 0 !important; padding: 0 !important; gap: 8px !important; box-shadow: none !important; }
+.wraith-dashboard .trader-tabs button {
+  border-radius: 10px !important; border: 1px solid var(--sk-line) !important; background: rgba(255, 255, 255, .04) !important; color: var(--sk-text-2) !important; padding: 9px 14px !important;
+  font-family: var(--font-sans) !important; font-size: 13.5px !important; font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; box-shadow: none !important;
+}
+.wraith-dashboard .trader-tabs button.on { border-color: rgba(var(--accent-rgb), .65) !important; background: rgba(var(--accent-rgb), .14) !important; color: var(--accent-text) !important; }
+.wraith-dashboard .tc-layout { border: 1px solid var(--sk-line) !important; border-radius: 10px !important; background: transparent !important; padding: 3px !important; gap: 2px !important; }
+.wraith-dashboard .tc-layout button { border-radius: 7px !important; border: 0 !important; background: transparent !important; }
+.wraith-dashboard .tc-layout button.on { background: rgba(255, 255, 255, .1) !important; }
+
+/* ═══ buttons ═══ */
+.profile-edit-button {
+  border-radius: 12px !important; height: 46px; min-height: 46px; font-family: var(--font-sans) !important; font-weight: 700 !important; font-size: 14.5px !important; letter-spacing: 0 !important;
+  border: 1px solid var(--sk-line-2) !important; background: rgba(255, 255, 255, .04) !important; color: #fff !important; box-shadow: none !important;
+}
+.profile-edit-button:hover { border-color: rgba(var(--accent-rgb), .6) !important; }
+.profile-btn-pair { display: flex !important; gap: 10px !important; width: 100%; }
+.profile-btn-pair .profile-edit-button { flex: 1; }
+.profile-btn-pair .profile-edit-button:last-child { background: var(--accent) !important; border-color: var(--accent) !important; color: #1a0d05 !important; font-weight: 800 !important; box-shadow: 0 8px 22px rgba(255, 123, 61, .25) !important; }
+/* Follow / Following (components/TraderFollowButton.tsx): an ember outline, so a screen of them is not a wall of orange */
+.tfb {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; min-width: 112px !important; width: auto !important; padding: 0 16px;
+  border: 1px solid rgba(var(--accent-rgb), .55); border-radius: 10px !important; background: transparent; color: var(--accent-text); font: 800 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+  box-shadow: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background .18s, color .18s, border-color .18s, opacity .18s, transform .1s;
+}
+.tfb:hover { background: rgba(var(--accent-rgb), .12); }
+.tfb:active { transform: scale(.97); }
+.tfb.is-compact { min-height: 36px; min-width: 92px !important; padding: 0 12px; }
+.tfb.is-following { border-color: var(--sk-line-2); background: rgba(255, 255, 255, .04); color: var(--sk-text-2); }
+.tfb.is-loading { border-color: var(--sk-line); background: rgba(255, 255, 255, .03); color: transparent; }
+.tfb:disabled { cursor: wait; opacity: .7; }
+
+/* ═══ profile header: name, handle, bio, then counts and buttons ═══ */
+.profile-hero .profile-cover { border-radius: 14px !important; }
 .profile-hero .profile-title-block > h1 { font-size: 28px !important; font-weight: 800 !important; letter-spacing: -.03em !important; line-height: 1.1 !important; margin: 16px 0 0 !important; }
 .profile-hero .profile-username, .profile-hero .profile-username span { font-family: var(--font-sans) !important; font-size: 15px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
 .profile-hero .profile-username { margin-top: 4px !important; }
@@ -123,34 +157,25 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
   .profile-hero .profile-social-counts { margin: 18px 0 0 !important; gap: 32px !important; }
   .profile-hero .profile-btn-pair { margin: 16px 0 0 !important; }
 }
-
-/* ── profile: a clean tile row under the portfolio value instead of one hairline strip ── */
+/* the tile row under the portfolio value */
 .profile-portfolio-period { display: flex !important; align-items: center; gap: 10px; margin-top: 10px; }
 .profile-portfolio-period strong { font-size: 16px !important; font-weight: 800 !important; }
-.wraith-dashboard .profile-summary-card .profile-stat-grid {
-  display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; margin-top: 14px;
-  border: 0 !important; background: transparent !important;
+/* (the older phone rules fight over padding and borders of these tiles with very specific selectors, so these are written to win: each tile is its own card) */
+html:root .wraith-dashboard .profile-summary-card .profile-stat-grid {
+  display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; margin-top: 14px; padding: 0 !important; border: 0 !important; background: transparent !important;
 }
-.wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-.wraith-dashboard .profile-summary-card .profile-stat-card {
-  padding: 14px 12px !important; gap: 4px !important; border: 0 !important; border-left: 0 !important; border-radius: 20px !important;
-  background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; min-width: 0;
-}
-.wraith-dashboard .profile-summary-card .profile-stat-card:first-child { padding-left: 12px !important; }
-.wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) > :nth-child(n+3) { border-top: 0 !important; }
+html:root .wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+@media (max-width: 640px) { html:root .wraith-dashboard .profile-summary-card .profile-stat-grid:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+html:root .wraith-dashboard .profile-summary-card .profile-stat-grid > .profile-stat-card { padding: 14px !important; gap: 4px !important; min-width: 0; border: 1px solid var(--sk-line) !important; border-radius: 14px !important; }
 .profile-summary-card .profile-stat-card > strong { font-size: clamp(15px, 4.6vw, 19px) !important; font-weight: 800 !important; letter-spacing: -.02em !important; white-space: nowrap; }
 .profile-summary-card .profile-stat-card > span, .profile-summary-card .profile-stat-card > small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ── Wins ── */
+/* ═══ Wins ═══ */
 .wb-head h2 { font-family: var(--font-sans) !important; font-size: 24px !important; font-weight: 800 !important; letter-spacing: -.025em !important; display: flex; align-items: center; gap: 10px; }
 .wb-head h2 svg { color: var(--sk-gold); width: 20px; height: 20px; }
 .wb-head p { font-size: 14.5px !important; line-height: 1.5 !important; color: var(--sk-text-2) !important; }
 .wb-stats b { font-size: 24px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
 .wb-stats b i { font-style: normal; font-size: 13px; font-weight: 700; color: var(--sk-text-3); }
-.wraith-dashboard .wb-wins {
-  border: 0 !important; border-radius: 28px !important; padding: 18px 14px !important; box-shadow: var(--sk-shadow) !important;
-  background: linear-gradient(180deg, rgba(61, 220, 151, .14), rgba(61, 220, 151, 0) 230px), var(--sk-card) !important;
-}
 .wb-wins-head h3, .wb-all-head h3 { font-size: 20px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
 .wb-wins-head h3 em { font-size: 13px !important; font-weight: 700 !important; color: var(--sk-up) !important; }
 .wb-wins-head h3 svg { color: var(--sk-up) !important; }
@@ -158,39 +183,86 @@ body { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 .wb-tier-label { font-family: var(--font-sans) !important; font-size: 13px !important; font-weight: 800 !important; letter-spacing: 0 !important; text-transform: none !important; color: var(--sk-text-2) !important; }
 .wb-tier-label b { color: var(--sk-up) !important; }
 .wb-tier-label.t10x b { color: var(--sk-gold) !important; }
-.wb-tier-label i { font-family: var(--font-sans); font-weight: 800; background: rgba(255, 255, 255, .1) !important; color: #fff !important; padding: 2px 9px !important; }
+.wb-tier-label i { font-family: var(--font-sans); font-weight: 800; background: rgba(255, 255, 255, .08) !important; border: 1px solid var(--sk-line); color: #fff !important; padding: 1px 8px !important; border-radius: 6px !important; }
 .wb-tier-label::after { background: rgba(255, 255, 255, .08) !important; }
 .wb-win { padding: 13px 14px !important; }
 .wb-win-rank { font-family: var(--font-sans) !important; font-size: 14px !important; font-weight: 800 !important; color: var(--sk-text-3) !important; }
 .wb-win-id strong { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.01em; }
 .wb-win-id span { font-size: 12.5px !important; color: var(--sk-text-3) !important; }
 .wb-win-path b, .wb-win-now b { font-size: 14.5px !important; font-weight: 800 !important; }
-.wb-win-mult {
-  border: 0 !important; background: linear-gradient(180deg, rgba(61, 220, 151, .3), rgba(61, 220, 151, .15)) !important; color: #86ffc6 !important;
-  font-size: 15px !important; font-weight: 800 !important; border-radius: 999px !important; padding: 6px 13px !important;
+.wb-win-mult { border: 1px solid rgba(61, 220, 151, .4) !important; background: rgba(61, 220, 151, .14) !important; color: #86ffc6 !important; font-size: 15px !important; font-weight: 800 !important; border-radius: 8px !important; padding: 5px 11px !important; }
+.wb-wins-more { border-radius: 12px !important; height: 44px !important; border: 1px solid var(--sk-line-2) !important; background: transparent !important; color: #fff !important; font-size: 14px !important; font-weight: 800 !important; }
+
+/* the Wins banner: a 14px card like the rest; on a computer it is taller so the character is not lost in a long strip */
+.gs { border-radius: 14px !important; border: 1px solid var(--sk-line); }
+@media (min-width: 900px) { .gs { height: 320px !important; } }
+
+/* ═══ top bar: cash module, deposit, bell ═══ */
+.embedded-wallet-header-chip { border: 1px solid var(--sk-line) !important; border-radius: 12px !important; background: rgba(255, 255, 255, .035) !important; box-shadow: none !important; }
+.embedded-wallet-header-value > span { font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 600 !important; color: var(--sk-text-3) !important; }
+.embedded-wallet-header-value > strong { font-family: var(--font-sans) !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.embedded-wallet-header-deposit {
+  border: 0 !important; border-radius: 9px !important; background: var(--accent) !important; color: #1a0d05 !important; font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: 0 !important; box-shadow: none !important;
 }
-.wb-wins-more { border-radius: 999px !important; height: 46px !important; border: 0 !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; font-size: 14px !important; font-weight: 800 !important; }
+.embedded-wallet-header-withdraw { border: 1px solid var(--sk-line-2) !important; border-radius: 9px !important; background: transparent !important; color: #fff !important; font-family: var(--font-sans) !important; font-weight: 800 !important; }
+.wx-bell { border: 1px solid var(--sk-line) !important; border-radius: 12px !important; background: rgba(255, 255, 255, .035) !important; box-shadow: none !important; }
+.wraith-header-avatar { border-radius: 50% !important; }
 
-/* ── share studio: the shapes must win over the app-wide button radius (on phones the X, period, Background and Share buttons came out as rounded squares) ── */
-.shs .shs-circle, .shs .shs-rail button { border-radius: 50% !important; }
-.shs .shs-period, .shs .shs-pill, .shs .shs-bgbtn, .shs .shs-share { border-radius: 999px !important; }
-.shs .shs-menu button { border-radius: 14px !important; }
-.shs .shs-share { background: linear-gradient(180deg, #ff9a5e, #ff7b3d); box-shadow: 0 10px 28px rgba(255, 123, 61, .35), inset 0 1px 0 rgba(255, 255, 255, .4); }
-.shs .shs-card { border-radius: 30px; box-shadow: 0 30px 70px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08), 0 0 70px rgba(255, 123, 61, .09); }
+/* ═══ share studio: the same shapes as the rest of the app (rectangles, not capsules) ═══ */
+.shs .shs-circle { border-radius: 12px !important; width: 48px; height: 48px; }
+.shs .shs-circle.sm { width: 42px; height: 42px; }
+.shs .shs-rail { border-radius: 14px !important; }
+.shs .shs-rail button { border-radius: 10px !important; }
+.shs .shs-period, .shs .shs-pill, .shs .shs-bgbtn, .shs .shs-share { border-radius: 12px !important; }
+.shs .shs-bgbtn canvas { border-radius: 8px; }
+.shs .shs-menu { border-radius: 14px; }
+.shs .shs-menu button { border-radius: 10px !important; }
+.shs .shs-share { background: var(--accent); box-shadow: 0 8px 22px rgba(255, 123, 61, .28); }
+.shs .shs-card { border-radius: 22px; box-shadow: 0 30px 70px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08), 0 0 70px rgba(255, 123, 61, .09); }
 
-/* ── ranking header: the crowned Wraith sits at the right of the title ── */
+/* ═══ ranking header: the crowned Wraith sits at the right of the title ═══ */
 .traders-heading { position: relative; }
 .traders-mascot { position: absolute; right: 4px; top: -20px; height: 92px; width: auto; pointer-events: none; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, .5)); z-index: 0; }
 .traders-heading > *:not(.traders-mascot) { position: relative; z-index: 1; }
 .traders-heading h1 { max-width: 62%; }
+@media (min-width: 900px) { .traders-mascot { height: 130px; top: -26px; right: 8px; } }
 
-/* ── top bar: cash chip, deposit, bell, avatar ── */
-.embedded-wallet-header-chip { border: 0 !important; border-radius: 999px !important; background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; }
-.embedded-wallet-header-value > span { font-family: var(--font-sans) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 11.5px !important; font-weight: 600 !important; color: var(--sk-text-3) !important; }
-.embedded-wallet-header-value > strong { font-family: var(--font-sans) !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
-.embedded-wallet-header-deposit {
-  border: 0 !important; border-radius: 999px !important; background: linear-gradient(180deg, #ff9a5e, #ff7b3d) !important; color: #1a0d05 !important;
-  font-family: var(--font-sans) !important; font-weight: 800 !important; letter-spacing: 0 !important; box-shadow: 0 6px 18px rgba(255, 123, 61, .28) !important;
+/* ═══ one shape system for the rest of the app ═══
+   Older stylesheets still ask for capsules (999px) on dozens of small things. Everything now follows one rule, smaller thing = smaller corner:
+   badges 6px, info chips 8px, filter chips and small buttons 10px, floating bars and cards 14px (tab bar 20px). Circles stay for avatars and dots only. */
+html:root :is(.wx-badge, .wx-src, .wx-age-chip, .wx-scan-sig, .sg-tag, .sg-count, .sg-lp, .sg-live, .hc-x, .hc-mc, .pw-kind, .cm-on, .pt-pill, .pt-row .now, .tn-pill, .ttd-badge, .q-badge, .ew-hold, .wb-spot, .wp-badge, .tc-live em, .ts-tags span, .trader-card-open > span:not(:first-child), .wx-tp-record, .sg-rail-row .end b, .ad-nav a b, .ad-steps span, .ws-eyebrow, .ws-chips span, .ws-mock-bar .pill) { border-radius: 6px !important; }
+html:root :is(.fi-token, .wx-tp-item, .wx-tp-tg, .wp-chip, .wx-flow-pill, .ws-chain, .profile-network-pill, .profile-count, .profile-wallet-status, .wraith-dashboard .wx-ca) { border-radius: 8px !important; }
+html:root :is(.hc-filters button, .ss-chips button, .sg-filters button, .pw-tabs button, .dt .dt-tabs button, .sg-rail-tabs button, .wx-cs-drop .wx-cs-tabs button, .hc-btn, .wp-retry, .wx-testbar button, .ad-pill, .wx-notif-prefs button, .wx-cs-paste, .wx-cs-close, .ps-ref, .ps-seg button, .ps-play button, .callout-heart-btn, .callout-action-btn, .fb-post, .wx-chart-latest, .wx-draw-del) { border-radius: 10px !important; }
+html:root :is(.fb-pill, .wx-tool-hint, .la-chip, .wx-pricebar .la-chip, .ss-search, .ps-seg, .wx-cs-inputrow) { border-radius: 14px !important; }
+html:root .hc-filters button { padding: 7px 14px !important; font-size: 13px !important; font-weight: 700 !important; }
+html:root .hc-filters button.on { border-color: rgba(var(--accent-rgb), .65) !important; background: rgba(var(--accent-rgb), .14) !important; color: var(--accent-text) !important; }
+html:root .hc-x { font-size: 12px !important; padding: 4px 9px !important; }
+html:root .hc-mc { font-size: 12px !important; font-weight: 800 !important; padding: 4px 9px !important; }
+/* cards in every screen: the same corner and the same hairline */
+html:root :is(.sg-card, .wb-stats > div, .wb-card, .profile-stat, .profile-stat-card, .profile-summary-card, .tc, .ts-panel, .wp-head, .wp-block, .callout-card, .hc-card, .la, .mn, .hc-side section, .wx-chart-card, .wx-pricebar, .wx-scanner-layout, .evm-trades, .wx-safety, .wx-panel .la, .wx-panel .mn, .wsk-card, .wsk-cover, .fb-compose) { border-radius: 14px !important; }
+html:root .hc-card { border-color: var(--sk-line) !important; background-color: transparent; }
+html:root .hc-card:hover { border-color: rgba(var(--accent-rgb), .38) !important; }
+
+/* market cards on a mid-width window: the numbers never split across two lines; the little chart gives up space first */
+.wx-kicker, .wx-tcard-mc strong, .wx-tcard-chg { white-space: nowrap; }
+.wx-tcard-mc .wx-spark { flex: 0 1 72px !important; min-width: 0 !important; }
+.wx-tcard-mc { gap: 6px; }
+.wx-badge { white-space: nowrap; }
+.wx-tcard-sym { flex-wrap: wrap; row-gap: 3px; }
+.wx-tcard-sym strong { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+
+/* small section labels everywhere: the same quiet sentence case (table column headers keep their capitals, that is what a table looks like) */
+html:root :is(.mc-sec > header strong, .sg-rail-title, .sg-title, .wd-label, .ew-total-label, .ew-gw-title, .evm-buy-lbl, .ms-state, .hc-side h3, .mm-side label, .cm-group > small, .wx-stat > span, .wx-change span, .pnlc-label, .sg-metrics small, .pt-card small, .wb-tier-label) {
+  text-transform: none !important; letter-spacing: 0 !important; font-family: var(--font-sans) !important; font-weight: 700 !important;
 }
-.embedded-wallet-header-withdraw { border: 0 !important; border-radius: 999px !important; background: rgba(255, 255, 255, .09) !important; color: #fff !important; font-family: var(--font-sans) !important; font-weight: 800 !important; }
-.wx-bell, .wraith-header-avatar { border: 0 !important; border-radius: 50% !important; background: var(--sk-card) !important; box-shadow: var(--sk-shadow) !important; }
+html:root .hc-side h3 { font-size: 13.5px !important; color: var(--sk-text-2) !important; margin-bottom: 10px !important; }
+html:root .hc-side h3 svg { width: 15px; height: 15px; }
+
+/* bottom tab bar (phones): a rounded bar, not a capsule; the sliding highlight is the same shape as the buttons */
+@media (max-width: 767px) {
+  html:root .wx-tabbar-pill { border-radius: 20px !important; }
+  html:root .wx-tabbar-pill a { border-radius: 15px !important; }
+  html:root .wx-tab-ind { border-radius: 15px !important; background: rgba(var(--accent-rgb), .16) !important; box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .3); }
+  html:root .wx-tabbar-pill a.on { background: rgba(var(--accent-rgb), .16); }
+  html:root .wx-tabbar-search { border-radius: 20px !important; }
+}

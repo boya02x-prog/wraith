@@ -36,9 +36,10 @@ export default function Wraith3D({
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [live, setLive] = useState(false);
+  const [still, setStill] = useState(false); // this device cannot (or should not) draw 3D: the picture stays
 
   useEffect(() => {
-    if (!can3D()) return;
+    if (!can3D()) { setStill(true); return; }
     let alive = true, raf = 0;
     let stop = () => {};
     void (async () => {
@@ -93,7 +94,7 @@ export default function Wraith3D({
   }, [pose, podium, confetti, spotlight, zoom, shiftX, interactive]);
 
   return (
-    <div ref={wrap} className={`w3d${live ? " is-live" : ""}${className ? ` ${className}` : ""}`} role="img" aria-label={alt || undefined} aria-hidden={alt ? undefined : true}>
+    <div ref={wrap} className={`w3d${live ? " is-live" : ""}${still ? " is-still" : ""}${className ? ` ${className}` : ""}`} role="img" aria-label={alt || undefined} aria-hidden={alt ? undefined : true}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="w3d-poster" src={poster} alt="" draggable={false} />
       <canvas ref={canvas} className="w3d-canvas" />

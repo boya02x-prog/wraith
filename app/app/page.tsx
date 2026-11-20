@@ -8,6 +8,7 @@ import { cacheTokenNav } from "@/lib/tokenNav";
 import { ToastProvider } from "@/components/Toast";
 
 import Header from "@/components/HeaderSlot";
+import DiscoverNav from "@/components/DiscoverNav";
 const TokenBoard = dynamic(() => import("@/components/TokenBoard"), { ssr: false });
 const WinsBoard = dynamic(() => import("@/components/WinsBoard"), { ssr: false });
 const SignalScanner = dynamic(() => import("@/components/SignalScanner"), { ssr: false });
@@ -35,12 +36,6 @@ export interface MemeTrend {
 }
 
 type View = "market" | "scanner" | "wins" | "intel";
-const VIEWS: { key: View; label: string; hint: string }[] = [
-  { key: "market", label: "Market", hint: "Live Solana tokens" },
-  { key: "scanner", label: "Scanner", hint: "Live momentum signals" },
-  { key: "wins", label: "Wins", hint: "How our calls performed" },
-  { key: "intel", label: "Intel", hint: "What traders are calling right now" },
-];
 
 export default function Home() {
   const router = useRouter();
@@ -102,17 +97,7 @@ export default function Home() {
       <Header onSelectMeme={handleSelectMeme} />
 
 
-      <nav className="wx-subnav" aria-label="Discover sections">
-        <div className="wx-subnav-inner">
-          {VIEWS.map((v) => (
-            <button key={v.key} type="button" data-view={v.key} className={view === v.key ? "on" : ""} aria-current={view === v.key ? "page" : undefined} onClick={() => changeView(v.key)}>
-              {v.label}
-            </button>
-          ))}
-          <button type="button" data-view="traders" onClick={() => router.push("/app/traders")} title="Rankings and the traders you follow">Traders</button>
-          <span className="wx-subnav-hint">{VIEWS.find((v) => v.key === view)?.hint}</span>
-        </div>
-      </nav>
+      <DiscoverNav active={view} onPick={changeView} />
 
       <main className="wx-main">
         {view === "market" && (

@@ -1,9 +1,9 @@
 // lib/wraith3d.ts  (browser only, loaded on demand)
-// Wraith's own 3D character: a chubby orange ghost with glowing eyes, built from code (no model files, no network), lit like a vinyl toy.
+// Wraith's own 3D character: a round orange ghost with a dark hood face and glowing eyes, built from code (no model files, no network), lit like a vinyl toy.
 // One builder feeds two things: the live canvas (components/Wraith3D.tsx: bobs, blinks, follows your finger, hops when tapped) and the
-// still posters (public/mascot/*.png) used where a live canvas is not worth it (empty states, share-card backgrounds).
+// still posters (public/mascot/*.webp) used where a live canvas is not worth it (empty states, ranking header, the corner of share cards).
+// Ghosts do not stand: it floats a hand's width above a hexagon podium (the hexagon is the radar shape from the ranking cards), with a glow and a shadow under it.
 import * as THREE from "three";
-import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 export type Pose = "king" | "wave" | "sleep" | "oops";
@@ -15,7 +15,7 @@ export interface SceneOpts {
   confetti: number;
   /** the light cone from above */
   spotlight: boolean;
-  /** freezes the random parts (confetti, sparkle) so a still always looks the same */
+  /** freezes the random parts (confetti) so a still always looks the same */
   seed?: number;
   /** camera zoom, 1 = the whole podium scene */
   zoom?: number;
@@ -32,7 +32,9 @@ export interface WraithScene {
   dispose(): void;
 }
 
-const BODY_R = 1.02;
+// body shape: a round dome on a belly that narrows a little to a scalloped hem. Rounder than tall, like a toy, with the face big on it.
+const BODY_R = 1.04, CY = 0.2, DOME_B = 0.8, Y_BOT = -0.72, CORNER = 0.2;
+const FACE_Y = 0.36;
 const TOP = new THREE.Color("#ff9a58");
 const MID = new THREE.Color("#ff7a3a");
 const BOT = new THREE.Color("#e4470e");
@@ -59,15 +61,14 @@ const radialTexture = (stops: [number, string][]) => canvasTexture(128, (g, s) =
   g.fillStyle = r; g.fillRect(0, 0, s, s);
 });
 
-/** The ghost's body: dome, round belly, a hem of five soft lobes; the colour is painted per vertex, the dark hood face is cut in the shader (smooth edge, nothing sticks out). */
+/** The body: dome, round belly, a hem of five soft lobes. Colour is painted per vertex; the dark hood face is cut in the shader (smooth edge, nothing sticks out). */
 function bodyGeometry(): THREE.BufferGeometry {
   const pts: THREE.Vector2[] = [];
-  const cy = 0.28, a = BODY_R, b = 0.9;
-  for (let i = 0; i <= 28; i++) { const th = (i / 28) * (Math.PI / 2); pts.push(new THREE.Vector2(a * Math.sin(th), cy + b * Math.cos(th))); }
-  const yBot = -0.85;
-  for (let i = 1; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(a * (1 - 0.03 * t + 0.02 * Math.sin(Math.PI * t)), cy + (yBot - cy) * t)); }
-  const rEnd = pts[pts.length - 1].x, c = 0.22;
-  for (let i = 1; i <= 10; i++) { const ph = (i / 10) * (Math.PI / 2); pts.push(new THREE.Vector2(rEnd - c + c * Math.cos(ph), yBot - c * Math.sin(ph))); }
+  const a = BODY_R;
+  for (let i = 0; i <= 28; i++) { const th = (i / 28) * (Math.PI / 2); pts.push(new THREE.Vector2(a * Math.sin(th), CY + DOME_B * Math.cos(th))); }
+  for (let i = 1; i <= 14; i++) { const t = i / 14; pts.push(new THREE.Vector2(a * (1 - 0.03 * t + 0.025 * Math.sin(Math.PI * t)), CY + (Y_BOT - CY) * t)); }
+  const rEnd = pts[pts.length - 1].x;
+  for (let i = 1; i <= 10; i++) { const ph = (i / 10) * (Math.PI / 2); pts.push(new THREE.Vector2(rEnd - CORNER + CORNER * Math.cos(ph), Y_BOT - CORNER * Math.sin(ph))); }
   // (no bottom cap: the hem is never seen from below, and a cap that follows the scalloped lobes folded into a bright stray shard on the front)
   pts.reverse(); // bottom to top: the surface faces outward
   const g = new THREE.LatheGeometry(pts, 112);
@@ -78,12 +79,12 @@ function bodyGeometry(): THREE.BufferGeometry {
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const ang = Math.atan2(x, z); // 0 = straight at the viewer
-    const t = THREE.MathUtils.smoothstep(-y, 0.55, 1.07);
+    const t = THREE.MathUtils.smoothstep(-y, 0.45, 0.92);
     const lobe = 0.5 + 0.5 * Math.cos(ang * 5);
-    y -= t * t * 0.2 * lobe;
+    y -= t * t * 0.17 * lobe;
     const infl = 1 + t * 0.03 * lobe; x *= infl; z *= infl;
     pos.setXYZ(i, x, y, z);
-    const u = THREE.MathUtils.clamp((y + 1.3) / 2.5, 0, 1);
+    const u = THREE.MathUtils.clamp((y + 1.1) / 2.2, 0, 1);
     if (u > 0.5) col.copy(MID).lerp(TOP, (u - 0.5) * 2); else col.copy(BOT).lerp(MID, u * 2);
     colors[i * 3] = col.r; colors[i * 3 + 1] = col.g; colors[i * 3 + 2] = col.b;
   }
@@ -92,9 +93,10 @@ function bodyGeometry(): THREE.BufferGeometry {
   return g;
 }
 
-/** y of the body's front surface at (x, y): where things stuck on the front (eyes, chain) sit. */
+/** z of the body's front surface at (x, y): where things stuck on the front (eyes, chain) sit. */
 function surfaceZ(x: number, y: number): number {
-  const r = y > 0.28 ? BODY_R * Math.sqrt(Math.max(0, 1 - ((y - 0.28) / 0.9) ** 2)) : BODY_R * (1 - 0.03 * Math.min(1, (0.28 - y) / 1.13));
+  const k = Math.min(1, Math.max(0, (CY - y) / (CY - Y_BOT)));
+  const r = y > CY ? BODY_R * Math.sqrt(Math.max(0, 1 - ((y - CY) / DOME_B) ** 2)) : BODY_R * (1 - 0.03 * k + 0.025 * Math.sin(Math.PI * k));
   return Math.sqrt(Math.max(0.0001, r * r - x * x));
 }
 
@@ -114,6 +116,16 @@ function coinTexture() {
     g.strokeStyle = "rgba(120,70,0,.55)"; g.lineWidth = 10; g.beginPath(); g.arc(s / 2, s / 2, s * 0.4, 0, Math.PI * 2); g.stroke();
     g.fillStyle = "#7a4300"; g.font = `800 ${s * 0.46}px "Plus Jakarta Sans", system-ui, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("W", s / 2, s / 2 + 8);
   });
+}
+
+function starShape(outer: number, inner: number): THREE.Shape {
+  const s = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner, a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+    if (i === 0) s.moveTo(Math.cos(a) * r, Math.sin(a) * r); else s.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  s.closePath();
+  return s;
 }
 
 export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts): WraithScene {
@@ -146,7 +158,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", "#include <common>\nvarying vec3 vObjPos;")
       .replace("#include <color_fragment>", `#include <color_fragment>
-        float fd = length(vec2(vObjPos.x / 0.66, (vObjPos.y - 0.5) / 0.47));
+        float fd = length(vec2(vObjPos.x / 0.7, (vObjPos.y - ${FACE_Y.toFixed(3)}) / 0.5));
         float fm = (1.0 - smoothstep(0.88, 1.0, fd)) * smoothstep(0.0, 0.25, vObjPos.z);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.03, 0.014, 0.009), fm * 0.99);`)
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, fm);")
@@ -157,12 +169,15 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
           material.sheenColor *= (1.0 - fm);
         #endif`);
   };
-  const armMat = own(new THREE.MeshPhysicalMaterial({ color: "#ff7a3e", roughness: 0.44, clearcoat: 0.45, clearcoatRoughness: 0.6, sheen: 0.3, sheenColor: new THREE.Color("#ffb88a") }));
-  // the soft room is only for the gold to reflect: on the orange body its bright panels showed up as hard yellow patches, so the body takes much less of it
-  bodyMat.envMap = armMat.envMap = envTex;
-  bodyMat.envMapIntensity = armMat.envMapIntensity = 0.2;
+  // (no sheen on the arms: where the hand meets the arm it lit a pale ring that read like a bracelet)
+  const armMat = own(new THREE.MeshStandardMaterial({ color: "#ff7a3e", roughness: 0.5, metalness: 0 }));
+  // the soft room is only for the gold to reflect: on the orange body its bright panels showed up as hard yellow patches, and across the arms as pale rings,
+  // so the body takes much less of it and the arms none
+  bodyMat.envMap = envTex; bodyMat.envMapIntensity = 0.2;
+  armMat.envMap = envTex; armMat.envMapIntensity = 0.0;
   const goldMat = own(new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.24 }));
   const glow = own(new THREE.MeshBasicMaterial({ color: "#fff1dc" }));
+  const coinFace = own(new THREE.MeshStandardMaterial({ map: own(coinTexture()), metalness: 0.8, roughness: 0.3 }));
 
   // everything about the ghost lives in one group so it can bob and turn as one
   const ghost = new THREE.Group();
@@ -175,65 +190,72 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const closed = opts.pose === "sleep";
   const wide = opts.pose === "oops";
   for (const sx of [-1, 1]) {
-    const x = sx * 0.27, y = 0.56, z = surfaceZ(x, y) + 0.012;
+    const x = sx * 0.29, y = FACE_Y + 0.1, z = surfaceZ(x, y) + 0.012;
     const e = new THREE.Group();
     e.position.set(x, y, z); e.rotation.y = Math.atan2(x, z);
     if (closed) {
-      const arc = new THREE.Mesh(own(new THREE.TorusGeometry(0.115, 0.024, 10, 28, Math.PI)), glow);
+      const arc = new THREE.Mesh(own(new THREE.TorusGeometry(0.12, 0.025, 10, 28, Math.PI)), glow);
       arc.rotation.z = Math.PI; arc.position.y = 0.04; e.add(arc);
     } else {
       const eye = new THREE.Mesh(own(new THREE.SphereGeometry(1, 32, 24)), glow);
-      eye.scale.set(wide ? 0.17 : 0.13, wide ? 0.22 : 0.19, 0.04); e.add(eye);
+      eye.scale.set(wide ? 0.18 : 0.14, wide ? 0.23 : 0.2, 0.04); e.add(eye);
       const spark = new THREE.Mesh(own(new THREE.SphereGeometry(0.04, 12, 12)), new THREE.MeshBasicMaterial({ color: "#ffffff" }));
       spark.position.set(-0.035, 0.07, 0.05); e.add(spark);
-      const pupil = new THREE.Mesh(own(new THREE.SphereGeometry(wide ? 0.06 : 0.0, 12, 12)), own(new THREE.MeshBasicMaterial({ color: "#2a120a" })));
-      pupil.position.set(0, -0.02, 0.045); if (wide) e.add(pupil);
+      if (wide) {
+        const pupil = new THREE.Mesh(own(new THREE.SphereGeometry(0.06, 12, 12)), own(new THREE.MeshBasicMaterial({ color: "#2a120a" })));
+        pupil.position.set(0, -0.02, 0.045); e.add(pupil);
+      }
     }
-    const halo = new THREE.Mesh(own(new THREE.PlaneGeometry(0.44, 0.44)), own(new THREE.MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const halo = new THREE.Mesh(own(new THREE.PlaneGeometry(0.46, 0.46)), own(new THREE.MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
     halo.position.z = -0.01; e.add(halo);
     ghost.add(e); eyes.push(e);
   }
   // mouth
   {
-    const y = 0.27, z = surfaceZ(0, y) + 0.012;
+    const y = FACE_Y - 0.17, z = surfaceZ(0, y) + 0.012;
     const m = new THREE.Group(); m.position.set(0, y, z);
     if (opts.pose === "oops") {
-      const o = new THREE.Mesh(own(new THREE.TorusGeometry(0.07, 0.02, 10, 28)), glow); m.add(o);
+      m.add(new THREE.Mesh(own(new THREE.TorusGeometry(0.075, 0.021, 10, 28)), glow));
     } else if (opts.pose === "sleep") {
-      const l = new THREE.Mesh(own(new THREE.CapsuleGeometry(0.014, 0.1, 6, 12)), glow); l.rotation.z = Math.PI / 2; m.add(l);
+      const l = new THREE.Mesh(own(new THREE.CapsuleGeometry(0.015, 0.1, 6, 12)), glow); l.rotation.z = Math.PI / 2; m.add(l);
     } else {
-      const s = new THREE.Mesh(own(new THREE.TorusGeometry(0.12, 0.022, 10, 32, Math.PI)), glow); s.rotation.z = Math.PI; s.position.y = 0.06; m.add(s);
+      const s = new THREE.Mesh(own(new THREE.TorusGeometry(0.13, 0.023, 10, 32, Math.PI)), glow); s.rotation.z = Math.PI; s.position.y = 0.07; m.add(s);
     }
     ghost.add(m);
   }
 
-  // arms: stubby mittens. The right one is up (holding a coin in "king", waving in "wave")
+  // arms: round mittens on short arms, the same size on both sides. Rotation z is measured from "hanging straight down"; for the left arm
+  // (x < 0) a NEGATIVE angle swings it out to the left, for the right arm a POSITIVE one swings it out to the right. (Both used to swing inward
+  // and hid behind the body, which is why one arm looked like a tiny stub.)
   const armL = new THREE.Group(), armR = new THREE.Group();
-  const arm = (g: THREE.Group, sx: number) => {
-    const limb = new THREE.Mesh(own(new THREE.CapsuleGeometry(0.18, 0.3, 8, 20)), armMat);
-    limb.position.y = -0.2; g.add(limb);
-    const hand = new THREE.Mesh(own(new THREE.SphereGeometry(0.21, 24, 18)), armMat);
-    hand.position.y = -0.52; g.add(hand);
-    g.position.set(sx * 0.98, 0.1, 0.12);
+  const buildArm = (g: THREE.Group, sx: number) => {
+    // one rounded capsule per arm (a separate, wider hand ball left a lit ring around the wrist that read like a bracelet)
+    const limb = new THREE.Mesh(own(new THREE.CapsuleGeometry(0.2, 0.36, 10, 24)), armMat);
+    limb.position.y = -0.24; g.add(limb);
+    g.position.set(sx * 0.96, 0.0, 0.1);
     ghost.add(g);
   };
-  arm(armL, -1); arm(armR, 1);
-  const upRight = opts.pose === "king" || opts.pose === "wave" || opts.pose === "oops";
-  armL.rotation.z = opts.pose === "oops" ? -2.5 : 0.5; // hangs a little out
-  armR.rotation.z = upRight ? (opts.pose === "oops" ? 2.5 : 2.3) : -0.5;
-  const raised = upRight;
+  buildArm(armL, -1); buildArm(armR, 1);
+  const bothUp = opts.pose === "king" || opts.pose === "oops";
+  const rightUp = bothUp || opts.pose === "wave";
+  const UP = opts.pose === "oops" ? 2.5 : 2.2, DOWN = 0.5;
+  const leftBase = bothUp ? -UP : -DOWN, rightBase = rightUp ? UP : DOWN;
+  armL.rotation.z = leftBase; armR.rotation.z = rightBase;
   if (opts.pose === "king") {
-    const coin = new THREE.Mesh(own(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 48)), [goldMat, own(new THREE.MeshStandardMaterial({ map: own(coinTexture()), metalness: 0.8, roughness: 0.3 })), goldMat]);
-    coin.rotation.x = Math.PI / 2; coin.position.set(0.0, -0.78, 0.0);
-    const hold = new THREE.Group(); hold.add(coin); hold.rotation.y = 0.3; armR.add(hold);
+    // a gold W coin in the right hand, a gold star in the left: the winner's pose, the same on both sides
+    const coin = new THREE.Mesh(own(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 48)), [goldMat, coinFace, goldMat]);
+    coin.rotation.x = Math.PI / 2; coin.position.set(0, -0.68, 0);
+    const holdR = new THREE.Group(); holdR.add(coin); holdR.rotation.y = 0.25; armR.add(holdR);
+    const star = new THREE.Mesh(own(new THREE.ExtrudeGeometry(starShape(0.27, 0.12), { depth: 0.06, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 3 })), goldMat);
+    star.position.set(0, -0.7, -0.03); star.rotation.z = Math.PI;
+    const holdL = new THREE.Group(); holdL.add(star); holdL.rotation.y = -0.25; armL.add(holdL);
   }
 
-  // crown (king only): band, five points with pearls, a ruby in front
+  // crown (king, and the sleeper's slipping one): band, five points with pearls, a ruby in front
   if (opts.pose === "king" || opts.pose === "sleep") {
     const crown = new THREE.Group();
-    const band = new THREE.Mesh(own(new THREE.CylinderGeometry(0.46, 0.42, 0.26, 48, 1, true)), goldMat);
-    (band.material as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
-    crown.add(band);
+    const bandMat = own(new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.24, side: THREE.DoubleSide }));
+    crown.add(new THREE.Mesh(own(new THREE.CylinderGeometry(0.46, 0.42, 0.26, 48, 1, true)), bandMat));
     for (const y of [0.13, -0.13]) { const rimT = new THREE.Mesh(own(new THREE.TorusGeometry(y > 0 ? 0.46 : 0.42, 0.03, 12, 64)), goldMat); rimT.rotation.x = Math.PI / 2; rimT.position.y = y; crown.add(rimT); }
     const pearl = own(new THREE.MeshPhysicalMaterial({ color: "#fff6e6", roughness: 0.2, clearcoat: 1, sheen: 1 }));
     for (let i = 0; i < 5; i++) {
@@ -245,7 +267,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
     }
     const ruby = new THREE.Mesh(own(new THREE.OctahedronGeometry(0.075)), own(new THREE.MeshPhysicalMaterial({ color: "#ff3355", emissive: "#ff1a40", emissiveIntensity: 0.6, roughness: 0.15, clearcoat: 1 })));
     ruby.position.set(0, 0, 0.45); ruby.scale.set(1, 1.3, 0.8); crown.add(ruby);
-    crown.position.set(0.04, 1.1, 0.06); crown.rotation.set(0.14, 0, opts.pose === "sleep" ? -0.35 : -0.1); crown.scale.setScalar(1.22);
+    crown.position.set(0.03, CY + DOME_B - 0.06, 0.05); crown.rotation.set(0.14, 0, opts.pose === "sleep" ? -0.35 : -0.08); crown.scale.setScalar(1.18);
     ghost.add(crown);
   }
 
@@ -253,38 +275,44 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   if (opts.pose === "king") {
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 28; i++) {
-      const u = (i / 28) * 2 - 1; // -1..1
-      const x = u * 0.72, y = -0.2 + 0.4 * u * u;
+      const u = (i / 28) * 2 - 1;
+      const x = u * 0.74, y = -0.3 + 0.46 * u * u;
       pts.push(new THREE.Vector3(x, y, surfaceZ(x, y) + 0.03));
     }
-    const chain = new THREE.Mesh(own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.02, 8, false)), goldMat);
-    ghost.add(chain);
-    const pend = new THREE.Mesh(own(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 40)), [goldMat, own(new THREE.MeshStandardMaterial({ map: own(coinTexture()), metalness: 0.8, roughness: 0.3 })), goldMat]);
-    pend.rotation.x = Math.PI / 2; pend.position.set(0, -0.28, surfaceZ(0, -0.28) + 0.06); ghost.add(pend);
+    ghost.add(new THREE.Mesh(own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.02, 8, false)), goldMat));
+    const pend = new THREE.Mesh(own(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 40)), [goldMat, coinFace, goldMat]);
+    pend.rotation.x = Math.PI / 2; pend.position.set(0, -0.33, surfaceZ(0, -0.33) + 0.06); ghost.add(pend);
   }
 
-  ghost.position.y = opts.podium ? 1.27 : 0;
+  const HOVER = 1.4; // body-origin height above the podium top: the lowest hem lobe floats about a hand's width above it
+  ghost.position.y = opts.podium ? HOVER : 0;
   scene.add(ghost);
 
-  // podium (1st in the middle, 2nd left, 3rd right) with a gold ring on top of the winner
+  // podium: three hexagon steps (1st in the middle, 2nd left, 3rd right), glossy graphite, a metal ring on top and an orange light line at the foot
   const podium = new THREE.Group();
   if (opts.podium) {
-    const stone = own(new THREE.MeshPhysicalMaterial({ color: "#17171d", roughness: 0.32, metalness: 0.55, clearcoat: 0.7, clearcoatRoughness: 0.25 }));
-    const steps: [number, number, number, string][] = [[0, 0, 1.0, "#ffc83d"], [-1.95, -0.38, 2, "#cfd6e4"], [1.95, -0.7, 3, "#d8955a"]];
+    const stone = own(new THREE.MeshPhysicalMaterial({ color: "#14141a", roughness: 0.3, metalness: 0.5, clearcoat: 0.8, clearcoatRoughness: 0.2 }));
+    const topMat = own(new THREE.MeshPhysicalMaterial({ color: "#1d1d25", roughness: 0.35, metalness: 0.4, clearcoat: 0.6 }));
+    const ember = own(new THREE.MeshBasicMaterial({ color: "#ff7b3d" }));
+    const steps: [number, number, number, string][] = [[0, 0, 1, "#ffc83d"], [-2.1, -0.5, 2, "#cfd6e4"], [2.1, -0.85, 3, "#d8955a"]];
     for (const [x, top, n, color] of steps) {
-      const h = 1.2;
-      const box = new THREE.Mesh(own(new RoundedBoxGeometry(1.7, h, 1.7, 6, 0.1)), stone);
-      box.position.set(x, top - h / 2, 0); podium.add(box);
-      const tag = new THREE.Mesh(own(new THREE.PlaneGeometry(0.7, 0.7)), own(new THREE.MeshBasicMaterial({ map: own(numeral(Math.round(n), color)), transparent: true })));
-      tag.position.set(x, top - 0.42, 0.861); podium.add(tag);
-      const ringTop = new THREE.Mesh(own(new THREE.TorusGeometry(0.82, 0.018, 10, 80)), own(new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: 0.3 })));
-      ringTop.rotation.x = Math.PI / 2; ringTop.position.set(x, top + 0.004, 0); podium.add(ringTop);
+      const h = 1.5;
+      const hex = new THREE.Mesh(own(new THREE.CylinderGeometry(0.98, 1.06, h, 6, 1)), stone);
+      hex.rotation.y = Math.PI / 6; hex.position.set(x, top - h / 2, 0); podium.add(hex);
+      const plate = new THREE.Mesh(own(new THREE.CylinderGeometry(0.88, 0.88, 0.03, 6)), topMat);
+      plate.rotation.y = Math.PI / 6; plate.position.set(x, top + 0.012, 0); podium.add(plate);
+      const ring = new THREE.Mesh(own(new THREE.TorusGeometry(0.88, 0.024, 8, 6)), own(new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: 0.28 })));
+      ring.rotation.set(Math.PI / 2, 0, 0); ring.position.set(x, top + 0.03, 0); podium.add(ring);
+      const foot = new THREE.Mesh(own(new THREE.TorusGeometry(1.08, 0.022, 8, 6)), ember);
+      foot.rotation.set(Math.PI / 2, 0, 0); foot.position.set(x, top - h + 0.03, 0); podium.add(foot);
+      const tag = new THREE.Mesh(own(new THREE.PlaneGeometry(0.62, 0.62)), own(new THREE.MeshBasicMaterial({ map: own(numeral(n, color)), transparent: true })));
+      tag.position.set(x, top - 0.52, 0.93); podium.add(tag);
     }
-    // light pool and contact shadow on the winner's step
-    const pool = new THREE.Mesh(own(new THREE.CircleGeometry(1.5, 48)), own(new THREE.MeshBasicMaterial({ map: own(radialTexture([[0, "rgba(255,200,130,.5)"], [1, "rgba(255,200,130,0)"]])), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-    pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.01, 0); podium.add(pool);
-    const shadow = new THREE.Mesh(own(new THREE.CircleGeometry(0.95, 40)), own(new THREE.MeshBasicMaterial({ map: own(radialTexture([[0, "rgba(0,0,0,.65)"], [1, "rgba(0,0,0,0)"]])), transparent: true, depthWrite: false })));
-    shadow.rotation.x = -Math.PI / 2; shadow.position.set(0, 0.015, 0); podium.add(shadow);
+    // an orange light pool on the winner's step and the ghost's soft shadow on it
+    const pool = new THREE.Mesh(own(new THREE.CircleGeometry(1.7, 48)), own(new THREE.MeshBasicMaterial({ map: own(radialTexture([[0, "rgba(255,150,80,.55)"], [1, "rgba(255,150,80,0)"]])), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.045, 0); podium.add(pool);
+    const shadow = new THREE.Mesh(own(new THREE.CircleGeometry(0.85, 40)), own(new THREE.MeshBasicMaterial({ map: own(radialTexture([[0, "rgba(0,0,0,.55)"], [1, "rgba(0,0,0,0)"]])), transparent: true, depthWrite: false })));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.set(0, 0.05, 0); podium.add(shadow);
     scene.add(podium);
   }
 
@@ -306,10 +334,14 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const flakes = opts.confetti;
   let confetti: THREE.InstancedMesh | null = null;
   const fl: { x: number; y: number; z: number; v: number; r: number; s: number }[] = [];
+  // on a wide banner the confetti spreads over the whole width (and gets denser, up to twice as many flakes), not just the middle
+  const flakeMax = Math.ceil(flakes * 2);
+  let xScale = 1;
   if (flakes > 0) {
-    confetti = new THREE.InstancedMesh(own(new THREE.PlaneGeometry(0.09, 0.15)), own(new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })), flakes);
+    confetti = new THREE.InstancedMesh(own(new THREE.PlaneGeometry(0.09, 0.15)), own(new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })), flakeMax);
+    confetti.count = flakes;
     const palette = ["#ffc83d", "#ffd96b", "#ff8447", "#fff1dc", "#ff5a7a"].map((c) => new THREE.Color(c));
-    for (let i = 0; i < flakes; i++) {
+    for (let i = 0; i < flakeMax; i++) {
       fl.push({ x: (R() - 0.5) * 6.5, y: R() * 6 - 1.5, z: (R() - 0.5) * 3 + 0.3, v: 0.25 + R() * 0.45, r: R() * Math.PI * 2, s: 0.6 + R() * 0.8 });
       confetti.setColorAt(i, palette[Math.floor(R() * palette.length)]);
     }
@@ -318,10 +350,10 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const dummy = new THREE.Object3D();
   const placeFlakes = (t: number) => {
     if (!confetti) return;
-    for (let i = 0; i < fl.length; i++) {
+    for (let i = 0; i < confetti.count; i++) {
       const f = fl[i];
       const y = ((f.y - t * f.v + 1.5) % 6 + 6) % 6 - 1.5;
-      dummy.position.set(f.x + Math.sin(t * 0.8 + i) * 0.12, y, f.z);
+      dummy.position.set(f.x * xScale + Math.sin(t * 0.8 + i) * 0.12, y, f.z);
       dummy.rotation.set(t * f.s + f.r, t * f.s * 0.7, f.r);
       dummy.updateMatrix();
       confetti.setMatrixAt(i, dummy.matrix);
@@ -336,30 +368,33 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const cur = { x: 0, y: 0 };
   const crowned = opts.pose === "king" || opts.pose === "sleep";
   const zoom = opts.zoom ?? 1; // >1 moves the camera in (the hero banner is wide and short, so it wants the ghost bigger)
-  const lookAtY = opts.podium ? 1.0 + (zoom - 1) : crowned ? 0.5 : -0.02;
+  const lookAtY = opts.podium ? 1.0 + (zoom - 1) : crowned ? 0.45 : -0.05;
   const sx = -(opts.shiftX ?? 0); // the camera slides left, so the ghost appears to the right (leaves room for a title on the left)
-  const frame = () => {
-    camera.position.set(sx, opts.podium ? 1.5 + (zoom - 1) * 0.6 : lookAtY + 0.3, (opts.podium ? 8.6 : crowned ? 7.9 : 6.0) / zoom);
-    camera.lookAt(sx, lookAtY, 0);
-  };
-  frame();
+  camera.position.set(sx, opts.podium ? 1.5 + (zoom - 1) * 0.6 : lookAtY + 0.3, (opts.podium ? 8.6 : crowned ? 7.6 : 6.0) / zoom);
+  camera.lookAt(sx, lookAtY, 0);
 
   return {
     scene, camera,
-    resize(w, h) { camera.aspect = Math.max(0.2, w / Math.max(1, h)); camera.fov = camera.aspect < 1 ? 32 / Math.min(1, camera.aspect * 0.9 + 0.1) : 32; camera.updateProjectionMatrix(); },
+    resize(w, h) {
+      camera.aspect = Math.max(0.2, w / Math.max(1, h)); camera.fov = camera.aspect < 1 ? 32 / Math.min(1, camera.aspect * 0.9 + 0.1) : 32; camera.updateProjectionMatrix();
+      const half = Math.tan((camera.fov * Math.PI) / 360) * camera.position.z * camera.aspect; // half the visible width at the ghost's depth
+      xScale = Math.max(1, (half + Math.abs(sx)) / 3.25);
+      if (confetti) confetti.count = Math.min(flakeMax, Math.round(flakes * Math.min(2, xScale)));
+    },
     update(t, dt, pointer) {
       cur.x += (pointer.x - cur.x) * Math.min(1, dt * 5); cur.y += (pointer.y - cur.y) * Math.min(1, dt * 5);
       // hop on tap: a little spring
       hopV -= 28 * dt; hop += hopV * dt; if (hop < 0) { hop = 0; hopV = 0; }
       spin *= Math.pow(0.02, dt);
-      ghost.position.y = base + Math.sin(t * 1.8) * 0.05 + hop;
+      ghost.position.y = base + Math.sin(t * 1.8) * 0.06 + hop; // floats, never touches
       ghost.rotation.y = cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + spin;
       ghost.rotation.x = -cur.y * 0.14;
       ghost.rotation.z = Math.sin(t * 1.2) * 0.02;
       const squash = 1 + Math.sin(t * 1.8 + 1.2) * 0.012; ghost.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-      if (opts.pose === "wave") armR.rotation.z = 2.3 + Math.sin(t * 6) * 0.25;
-      else if (raised) armR.rotation.z = (opts.pose === "oops" ? 2.5 : 2.3) + Math.sin(t * 2.2) * 0.05;
-      armL.rotation.z = (opts.pose === "oops" ? -2.5 : 0.5) + Math.sin(t * 2 + 1) * 0.04;
+      // both arms move together: the same swing, a half-beat apart, mirrored left and right
+      const wave = Math.sin(t * 6) * 0.25;
+      armR.rotation.z = rightBase + (opts.pose === "wave" ? wave : Math.sin(t * 2.2) * 0.06);
+      armL.rotation.z = leftBase - (bothUp ? Math.sin(t * 2.2 + 1.4) * 0.06 : Math.sin(t * 2 + 1) * 0.05);
       // blink
       if (!closed && t > blinkAt && blinkT < 0) blinkT = t;
       if (blinkT >= 0) { const k = (t - blinkT) / 0.14; const s = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; for (const e of eyes) e.scale.y = Math.max(0.08, s); if (k >= 1) { blinkT = -1; blinkAt = t + 2.4 + Math.random() * 2.4; } }

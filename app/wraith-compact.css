@@ -617,10 +617,12 @@ button.wp-back { background: transparent; border: 0; padding: 4px 0; cursor: poi
 /* starts part-visible, so a screen change is a quick ease and never a flash of black */
 @keyframes wx-page-in { from { opacity: .45; } to { opacity: 1; } }
 @keyframes wx-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-body.wx-enter .wx-page, body.wx-enter .profile-page { animation: wx-page-in .18s ease-out both; }
+/* the screen is animated through ONE wrapper (.wx-route, in AppShell) that stays put while the page inside it changes. Animating the page itself made a token
+   screen slide in twice: once as its loading skeleton, and again when the real page replaced the skeleton. */
+body.wx-enter .wx-route { animation: wx-page-in .18s ease-out both; }
 .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: wx-page-in .22s ease-out both; }
 @media (prefers-reduced-motion: reduce) {
-  body.wx-enter .wx-page, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: none !important; }
+  body.wx-enter .wx-route, .wx-market-layout, .wx-scanner-layout, .wx-wins-wrap, .hc-scroll { animation: none !important; }
 }
 
 /* ───────────────────────────────────────────────────────────────────────
@@ -1395,10 +1397,10 @@ html { scroll-behavior: smooth; }
 @keyframes wx-slide-back { from { transform: translate3d(-26%, 0, 0); opacity: .55; } to { transform: translate3d(0, 0, 0); opacity: 1; } }
 @media (max-width: 899px) {
   body.wx-enter-fwd, body.wx-enter-back { overflow-x: hidden; }
-  body.wx-enter-fwd .wx-page, body.wx-enter-fwd .profile-page { animation: wx-slide-fwd .34s cubic-bezier(.22, 1, .36, 1) both; }
-  body.wx-enter-back .wx-page, body.wx-enter-back .profile-page { animation: wx-slide-back .34s cubic-bezier(.22, 1, .36, 1) both; }
+  body.wx-enter-fwd .wx-route { animation: wx-slide-fwd .34s cubic-bezier(.22, 1, .36, 1) both; }
+  body.wx-enter-back .wx-route { animation: wx-slide-back .34s cubic-bezier(.22, 1, .36, 1) both; }
 }
-@media (prefers-reduced-motion: reduce) { body.wx-enter-fwd .wx-page, body.wx-enter-back .wx-page, body.wx-enter-fwd .profile-page, body.wx-enter-back .profile-page { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { body.wx-enter-fwd .wx-route, body.wx-enter-back .wx-route { animation: none !important; } }
 
 /* ───────── Ghost scene: the Wraith ghost as a character (Wins banner) and the sleepy ghost in empty states ───────── */
 .gs { position: relative; overflow: hidden; border-radius: 26px; margin-bottom: 16px; background: radial-gradient(80% 110% at 50% 0%, rgba(255, 190, 110, .14), transparent 70%), #0a0a0b; box-shadow: 0 14px 34px rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 255, 255, .075); }
@@ -1409,7 +1411,9 @@ html { scroll-behavior: smooth; }
 .w3d { position: relative; width: 100%; height: 100%; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
 .gs .w3d { position: absolute; inset: 0; }
 .w3d-poster, .w3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.w3d-poster { object-fit: fill; pointer-events: none; -webkit-user-drag: none; }
+.w3d-poster { object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+/* the still was drawn for a phone-shaped banner: on a wide one it would sit in the wrong place under the live scene, so it only shows there when 3D is off */
+@media (min-width: 600px) { .gs .w3d:not(.is-still) .w3d-poster { display: none; } }
 .w3d-canvas { opacity: 0; transition: opacity .5s ease; }
 .w3d.is-live .w3d-canvas { opacity: 1; }
 .w3d.is-live .w3d-poster { opacity: 0; transition: opacity .1s linear .5s; }
