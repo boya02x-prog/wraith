@@ -34,6 +34,14 @@ const EXTRA: { key: string; log?: boolean }[] = [
   { key: "thWin" }, { key: "thN", log: true },
 ];
 
+/**
+ * Market-regime and rank columns (how the last day of calls turned out, where a call ranks among them). They looked good while the model was being built,
+ * but on the honest forward test (train on everything before a block of calls, score that block) taking them OUT raised the score on every target we
+ * tried: reach 2x 0.477 -> 0.506, reach +50% 0.497 -> 0.514, reach +30% 0.526 -> 0.543 (scripts/research-target.ts). With only a few thousand calls they
+ * just memorise. They stay in the list so old saved models keep reading the same positions; they are simply always "missing".
+ */
+const IGNORED = new Set(["regWin12", "regWin36", "regCol12", "regN12", "rkVol", "rkLiq", "rkH1", "rkM5", "rkTraders", "rkBuy", "rkMcap", "rkHolders", "rkAge", "thWin", "thN"]);
+
 export const FEATURE_NAMES = [...NUMERIC.map((n) => n.key), ...HAS.map((k) => `has:${k}`), ...EXTRA.map((n) => n.key)];
 
 const slog = (x: number) => Math.sign(x) * Math.log1p(Math.abs(x));
@@ -48,7 +56,7 @@ export function rawVector(f: Features): number[] {
   }
   for (const k of HAS) out.push(num(f[k]) === null ? 0 : 1);
   for (const n of EXTRA) {
-    const v = num(f[n.key]);
+    const v = IGNORED.has(n.key) ? null : num(f[n.key]);
     out.push(v === null ? NaN : n.log ? slog(v) : v);
   }
   return out;
