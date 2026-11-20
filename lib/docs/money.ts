@@ -76,9 +76,10 @@ export const MONEY: DocPage[] = [
     blocks: [
       { t: "steps", items: [
         { title: "Open Withdraw", text: "Choose **Withdraw** in the avatar menu (it is there on every screen size), or press the **Withdraw** button next to your cash balance on a wide screen." },
-        { title: "Choose where it goes", text: "Pick the network that the receiving address is on, and the token you want it to receive." },
-        { title: "Enter the amount and the address", text: "Use the quick buttons or type an amount, then paste the receiving address. Wraith checks that the address is valid for that network." },
-        { title: "Confirm", text: "Approve the transaction. You can follow it afterwards in **Transfers**." },
+        { title: "Step 1: the amount", text: "Type the amount on the number pad (on a computer you can type it on your keyboard), or press **25%**, **50%**, **75%** or **Max**. Under the amount Wraith says which of your cash balances it will come from. In the **Send to network** box pick the network the receiving address is on; it also shows the token that will arrive. Then press **Next**." },
+        { title: "Step 2: the address", text: "Paste the receiving address with the **Paste** button, or tap one of your three most recent addresses on that network. Under the box Wraith says whether the address is valid for that network. Then press **Review**." },
+        { title: "Step 3: review and send", text: "You see what you send, the address, the network, where the money comes from, what the receiver gets and the network fee. If you hold cash on more than one network, **Pay from** lets you choose where it comes out of; otherwise Wraith picks the best route. Press **Confirm and send**. You can follow it afterwards in **Transfers**." },
+        { title: "Going back", text: "The **Back** button at the top returns you one step and keeps what you typed." },
       ] },
       { t: "h2", text: "How it is sent" },
       { t: "ul", items: [

@@ -21,6 +21,8 @@ export const HELP: DocPage[] = [
       { t: "p", text: "Yes. They come from the same server-side call record the app uses. The multiple is measured from the market cap where the token was spotted." },
       { t: "h3", text: "How do I withdraw?" },
       { t: "p", text: "Avatar menu, then **Withdraw**. See [Withdraw](/docs/withdraw)." },
+      { t: "h3", text: "Why do I see a \"verify you are human\" screen?" },
+      { t: "p", text: "On a computer, the website asks for a quick check from Cloudflare before it opens, to keep bots out. It takes a second and is remembered for a while. Phones and the Android app skip it." },
       { t: "h3", text: "Is there an iPhone app?" },
       { t: "p", text: "Not yet. The website works on any phone, and you can add it to your home screen. The Android app adds notifications, fingerprint unlock and screenshot-to-share." },
       { t: "h3", text: "Why does my balance show a ~ ?" },
