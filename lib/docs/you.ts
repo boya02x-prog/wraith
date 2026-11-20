@@ -11,7 +11,7 @@ export const YOU: DocPage[] = [
       { t: "ul", items: [
         "**Avatar, name and @handle**, a short **bio**, and how many people you **follow** and how many follow **you** (tap either number for the list).",
         "**Edit profile** changes your photo, cover, name, handle, bio and **avatar border**. **Share** opens the [Share studio](/docs/share).",
-        "**The cover.** If you have not uploaded one, Wraith gives you a 3D banner of its ghost in a different colour and a different pose (wearing the crown, waving, asleep, shocked, cheering, dancing, spinning or hopping). Which one you get depends on your account and never changes by itself.",
+        "**The cover.** If you have not uploaded one, Wraith gives you a 3D banner of its ghost in a different colour and a different pose (wearing the crown, waving, asleep, shocked, cheering, dancing, spinning or hopping). The ghost is always turned toward your photo. Which one you get depends on your account and never changes by itself.",
         "**Tap a photo to see it large.** Your photo and cover open full screen; the same works for other traders' photos and covers, in search results and on the leaderboard, and for token pictures in search. Pinch to zoom, drag down or tap outside to close.",
         "**Joined** and your number of trades, plus your linked X account if you added one.",
       ] },

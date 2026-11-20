@@ -12,7 +12,9 @@ const svgUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(sv
 /**
  * The cover of anyone who has not uploaded one: Wraith's own 3D ghost in a different colour and a different action (king, wave, asleep,
  * shocked, cheering, dancing, spinning, hopping), one of eight pictures in public/covers, chosen by the account so it never changes.
- * (Rendered from lib/wraith3d.ts, 1600x440.)
+ * Every picture is composed the same way: 1600x500, the ghost left of centre (so it is close to the profile photo, which overlaps the cover's lower
+ * left), turned toward that photo, about 60% of the height, with its own props (speech bubble, moon, music notes ...). Rendered from lib/wraith3d.ts
+ * with the yaw / lift options plus a little 2D painting. HotShots.tsx shows the same picture smaller on its tall posters.
  */
 export const DEFAULT_COVERS = ["king", "wave", "sleep", "oops", "cheer", "dance", "spin", "hop"] as const;
 export function defaultCover(seed: string): string {

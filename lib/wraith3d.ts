@@ -23,6 +23,10 @@ export interface SceneOpts {
   shiftX?: number;
   /** turns the ghost's orange to another colour: a fraction of the colour wheel (0 = orange, 0.55 = blue, 0.3 = green ...) */
   hue?: number;
+  /** turns the ghost this many radians toward the viewer's left (negative) or right (positive): the default covers use it so the ghost looks at the profile photo beside it */
+  yaw?: number;
+  /** moves the camera up (the ghost sits lower in the picture) or down, in scene units */
+  lift?: number;
 }
 export interface WraithScene {
   scene: THREE.Scene;
@@ -477,7 +481,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   };
   const crowned = opts.pose === "king" || opts.pose === "sleep";
   const zoom = opts.zoom ?? 1; // >1 moves the camera in (the hero banner is wide and short, so it wants the ghost bigger)
-  const lookAtY = opts.podium ? 1.0 + (zoom - 1) : crowned ? 0.45 : -0.05;
+  const lookAtY = (opts.podium ? 1.0 + (zoom - 1) : crowned ? 0.45 : -0.05) + (opts.lift ?? 0);
   const sx = -(opts.shiftX ?? 0); // the camera slides left, so the ghost appears to the right (leaves room for a title on the left)
   camera.position.set(sx, opts.podium ? 1.5 + (zoom - 1) * 0.6 : lookAtY + 0.3, (opts.podium ? 8.6 : crowned ? 7.6 : 6.0) / zoom);
   camera.lookAt(sx, lookAtY, 0);
@@ -509,7 +513,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
       boop = Math.max(0, boop - dt * 4.5); // every tap answers at once with a little squash, even when it has to wait its turn
       off.sq *= 1 - 0.06 * boop * boop;
       ghost.position.y = base + Math.sin(t * 1.8) * 0.06 + off.y; // floats, never touches
-      ghost.rotation.y = cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + off.ry;
+      ghost.rotation.y = (opts.yaw ?? 0) + cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + off.ry;
       ghost.rotation.x = -cur.y * 0.14 + off.rx;
       ghost.rotation.z = Math.sin(t * 1.2) * 0.02 + off.rz;
       const squash = (1 + Math.sin(t * 1.8 + 1.2) * 0.012) * off.sq; ghost.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));

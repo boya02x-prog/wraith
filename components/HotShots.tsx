@@ -23,6 +23,14 @@ export type HotTrader = {
 
 type Money = (sol: number, signed?: boolean) => string;
 
+/**
+ * The default 3D cover is a wide banner (the ghost left of centre). A poster is tall, and filling it with that picture blew the ghost up until only its
+ * face showed behind the text. So the picture is shown smaller, as a band in the free space between the name row and the gain, with its top and bottom
+ * edges fading into the card.
+ */
+const FADE = "linear-gradient(180deg, transparent 15%, #000 27%, #000 55%, transparent 67%)";
+const DEFAULT_ART = (src: string): React.CSSProperties => ({ backgroundImage: `url("${src}")`, backgroundSize: "auto 46%", backgroundRepeat: "no-repeat", backgroundPosition: "27% 34%", WebkitMaskImage: FADE, maskImage: FADE });
+
 function Poster({ t, rank, pnl, money, gainLabel }: { t: HotTrader; rank: number; pnl: number; money: Money; gainLabel: string }) {
   const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
   const art = t.hasCover ? `/api/traders/${t.userId}/cover` : defaultCover(t.userId);
@@ -31,7 +39,7 @@ function Poster({ t, rank, pnl, money, gainLabel }: { t: HotTrader; rank: number
   const tag = s?.tags?.[0] ?? (t.username ? `@${t.username}` : "Trader");
   return (
     <article className={`hs-card r${rank}`} style={frameGlow(t.frame)}>
-      <div className="hs-art" style={{ backgroundImage: `url("${art}")` }} aria-hidden="true" />
+      <div className="hs-art" style={t.hasCover ? { backgroundImage: `url("${art}")` } : DEFAULT_ART(art)} aria-hidden="true" />
       <div className="hs-shade" aria-hidden="true" />
       <Link className="hs-hit" href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`} aria-label={`${t.displayName}, number ${rank}`} />
       <span className="hs-rank">{rank === 1 && <Crown size={15} aria-hidden="true" />}#{rank}</span>
