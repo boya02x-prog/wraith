@@ -51,4 +51,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Share studio on screenshot: Android 14+ reports screenshots to an open app (no prompt); older phones, and makers whose own screenshot tool does not report,
+         use the photo-access watcher in MainActivity, which only runs after the person allows photo access -->
+    <uses-permission android:name="android.permission.DETECT_SCREEN_CAPTURE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 </manifest>
