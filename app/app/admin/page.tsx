@@ -5,10 +5,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, Fuel, Gift, ListChecks, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowDown, ArrowUp, Bug, Check, ExternalLink, FlaskConical, Fuel, Gift, ListChecks, Megaphone, Rocket, ShieldCheck, ToggleRight, Trash2, TriangleAlert } from "lucide-react";
 import Header from "@/components/HeaderSlot";
 import DateTimeField from "@/components/DateTimeField";
 import AdminGasWallets from "@/components/AdminGasWallets";
+import AdminLab from "@/components/AdminLab";
 import AdminChecklist from "@/components/AdminChecklist";
 import { refreshLaunchSettings } from "@/hooks/useLaunchSettings";
 import { LAUNCH_ITEMS, MINT_RE, resolveSettings, type LaunchSettings, type RoadmapItem } from "@/lib/launchSettings";
@@ -228,6 +229,7 @@ export default function AdminPage() {
         <a href="#checklist"><ListChecks size={14} /> Checklist</a>
         <a href="#access"><ShieldCheck size={14} /> Site access</a>
         <a href="#gas"><Fuel size={14} /> Gas wallets</a>
+        <a href="#lab"><FlaskConical size={14} /> Auto-trader lab</a>
         <a href="#launch"><Rocket size={14} /> Launch</a>
         <a href="#tools"><ToggleRight size={14} /> Tools</a>
         <a href="#airdrop"><Gift size={14} /> Airdrop</a>
@@ -255,6 +257,8 @@ export default function AdminPage() {
       <AdminChecklist settings={form} />
 
       <AdminGasWallets />
+
+      <AdminLab />
 
       <section className="q-card ad-card" id="launch">
         <h2><Rocket size={16} /> Launch OMEN</h2>

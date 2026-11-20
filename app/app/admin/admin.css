@@ -128,3 +128,13 @@
 .ad-card { scroll-margin-top: 130px; }
 
 .ad-undo { margin-top: 8px; } .ad-undo.is-armed { border-color: rgba(255, 138, 115, .6); color: #ff8a73; }
+
+/* Auto-trader lab */
+.lab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.lab-card { display: grid; gap: 8px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
+.lab-card > b { font-size: 15px; } .lab-card > small { color: var(--text-muted); font-size: 11.5px; line-height: 1.4; }
+.lab-avg { font-size: 30px; font-weight: 800; line-height: 1.1; } .lab-avg i { display: block; font-size: 11px; font-weight: 600; font-style: normal; color: var(--text-muted); margin-top: 2px; }
+.lab-avg.up { color: #37d58a; } .lab-avg.down { color: #ff8a73; }
+.lab-rows { display: grid; gap: 5px; } .lab-rows span { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--text-muted); } .lab-rows b { color: var(--text); font-weight: 700; } .lab-rows b.g { color: #37d58a; } .lab-rows b.r { color: #ff8a73; }
+.lab-verdict { font-style: normal; font-size: 12px; font-weight: 700; color: var(--accent-text); padding-top: 6px; border-top: 1px solid rgba(255,255,255,.06); }
+.lab-recent { display: flex; flex-wrap: wrap; gap: 6px; } .lab-recent span { font-size: 11.5px; padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,.04); font-weight: 700; } .lab-recent span.g { color: #55cf91; } .lab-recent span.r { color: #ff8a73; } .lab-recent i { font-style: normal; font-weight: 500; color: var(--text-muted); }

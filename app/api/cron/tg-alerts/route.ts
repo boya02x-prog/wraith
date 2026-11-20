@@ -3,6 +3,7 @@
 //   1. new HOT/WATCH signals  2. win milestones (2x, 3x, 5x, 10x…) on every tracked call.
 // Auth: Vercel cron sends "Authorization: Bearer $CRON_SECRET"; external cron can use ?key=$CRON_SECRET.
 // Free option if your host only runs daily crons: ping this URL every minute from cron-job.org.
+import { labStep } from "@/lib/autoLab";
 import { isSitePrivate } from "@/lib/siteAccess";
 import { after, NextRequest, NextResponse } from "next/server";
 import { callGet } from "@/lib/internalCall";
@@ -134,6 +135,8 @@ async function runAlertJob(origin: string, first: boolean): Promise<{ status: nu
     signals = (await callGet<{ signals?: Signal[] }>(() => import("@/app/api/signals/route"), `${origin}/api/signals`, 40_000)).signals ?? [];
   } catch { /* feed down: still do wins */ }
   await refreshCalls(true).catch(() => undefined);
+  // the paper auto-trader lab: buys fresh calls and checks open trades against the latest prices (simulation only, see lib/autoLab.ts)
+  await labStep().then((l) => { if (l.opened || l.closed) console.log("[lab]", JSON.stringify(l)); }).catch((e) => console.error("[lab]", e instanceof Error ? e.message : e));
 
   // Phone push starts here, right after the calls are refreshed and in parallel with the Telegram sends below, so a slow or
   // failing Telegram step can never keep an alert from reaching a phone.
