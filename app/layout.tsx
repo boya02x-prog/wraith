@@ -12,6 +12,8 @@ import "./wraith-skin.css";
 import "./wraith-frames.css";
 import "./wraith-traders.css";
 import "./wraith-withdraw.css";
+import "./wraith-intel.css";
+import "./wraith-editprofile.css";
 import WalletProvider from "@/components/WalletProvider";
 import BootSplash from "@/components/BootSplash";
 import NativePush from "@/components/NativePush";

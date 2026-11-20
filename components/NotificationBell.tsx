@@ -110,6 +110,8 @@ export default function NotificationBell() {
       };
 
       const jobs: Promise<void>[] = [];
+      // the best milestone the latest data gives each recent call: a 🏆 entry above it was based on a wrong peak and is taken back below
+      const bestWin = new Map<string, number>();
 
       if (p.trader) jobs.push(getJson<{ callouts?: FeedItem[] }>("/api/traders/feed").then((d) => {
         for (const c of d?.callouts ?? []) {
@@ -146,7 +148,8 @@ export default function NotificationBell() {
           // a call that has since reached 2x, 3x, 5x ...: one 🏆 entry per milestone, like the phone push
           const x = c.spottedMcap > 0 ? Math.max(c.peakMcap ?? 0, c.lastMcap ?? 0) / c.spottedMcap : 0;
           const m = winMilestone(x);
-          if (m) add({ id: `w:${c.address}:${m}`, kind: "signal", ts: Date.now(), img: c.imageUrl, ...winText({ symbol: c.symbol, milestone: m, x, nowMcap: c.lastMcap }), href: `/app/token/${c.address}` });
+          bestWin.set(c.address, m);
+          if (m) add({ id: `w:${c.address}:${m}`, kind: "signal", ts: Date.now(), img: c.imageUrl, ...winText({ symbol: c.symbol, milestone: m, x, nowMcap: c.lastMcap, spottedMcap: c.spottedMcap }), href: `/app/token/${c.address}` });
           add({
             id: `s:${c.address}`, kind: "signal", ts: c.spottedAt, img: c.imageUrl,
             ...callText({ symbol: c.symbol, mcap: c.spottedMcap, score: c.score }),
@@ -185,12 +188,21 @@ export default function NotificationBell() {
 
       write(KNOWN, [...known].slice(-400));
       pushState();
-      if (fresh.length) {
+      // "🏆 $X hit 10x" that the corrected data no longer supports (the call's peak was a wrong price reading) is taken back
+      const wrong = (n: Notif) => {
+        const w = /^w:([^:]+):(\d+)$/.exec(n.id);
+        return !!w && bestWin.has(w[1]) && (bestWin.get(w[1]) ?? 0) < Number(w[2]);
+      };
+      if (fresh.length || bestWin.size) {
         setItems((prev) => {
-          const next = [...fresh, ...prev].sort((a, b) => b.ts - a.ts).slice(0, 60);
+          const kept = prev.some(wrong) ? prev.filter((n) => !wrong(n)) : prev;
+          if (!fresh.length && kept === prev) return prev;
+          const next = [...fresh, ...kept].sort((a, b) => b.ts - a.ts).slice(0, 60);
           write(KEY, next);
           return next;
         });
+      }
+      if (fresh.length) {
         try { navigator.vibrate?.(40); } catch { /* not supported */ }
         // a banner at the top, like any other app (only for something that just happened, not an old call found after a long time away)
         const newest = fresh.reduce((a, b) => (b.ts > a.ts ? b : a), fresh[0]);

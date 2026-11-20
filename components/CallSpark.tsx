@@ -1,9 +1,10 @@
 "use client";
 
-// A small price chart from the moment a call was posted until now, drawn under the token in the Intel feed, so a call can be judged at a glance.
-// It loads only when the card is near the screen (a feed has many cards), reuses the chart route the token page uses, and says nothing when
+// A small price chart from the moment a call was posted until now, drawn under the token in the Intel feed, so a call can be judged at a glance:
+// a dashed line marks the price at the call, the line is green above it and red below it, and it draws itself in from left to right.
+// It loads only when the card is near the screen (a feed has many cards), reuses the chart route the token page uses, and says so quietly when
 // there is no chart (a brand-new token, another chain).
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { SOLANA_MINT_RE } from "@/lib/market";
 
 type Pt = { t: number; c: number };
@@ -20,9 +21,11 @@ function cut(all: Pt[], since: number, stepMs: number): Pt[] {
 }
 
 export default function CallSpark({ mint, since }: { mint: string; since: number }) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const host = useRef<HTMLSpanElement>(null);
   const [near, setNear] = useState(false);
-  const [pts, setPts] = useState<Pt[] | null>(null);
+  const [pts, setPts] = useState<Pt[] | null>(null); // null = not loaded yet, [] = no chart for this token
+  const solana = SOLANA_MINT_RE.test(mint);
 
   useEffect(() => {
     const el = host.current;
@@ -33,7 +36,7 @@ export default function CallSpark({ mint, since }: { mint: string; since: number
   }, []);
 
   useEffect(() => {
-    if (!near || !SOLANA_MINT_RE.test(mint)) return;
+    if (!near || !solana) return;
     const age = Date.now() - since;
     const tf = age < 20 * 3600e3 ? "15m" : age < 10 * 86400e3 ? "1h" : "4h";
     const stepMs = tf === "15m" ? 900e3 : tf === "1h" ? 3600e3 : 14400e3;
@@ -48,32 +51,52 @@ export default function CallSpark({ mint, since }: { mint: string; since: number
         memo.set(key, { at: Date.now(), pts: all });
         if (alive) setPts(cut(all, since, stepMs));
       })
+      .catch(() => { if (alive) setPts([]); });
     return () => { alive = false; };
-  }, [near, mint, since]);
+  }, [near, mint, since, solana]);
 
-  const W = 300, H = 56, PAD = 5;
-  let body: React.ReactNode = <line className="cs-base" x1="0" x2={W} y1={H / 2} y2={H / 2} />;
+  const W = 300, H = 64, PAD = 7;
+  const ready = !!pts && pts.length >= 3;
+  const none = !solana || (pts !== null && !ready);
   let tone = "flat";
-  if (pts && pts.length >= 3) {
+  let svg: React.ReactNode = null;
+  let dots: React.ReactNode = null;
+  if (ready && pts) {
     const lo = Math.min(...pts.map((p) => p.c)), hi = Math.max(...pts.map((p) => p.c));
     const span = hi - lo || hi || 1;
     const xy = pts.map((p, i) => [(i / (pts.length - 1)) * W, PAD + (1 - (p.c - lo) / span) * (H - PAD * 2)] as const);
     const line = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
     const [x0, y0] = xy[0], [x1, y1] = xy[xy.length - 1];
     tone = pts[pts.length - 1].c >= pts[0].c ? "up" : "down";
-    body = (
+    svg = (
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`g${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style={{ stopColor: "var(--cs)", stopOpacity: 0.3 }} />
+            <stop offset="1" style={{ stopColor: "var(--cs)", stopOpacity: 0 }} />
+          </linearGradient>
+          <clipPath id={`c${uid}`}><rect className="cs-reveal" x="0" y="-8" width={W} height={H + 16} /></clipPath>
+        </defs>
+        <line className="cs-base" x1="0" x2={W} y1={y0} y2={y0} />
+        <g clipPath={`url(#c${uid})`}>
+          <path className="cs-area" d={`${line} L${W} ${H} L0 ${H} Z`} fill={`url(#g${uid})`} />
+          <path className="cs-line" d={line} />
+        </g>
+      </svg>
+    );
+    // the two dots are plain elements, not SVG circles: the drawing is stretched to the width of the card, which would turn circles into ovals
+    dots = (
       <>
-        <path className="cs-area" d={`${line} L${W} ${H} L0 ${H} Z`} />
-        <path className="cs-line" d={line} />
-        <circle className="cs-call" cx={x0} cy={y0} r="3.4" />
-        <circle className="cs-now" cx={x1} cy={y1} r="3.4" />
+        <i className="cs-dot call" style={{ left: `${(x0 / W) * 100}%`, top: `${(y0 / H) * 100}%` }} />
+        <i className="cs-dot now" style={{ left: `${(x1 / W) * 100}%`, top: `${(y1 / H) * 100}%` }} />
       </>
     );
   }
   return (
-    <span ref={host} className={`cs ${tone}`} aria-hidden="true">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">{body}</svg>
-      {pts && pts.length >= 3 && <small>since the call</small>}
+    <span ref={host} className={`cs ${tone}${ready ? " ready" : none ? " none" : " wait"}`} aria-hidden="true">
+      {svg}
+      {dots}
+      {none && <small>No chart yet</small>}
     </span>
   );
 }

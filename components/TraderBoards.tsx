@@ -18,7 +18,7 @@ const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3
 function Board({ title, icon, rows, value, note }: { title: string; icon: React.ReactNode; rows: Row[]; value: (r: Row) => string; note: string }) {
   const [all, setAll] = useState(false);
   if (!rows.length) return null;
-  const shown = all ? rows : rows.slice(0, 5);
+  const shown = all ? rows : rows.slice(0, FIRST);
   return (
     <section className="bd" aria-label={title}>
       <header className="bd-head">
@@ -42,14 +42,18 @@ function Board({ title, icon, rows, value, note }: { title: string; icon: React.
           </li>
         ))}
       </ol>
-      {rows.length > 5 && (
+      {rows.length > FIRST && (
         <button type="button" className="bd-more" onClick={() => setAll((v) => !v)}>{all ? "Show less" : `Show all ${rows.length}`}</button>
       )}
     </section>
   );
 }
 
-export default function TraderBoards() {
+/** how many rows of each board show before "Show all" */
+const FIRST = 5;
+
+/** `onShown` tells the page who is on show in the boards, so the ranking cards below do not list the same person a second time. */
+export default function TraderBoards({ onShown }: { onShown?: (ids: string[]) => void }) {
   const { money } = useCash();
   // a saved copy from an older shape (or a bad answer) must not crash the page: only a well-formed pair of lists counts
   const wellFormed = (d: Boards | null): d is Boards => !!d && Array.isArray(d.followed) && Array.isArray(d.earners);
@@ -66,6 +70,9 @@ export default function TraderBoards() {
     window.addEventListener("wraith:refresh", load);
     return () => { alive = false; window.removeEventListener("wraith:refresh", load); };
   }, []);
+
+  const shownKey = data ? [...data.followed.slice(0, FIRST), ...data.earners.slice(0, FIRST)].map((r) => r.userId).join(",") : "";
+  useEffect(() => { onShown?.(shownKey ? shownKey.split(",") : []); }, [shownKey, onShown]);
 
   if (!data || (!data.followed.length && !data.earners.length)) return null;
   return (

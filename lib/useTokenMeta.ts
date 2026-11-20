@@ -15,9 +15,34 @@ export interface TokenMeta {
 const cache = new Map<string, TokenMeta>();
 const pending = new Set<string>();
 
-export function useTokenMeta(mints: string[]): Record<string, TokenMeta> {
+/**
+ * `refreshMs` (optional): a screen that stays open (the Intel feed) keeps its "now" numbers current by re-reading the market caps that often while the
+ * page is visible. Without it the numbers are read once, which is fine for a screen you pass through.
+ */
+export function useTokenMeta(mints: string[], refreshMs = 0): Record<string, TokenMeta> {
   const key = [...new Set(mints.filter(Boolean))].sort().join(",");
   const [, bump] = useState(0);
+
+  useEffect(() => {
+    if (!key || !refreshMs) return;
+    let alive = true;
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
+      fetch(`/api/signal-prices?mints=${key.split(",").slice(0, 30).join(",")}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { prices?: Record<string, { mcap: number }> } | null) => {
+          let changed = false;
+          for (const [m, p] of Object.entries(d?.prices ?? {})) {
+            const old = cache.get(m);
+            if (old && p.mcap > 0 && p.mcap !== old.mcap) { cache.set(m, { ...old, mcap: p.mcap }); changed = true; }
+          }
+          if (alive && changed) bump((n) => n + 1);
+        })
+        .catch(() => undefined);
+    };
+    const t = window.setInterval(tick, refreshMs);
+    return () => { alive = false; window.clearInterval(t); };
+  }, [key, refreshMs]);
 
   useEffect(() => {
     if (!key) return;

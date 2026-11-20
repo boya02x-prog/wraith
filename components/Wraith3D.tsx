@@ -26,7 +26,16 @@ function can3D(): boolean {
   }
 }
 
-/** Fetch the 3D code and the banner still ahead of time (when the app is idle), so the Wins screen opens without waiting for either. */
+/** The Wins banner's scene: components/GhostScene.tsx draws it with exactly these settings (and warmWraith3D builds it ahead of time with them). */
+export const WINS_SCENE = { pose: "king", podium: 3, confetti: 44, spotlight: true, zoom: 1.15, shiftX: 0.85 } as const;
+const sceneKey = (o: Opts) => `${o.pose}|${o.podium}|${o.confetti}|${o.spotlight}|${o.zoom}|${o.shiftX}`;
+
+/**
+ * Fetch the 3D code and the banner still ahead of time (when the app is idle), so the Wins screen opens without waiting for either, and a few
+ * seconds later BUILD the Wins scene itself while nothing else is going on. Before this the scene was only built after you opened Wins, so the
+ * still picture sat there for a second or more, which looked like a frozen character that then suddenly started to move. Now it is already
+ * built and kept (see `kept`), and opening Wins shows it moving at once.
+ */
 export function warmWraith3D() {
   try {
     if (!can3D()) return;
@@ -35,6 +44,10 @@ export function warmWraith3D() {
     const im = new Image();
     im.decoding = "async";
     im.src = "/mascot/wraith-king.webp";
+    window.setTimeout(() => {
+      if (document.visibilityState !== "visible") return;
+      void build(sceneKey(WINS_SCENE), WINS_SCENE, 0).catch(() => undefined);
+    }, isPhone() ? 5000 : 2500);
   } catch { /* optional */ }
 }
 
@@ -106,11 +119,12 @@ export default function Wraith3D({
     if (!can3D()) { setStill(true); return; }
     let alive = true;
     let stop = () => {};
-    const key = `${pose}|${podium}|${confetti}|${spotlight}|${zoom}|${shiftX}`;
+    const key = sceneKey({ pose, podium, confetti, spotlight, zoom, shiftX });
     const wasKept = kept.has(key);
     if (wasKept) setWarm(true);
     void (async () => {
-      const sh = await build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 650 : 380);
+      // (the wait before a first build used to be 650 / 380 ms because the screen slid in; tab switches no longer slide, so a short settle is enough)
+      const sh = await build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 300 : 150);
       const host = wrap.current;
       if (!alive || !sh || !host) return;
       const { canvas, renderer, sc } = sh;

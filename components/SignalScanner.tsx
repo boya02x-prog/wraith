@@ -8,7 +8,8 @@
 
 import { riskLevel, signalBand } from "@/lib/scoreBand";
 import { swrRead, swrWrite } from "@/lib/swrCache";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { readLast, writeLast } from "@/lib/lastGood";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Flame, LayoutGrid, List, Lock, Radar, RefreshCw, Sparkles, Zap } from "lucide-react";
 import type { MemeTrend } from "@/app/app/page";
 import { changeColor, fmtAge, fmtPct, fmtUsd, type MarketToken } from "@/lib/market";
@@ -48,12 +49,22 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "safe", label: "Safer" },
 ];
 
-function useSignals() {
+/** The last list this device saw (this visit, or up to 20 minutes ago from a previous visit: the app being closed in between must not mean a blank wait). */
+function lastSignals(): { signals: Signal[]; at: number | null } | null {
   const warm = swrRead<Signal[]>("signals");
-  const [signals, setSignals] = useState<Signal[]>(warm ?? []);
-  const [loading, setLoading] = useState(!warm);
+  if (warm?.length) return { signals: warm, at: null };
+  const saved = readLast<{ signals: Signal[]; at: number }>("signals-feed", 20 * 60_000);
+  return saved && Array.isArray(saved.signals) && saved.signals.length ? { signals: saved.signals, at: saved.at ?? null } : null;
+}
+
+function useSignals() {
+  // (this component only ever renders in the browser, so the first render may read storage)
+  const [first] = useState(lastSignals);
+  const [signals, setSignals] = useState<Signal[]>(first?.signals ?? []);
+  const [loading, setLoading] = useState(!first);
   const [error, setError] = useState("");
-  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(first?.at ?? null);
+  const savedAt = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -62,6 +73,8 @@ function useSignals() {
       if (Array.isArray(data.signals) && data.signals.length) {
         setSignals(data.signals);
         swrWrite("signals", data.signals);
+        // kept on the device at most once a minute (the list is large and this runs every 20 seconds)
+        if (Date.now() - savedAt.current > 60_000) { savedAt.current = Date.now(); writeLast("signals-feed", { signals: data.signals, at: data.updatedAt ?? Date.now() }); }
         setUpdatedAt(data.updatedAt ?? Date.now());
         setError("");
       } else if (!res.ok) {

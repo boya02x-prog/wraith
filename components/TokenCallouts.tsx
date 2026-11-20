@@ -363,12 +363,8 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
             {/* Header */}
             <div className="callout-header">
               <div className="callout-avatar">
-                {c.avatarDataUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.avatarDataUrl} alt="" className="callout-avatar-img" />
-                ) : (
-                  <span className="callout-avatar-fallback">{c.displayName.slice(0, 1).toUpperCase()}</span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.avatarDataUrl || defaultAvatar(c.userId)} alt="" className="callout-avatar-img" />
               </div>
               <div className="callout-meta">
                 <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="callout-name">

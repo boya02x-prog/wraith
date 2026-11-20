@@ -30,8 +30,18 @@ export function callText(o: { symbol: string; mcap?: number | null; score: numbe
   return { title: `📣 New call: $${o.symbol}`, body: `Spotted at ${compactUsd(o.mcap)} · score ${Math.round(o.score)}` };
 }
 
-export function winText(o: { symbol: string; milestone: number; x: number; nowMcap?: number | null }): NotifyText {
-  return { title: `🏆 $${o.symbol} hit ${o.milestone}x`, body: `${o.x.toFixed(2)}x from the call${o.nowMcap ? ` · now ${compactUsd(o.nowMcap)}` : ""}` };
+const fmtX = (x: number) => (x >= 10 ? x.toFixed(1) : x.toFixed(2));
+
+/**
+ * `x` is the best the call reached (its peak, or now when now is the best). When the token has since given some of it back, the text says both, so it
+ * matches the token page, which shows where the call stands now: "11.7x from the call · now $32K" read like a mistake when now was 2.9x.
+ */
+export function winText(o: { symbol: string; milestone: number; x: number; nowMcap?: number | null; spottedMcap?: number | null }): NotifyText {
+  const now = o.nowMcap && o.spottedMcap && o.spottedMcap > 0 ? o.nowMcap / o.spottedMcap : null;
+  const body = now !== null && o.x > now * 1.1
+    ? `Peaked at ${fmtX(o.x)}x · now ${fmtX(now)}x (${compactUsd(o.nowMcap)})`
+    : `${fmtX(o.x)}x from the call${o.nowMcap ? ` · now ${compactUsd(o.nowMcap)}` : ""}`;
+  return { title: `🏆 $${o.symbol} hit ${o.milestone}x`, body };
 }
 
 export function tradeText(o: { name?: string | null; type: "open" | "closed"; symbol?: string | null; entryMcap?: number | null; pnlPct?: number | null }): NotifyText {

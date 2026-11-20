@@ -10,7 +10,7 @@ export const YOU: DocPage[] = [
       { t: "h2", text: "The top" },
       { t: "ul", items: [
         "**Avatar, name and @handle**, a short **bio**, and how many people you **follow** and how many follow **you** (tap either number for the list).",
-        "**Edit profile** changes your photo, cover, name, handle, bio and **avatar border**. **Share** opens the [Share studio](/docs/share).",
+        "**Edit profile** (a sheet with the Save button always in view) changes your cover and photo, name, handle, bio (a fixed box that scrolls when the text is longer), **X account**, **avatar border** and what you share publicly. **Share** opens the [Share studio](/docs/share).",
         "**The cover.** If you have not uploaded one, Wraith gives you a 3D banner of its ghost in a different colour and a different pose (wearing the crown, waving, asleep, shocked, cheering, dancing, spinning or hopping). The ghost is always turned toward your photo. Which one you get depends on your account and never changes by itself.",
         "**Tap a photo to see it large.** Your photo and cover open full screen; the same works for other traders' photos and covers, in search results and on the leaderboard, and for token pictures in search. Pinch to zoom, drag down or tap outside to close.",
         "**Joined** and your number of trades, plus your linked X account if you added one.",
@@ -110,7 +110,7 @@ export const YOU: DocPage[] = [
     lead: "The bell inside the app, notifications on your phone, and the Telegram bot.",
     blocks: [
       { t: "h2", text: "The bell" },
-      { t: "p", text: "The bell at the top shows what happened while you were away: calls, wins, activity from traders you follow, and your price alerts. A dot on the bell means something is new. Notifications that arrive while the app is open also slide in as a banner at the top." },
+      { t: "p", text: "The bell at the top shows what happened while you were away: calls, wins, activity from traders you follow, and your price alerts. A dot on the bell means something is new. A win says how far the call went and where it stands now, for example **Peaked at 6.6x · now 3.15x**, and every high is checked against the real chart before it is counted. Notifications that arrive while the app is open also slide in as a banner at the top." },
       { t: "h2", text: "Phone notifications (push)" },
       { t: "p", text: "In the Android app, Wraith asks for notification permission once you are signed in. After that your phone buzzes even when the app is closed. You choose what you want to hear about with four switches:" },
       { t: "table", head: ["Switch", "You are told when"], rows: [

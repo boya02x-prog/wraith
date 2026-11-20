@@ -96,35 +96,15 @@ html:root .hs-follow .tfb {
 .bd-more { width: 100%; margin-top: 2px; padding: 11px; border: 0; border-radius: 10px; background: transparent; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 700 13px var(--font-sans); cursor: pointer; }
 .bd-more:hover { background: rgba(255, 255, 255, 0.05); }
 
+/* the heading over the ranking cards that follow the boards: without it the first card read like the next row of the board above it */
+.tl-head { display: flex; align-items: baseline; gap: 8px; margin: 4px 4px 10px; }
+.tl-head h3 { margin: 0; color: #fff; font: 800 16px/1.1 var(--font-sans); letter-spacing: -0.01em; }
+.tl-head small { margin-left: auto; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1 var(--font-sans); }
+
 /* the cards of the full list: a soft inner glow in the colour of the border their owner picked, and room for the ring around the photo */
 html:root .tc[style*="--frc"] { position: relative; }
 html:root .tc[style*="--frc"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 56px -30px var(--frc); }
 .tc-main .fr { margin: 0 3px; }
-
-/* ═══ Intel feed: the token under a call is its own block with a chart since the call ═══ */
-/* the older Intel rules force this block into a row with !important, so these have to as well */
-html:root .hc-token { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; align-items: stretch !important; justify-content: stretch !important; gap: 12px !important; width: 100%; margin-top: 10px; padding: 14px !important; text-align: left; border: 0 !important; border-radius: 14px !important; background: var(--surface-2, #1a1a1d) !important; color: inherit; cursor: pointer; transition: background 0.12s; }
-html:root .hc-token:hover { background: var(--surface-3, #232327) !important; }
-/* (an older rule makes every direct <span> of the block a grid, so the rows below name the block too) */
-html:root .hc-token > .hc-token-top { display: flex !important; align-items: center; gap: 12px; min-width: 0; }
-.hc-token .hc-tk { flex: 1; min-width: 0; display: grid; gap: 3px; }
-.hc-token .hc-tk b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 17px/1.15 var(--font-sans); color: #fff; }
-html:root .hc-token .hc-tk small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; font: 600 12.5px/1.3 var(--font-sans) !important; color: rgba(255, 255, 255, 0.55); }
-.hc-mult { flex: none; padding: 6px 10px; border-radius: 8px; font: 800 15px/1 var(--font-sans); }
-.hc-mult.up { background: rgba(61, 220, 151, 0.14); color: #3ddc97; }
-.hc-mult.down { background: rgba(255, 107, 98, 0.14); color: #ff8a80; }
-.hc-go { flex: none; color: rgba(255, 255, 255, 0.4); }
-html:root .hc-token > .cs, .cs { position: relative; display: block !important; height: 56px; }
-.cs svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.cs .cs-base { stroke: rgba(255, 255, 255, 0.12); stroke-width: 1.5; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
-.cs .cs-line { fill: none; stroke: var(--cs, #8d8d99); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.cs .cs-area { fill: var(--cs, #8d8d99); opacity: 0.12; }
-.cs .cs-call { fill: #14141a; stroke: rgba(255, 255, 255, 0.75); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.cs .cs-now { fill: var(--cs, #8d8d99); }
-.cs.up { --cs: #3ddc97; }
-.cs.down { --cs: #ff6b62; }
-.cs small { position: absolute; left: 0; bottom: -2px; color: rgba(255, 255, 255, 0.35); font: 600 11px var(--font-sans); }
-html:root .hc-token .hc-pos { margin-left: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; }
 
 /* ═══ Profile: the balance block (PortfolioBlock) ═══ */
 .pf { display: grid; gap: 14px; margin: 14px 0 18px; padding: 18px 16px 12px; border-radius: 16px; background: var(--surface, #131315); }

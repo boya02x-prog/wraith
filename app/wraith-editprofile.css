@@ -1,0 +1,100 @@
+/* ═════════════════════ Edit profile (app/app/profile/page.tsx) ═════════════════════
+   Its own class names (ep-*): the old sheet was one long form whose fields came from four different stylesheets (a mono-spaced username box with an
+   outline, filled name and bio boxes, a bio that could be dragged to any size, bare browser checkboxes) and whose Save button was at the very end of
+   the scroll. Now: a fixed header, ONE scrolling middle, a fixed Save button, flat grouped cards, one input style, real switches.
+   Follows the skin (wraith-skin.css): flat tonal surfaces, no outlines, no glow, controls 12px, cards 14px, one text face. */
+
+.ep { position: relative; display: flex; flex-direction: column; width: min(520px, 100%); max-height: min(90dvh, 860px); overflow: hidden; border-radius: 22px; background: var(--surface, #131315); color: #fff; box-shadow: 0 24px 90px rgba(0, 0, 0, 0.6); animation: ep-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes ep-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+/* on a phone it is a sheet that rises from the bottom */
+@media (max-width: 767px) {
+  .ep { width: 100%; max-height: 94dvh; border-radius: 22px 22px 0 0; animation-name: ep-up; animation-duration: 0.34s; }
+  @keyframes ep-up { from { transform: translateY(100%); } to { transform: none; } }
+}
+
+/* header */
+.ep-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 10px 20px; }
+.ep-head h2 { margin: 0; color: #fff; font: 800 21px/1.1 var(--font-sans); letter-spacing: -0.03em; }
+.ep-x { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 12px; background: var(--sk-fill, rgba(255, 255, 255, 0.07)); color: rgba(255, 255, 255, 0.82); cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.ep-x:hover { background: var(--sk-fill-2, rgba(255, 255, 255, 0.11)); }
+.ep-x:active { transform: scale(0.93); }
+
+/* the one scrolling part */
+.ep-body { flex: 1; min-height: 0; display: grid; align-content: start; gap: 12px; padding: 4px 16px 22px; overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: 16px; -webkit-overflow-scrolling: touch; }
+
+/* cover, with the photo on its lower edge */
+.ep-hero { position: relative; margin-bottom: 44px; }
+.ep-cover { position: relative; height: 132px; border-radius: 14px; background: var(--surface-2, #1a1a1d) center / cover no-repeat; }
+.ep-cover-btns { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+.ep-cover-btns button { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 0; border-radius: 10px; background: rgba(0, 0, 0, 0.64); color: #fff; font: 700 13px var(--font-sans); cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.ep-cover-btns button:hover { background: rgba(0, 0, 0, 0.8); }
+.ep-cover-btns button:active { transform: scale(0.96); }
+.ep-photo { position: absolute; left: 14px; bottom: -36px; display: flex; align-items: flex-end; gap: 14px; }
+.ep-av { position: relative; flex: none; width: 86px; height: 86px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-3, #232327); box-shadow: 0 0 0 4px var(--surface, #131315); cursor: pointer; transition: transform 0.12s; }
+.ep-av:active { transform: scale(0.96); }
+.ep-av img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.ep-av i { position: absolute; right: -3px; bottom: -3px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent, #ff7b3d); color: #1d0d05; box-shadow: 0 0 0 3px var(--surface, #131315); }
+.ep-link { margin-bottom: 6px; padding: 6px 0; border: 0; background: transparent; color: #ff8a80; font: 700 13px var(--font-sans); cursor: pointer; }
+
+/* cover position sliders (appear after choosing a new cover) */
+.ep-crop { display: grid; gap: 10px; margin: -28px 0 4px; padding: 14px; border-radius: 14px; background: var(--surface-2, #1a1a1d); }
+.ep-crop label { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 10px; color: rgba(255, 255, 255, 0.62); font: 700 13px var(--font-sans); }
+.ep-crop input[type="range"] { width: 100%; accent-color: var(--accent, #ff7b3d); }
+
+/* grouped flat cards */
+.ep-card { display: grid; gap: 16px; padding: 16px; border-radius: 14px; background: var(--surface-2, #1a1a1d); }
+.ep-field { display: grid; gap: 8px; min-width: 0; }
+.ep-lbl { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: rgba(255, 255, 255, 0.64); font: 700 13px var(--font-sans); }
+.ep-lbl em { font-style: normal; font-weight: 600; font-size: 12px; color: rgba(255, 255, 255, 0.4); }
+
+/* ONE input style for every field (the specificity is on purpose: older rules style every input and textarea in the app) */
+html:root .ep .ep-input { display: flex; align-items: center; width: 100%; min-height: 48px; margin: 0; padding: 0 14px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.07); box-shadow: none; color: #fff; font: 600 16px var(--font-sans); outline: none; transition: background 0.15s, box-shadow 0.15s; }
+html:root .ep .ep-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+html:root .ep .ep-input:focus, html:root .ep .ep-user:focus-within { background: rgba(255, 255, 255, 0.09); box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.6); }
+/* the bio: a fixed size that scrolls when the text is longer, and no drag handle: it cannot be made bigger or smaller */
+html:root .ep .ep-bio { display: block; height: 112px; min-height: 112px; max-height: 112px; padding: 12px 14px; resize: none; overflow-y: auto; font-weight: 500; font-size: 15.5px; line-height: 1.5; }
+/* @username: the @ sits inside the box, the check or cross at the right */
+html:root .ep .ep-user { gap: 2px; padding-right: 12px; }
+.ep-user b { flex: none; color: var(--accent-text, #ffad7b); font: 800 16px var(--font-sans); }
+html:root .ep .ep-user input { flex: 1; min-width: 0; width: auto; min-height: 0; margin: 0; padding: 12px 0; border: 0; background: transparent; box-shadow: none; color: #fff; font: 600 16px var(--font-sans); outline: none; }
+.ep-st { flex: none; margin-left: 6px; color: rgba(255, 255, 255, 0.5); }
+.ep-st.ok { color: var(--sk-up, #3ddc97); }
+.ep-st.bad { color: var(--sk-down, #ff6b62); }
+.ep-err { color: var(--sk-down, #ff6b62); font: 600 13px/1.4 var(--font-sans); }
+
+/* a row: icon, text, button */
+.ep-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.ep-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); color: #fff; }
+.ep-txt { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.ep-txt b { color: #fff; font: 750 15px/1.25 var(--font-sans); }
+.ep-txt small { color: rgba(255, 255, 255, 0.5); font: 600 13px/1.4 var(--font-sans); }
+.ep-btn { flex: none; height: 38px; padding: 0 18px; border: 0; border-radius: 12px; background: rgba(255, 255, 255, 0.1); color: #fff; font: 700 13.5px var(--font-sans); cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.ep-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.ep-btn:active { transform: scale(0.95); }
+.ep-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* the two privacy choices: a title with its explanation, and a real switch (not a browser checkbox) */
+.ep-sw { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; cursor: pointer; transition: opacity 0.2s; }
+.ep-sw + .ep-sw { padding-top: 16px; box-shadow: inset 0 1px 0 var(--sk-line, rgba(255, 255, 255, 0.06)); }
+.ep-sw.off { opacity: 0.5; cursor: default; }
+html:root .ep .ep-switch { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 50px; height: 30px; min-height: 0; margin: 2px 0 0; padding: 0; border: 0; border-radius: 15px; background: rgba(255, 255, 255, 0.16); box-shadow: none; cursor: pointer; transition: background 0.2s; }
+html:root .ep .ep-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
+html:root .ep .ep-switch:checked { background: var(--accent, #ff7b3d); }
+html:root .ep .ep-switch:checked::after { transform: translateX(20px); }
+html:root .ep .ep-switch:disabled { cursor: not-allowed; }
+html:root .ep .ep-switch:focus-visible { outline: 2px solid rgba(var(--accent-rgb), 0.7); outline-offset: 2px; }
+
+/* Save stays in view at the bottom */
+.ep-foot { flex: none; padding: 12px 16px calc(14px + var(--sai-bottom, 0px)); background: var(--surface, #131315); box-shadow: inset 0 1px 0 var(--sk-line, rgba(255, 255, 255, 0.06)); }
+.ep-save { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 52px; border: 0; border-radius: 14px; background: var(--accent, #ff7b3d); color: #1d0d05; font: 800 16px var(--font-sans); cursor: pointer; transition: transform 0.12s, opacity 0.15s; }
+.ep-save:hover { opacity: 0.92; }
+.ep-save:active { transform: scale(0.985); }
+.ep-save:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* the avatar border picker inside the sheet: its header and tiles are drawn by wraith-frames.css; this only sets the spacing */
+.ep-body .fp { margin: 2px 0 2px; padding: 0 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ep { animation: none; }
+  .ep-switch::after { transition: none; }
+}

@@ -2040,88 +2040,47 @@ export default function ProfilePage() {
               if (event.target === event.currentTarget) setEditing(false);
             }}
           >
-            <section
-              className="profile-edit-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="profile-edit-title"
-            >
-              {/* Close button — absolute top-right */}
-              <button
-                type="button"
-                className="profile-modal-close"
-                aria-label="Close"
-                onClick={() => setEditing(false)}
-              >
-                <X size={16} />
-              </button>
-
-              {/* Avatar section — centered */}
-              <div className="profile-modal-avatar-section">
-                <button
-                  type="button"
-                  className="profile-avatar-button profile-modal-avatar-btn"
-                  onClick={() => photoInputRef.current?.click()}
-                  aria-label="Change profile photo"
-                >
-                  {draft.avatarDataUrl || session?.user?.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={draft.avatarDataUrl || session?.user?.image || ""}
-                      alt=""
-                      className="profile-avatar"
-                    />
-                  ) : (
-                    <span className="profile-avatar-fallback">
-                      {displayName.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                  <span className="profile-avatar-edit">
-                    <Camera size={14} />
-                  </span>
+            {/* The sheet is its own piece of CSS (app/wraith-editprofile.css, the ep-* classes): a fixed header and Save button, one scrolling middle,
+                flat grouped cards, real switches. The old one was a single long form that mixed four different input styles. */}
+            <section className="ep" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+              <header className="ep-head">
+                <h2 id="profile-edit-title">Edit profile</h2>
+                <button type="button" className="ep-x" aria-label="Close" onClick={() => setEditing(false)}>
+                  <X size={18} />
                 </button>
-                {draft.avatarDataUrl && (
-                  <button
-                    type="button"
-                    className="profile-remove-photo"
-                    onClick={() => setDraft((c) => ({ ...c, avatarDataUrl: "" }))}
-                  >
-                    Remove photo
-                  </button>
-                )}
-              </div>
+              </header>
 
-              {/* Cover */}
-              <div className="profile-field">
-                <span>Cover</span>
-                <div
-                  className="profile-modal-cover"
-                  style={
-                    draft.coverDataUrl
-                      ? { backgroundImage: `url(${draft.coverDataUrl})` }
-                      : undefined
-                  }
-                >
-                  <button
-                    type="button"
-                    className="profile-modal-cover-btn"
-                    onClick={() => coverInputRef.current?.click()}
-                  >
-                    <Camera size={14} />
-                    {draft.coverDataUrl ? "Replace cover" : "Add cover"}
-                  </button>
-                  {draft.coverDataUrl && (
-                    <button
-                      type="button"
-                      className="profile-modal-cover-btn"
-                      onClick={() => setDraft((c) => ({ ...c, coverDataUrl: "" }))}
-                    >
-                      Remove
+              <div className="ep-body">
+                {/* cover, with the photo sitting on its lower edge like on the profile itself */}
+                <div className="ep-hero">
+                  <div className="ep-cover" style={{ backgroundImage: `url("${draft.coverDataUrl || defaultCover(userId || displayName)}")` }}>
+                    <div className="ep-cover-btns">
+                      <button type="button" onClick={() => coverInputRef.current?.click()}>
+                        <Camera size={14} />
+                        {draft.coverDataUrl ? "Change cover" : "Add cover"}
+                      </button>
+                      {draft.coverDataUrl && (
+                        <button type="button" onClick={() => setDraft((c) => ({ ...c, coverDataUrl: "" }))}>
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ep-photo">
+                    <button type="button" className="ep-av" onClick={() => photoInputRef.current?.click()} aria-label="Change profile photo">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={draft.avatarDataUrl || session?.user?.image || defaultAvatar(userId || displayName)} alt="" />
+                      <i><Camera size={14} /></i>
                     </button>
-                  )}
+                    {draft.avatarDataUrl && (
+                      <button type="button" className="ep-link" onClick={() => setDraft((c) => ({ ...c, avatarDataUrl: "" }))}>
+                        Remove photo
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {coverCrop && coverImgRef.current && draft.coverDataUrl && (
-                  <div className="profile-crop">
+                  <div className="ep-crop">
                     {([["zoom", "Zoom", 1, 3, 0.01], ["x", "Left / right", 0, 100, 1], ["y", "Up / down", 0, 100, 1]] as const).map(([k, label, min, max, step]) => (
                       <label key={k}>
                         <span>{label}</span>
@@ -2141,157 +2100,129 @@ export default function ProfilePage() {
                     event.currentTarget.value = "";
                   }}
                 />
-              </div>
 
-              {/* Username */}
-              <div className="profile-field">
-                <span>Username</span>
-                <div className="profile-modal-username-wrap">
-                  <span className="profile-modal-at">@</span>
-                  <input
-                    value={usernameEdit}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setUsernameEdit(v);
-                      setUsernameSaveErr("");
-                      setUsernameAvailable(null);
-                      if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
-                      if (v.length < 3) { setUsernameCheckErr(""); return; }
-                      usernameDebounceRef.current = setTimeout(async () => {
-                        setUsernameChecking(true);
-                        setUsernameCheckErr("");
-                        try {
-                          const r = await fetch(`/api/user/username/check?q=${encodeURIComponent(v)}`);
-                          const d = await r.json();
-                          setUsernameAvailable(d.available ?? false);
-                          if (!d.available && d.error) setUsernameCheckErr(d.error);
-                        } catch { setUsernameCheckErr("Could not check."); }
-                        finally { setUsernameChecking(false); }
-                      }, 400);
-                    }}
-                    placeholder="username"
-                    maxLength={20}
-                    autoCapitalize="none"
-                    autoComplete="off"
-                    spellCheck={false}
-                    id="profile-edit-title"
-                  />
-                  {usernameChecking && <LoaderCircle size={14} className="profile-spin profile-modal-username-status" />}
-                  {!usernameChecking && usernameAvailable === true && <Check size={14} className="profile-modal-username-ok" />}
-                  {!usernameChecking && usernameAvailable === false && <X size={14} className="profile-modal-username-err" />}
+                <div className="ep-card">
+                  <label className="ep-field">
+                    <span className="ep-lbl">Display name</span>
+                    <input
+                      className="ep-input"
+                      maxLength={40}
+                      value={draft.displayName}
+                      onChange={(event) => setDraft((current) => ({ ...current, displayName: event.target.value }))}
+                      placeholder="Your name"
+                    />
+                  </label>
+
+                  <div className="ep-field">
+                    <label className="ep-lbl" htmlFor="ep-username">Username</label>
+                    <div className="ep-input ep-user">
+                      <b>@</b>
+                      <input
+                        id="ep-username"
+                        value={usernameEdit}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setUsernameEdit(v);
+                          setUsernameSaveErr("");
+                          setUsernameAvailable(null);
+                          if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+                          if (v.length < 3) { setUsernameCheckErr(""); return; }
+                          usernameDebounceRef.current = setTimeout(async () => {
+                            setUsernameChecking(true);
+                            setUsernameCheckErr("");
+                            try {
+                              const r = await fetch(`/api/user/username/check?q=${encodeURIComponent(v)}`);
+                              const d = await r.json();
+                              setUsernameAvailable(d.available ?? false);
+                              if (!d.available && d.error) setUsernameCheckErr(d.error);
+                            } catch { setUsernameCheckErr("Could not check."); }
+                            finally { setUsernameChecking(false); }
+                          }, 400);
+                        }}
+                        placeholder="username"
+                        maxLength={20}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      {usernameChecking && <LoaderCircle size={16} className="profile-spin ep-st" />}
+                      {!usernameChecking && usernameAvailable === true && <Check size={16} className="ep-st ok" />}
+                      {!usernameChecking && usernameAvailable === false && <X size={16} className="ep-st bad" />}
+                    </div>
+                    {(usernameCheckErr || usernameSaveErr) && <small className="ep-err">{usernameCheckErr || usernameSaveErr}</small>}
+                  </div>
+
+                  <label className="ep-field">
+                    <span className="ep-lbl">Bio <em>{draft.bio.length}/160</em></span>
+                    {/* a fixed size that scrolls when the text is longer: it cannot be dragged bigger */}
+                    <textarea
+                      className="ep-input ep-bio"
+                      maxLength={160}
+                      rows={4}
+                      value={draft.bio}
+                      onChange={(event) => setDraft((current) => ({ ...current, bio: event.target.value }))}
+                      placeholder="A little about your trading style…"
+                    />
+                  </label>
                 </div>
-                {(usernameCheckErr || usernameSaveErr) && (
-                  <small className="profile-modal-field-error">{usernameCheckErr || usernameSaveErr}</small>
+
+                {(xLinkAvailable || profile.xHandle) && (
+                  <div className="ep-card ep-row">
+                    <i className="ep-ico">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.632L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                    </i>
+                    <span className="ep-txt">
+                      <b>X account</b>
+                      <small>{profile.xHandle ? `@${profile.xHandle} is linked` : "Shows a verified X badge next to your name"}</small>
+                    </span>
+                    {profile.xHandle ? (
+                      <button type="button" className="ep-btn" disabled={xBusy} onClick={() => void unlinkXAccount()}>Unlink</button>
+                    ) : (
+                      <button type="button" className="ep-btn" disabled={!xLinkAvailable || xBusy} onClick={startXLink}>Link</button>
+                    )}
+                  </div>
                 )}
-              </div>
 
-              {/* Display name */}
-              <label className="profile-field">
-                Display name
-                <input
-                  maxLength={40}
-                  value={draft.displayName}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, displayName: event.target.value }))
-                  }
-                  placeholder="Your name"
+                <FramePicker
+                  value={draft.frame ?? "none"}
+                  photo={draft.avatarDataUrl || session?.user?.image || defaultAvatar(userId || displayName)}
+                  onChange={(id) => setDraft((current) => ({ ...current, frame: id }))}
                 />
-              </label>
 
-              {/* Bio */}
-              <label className="profile-field">
-                Bio
-                <textarea
-                  maxLength={160}
-                  rows={3}
-                  value={draft.bio}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, bio: event.target.value }))
-                  }
-                  placeholder="A little about your trading style…"
-                />
-                <span className="profile-modal-charcount">{draft.bio.length}/160</span>
-              </label>
-
-              {/* X account row */}
-              <div className="profile-field" style={!xLinkAvailable && !profile.xHandle ? { display: "none" } : undefined}>
-                <span>X account</span>
-                <div className="profile-x-linked-row">
-                  {profile.xHandle ? (
-                    <>
-                      <span className="profile-x-verified">@{profile.xHandle} · linked</span>
-                      <button
-                        className="profile-remove-photo"
-                        type="button"
-                        disabled={xBusy}
-                        onClick={() => void unlinkXAccount()}
-                      >
-                        Unlink
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="profile-x-connect-btn"
-                      type="button"
-                      disabled={!xLinkAvailable || xBusy}
-                      onClick={startXLink}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.632L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                      Link X account
-                    </button>
-                  )}
+                <div className="ep-card">
+                  <label className="ep-sw">
+                    <span className="ep-txt">
+                      <b>Share my trading activity</b>
+                      <small>Show live positions and closed trades on the public Traders page. Balances stay private unless you also switch on the next option.</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="ep-switch"
+                      checked={draft.publicTrading}
+                      onChange={(event) => setDraft((current) => ({ ...current, publicTrading: event.target.checked }))}
+                    />
+                  </label>
+                  <label className={`ep-sw${draft.publicTrading ? "" : " off"}`}>
+                    <span className="ep-txt">
+                      <b>Show my balance</b>
+                      <small>Show your portfolio value, cash and the tokens you hold on your public page, with a chart that builds up over time. Only your Solana wallet is counted and its address stays hidden.</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="ep-switch"
+                      checked={draft.publicTrading && draft.publicBalance === true}
+                      disabled={!draft.publicTrading}
+                      onChange={(event) => setDraft((current) => ({ ...current, publicBalance: event.target.checked }))}
+                    />
+                  </label>
                 </div>
-                {!xLinkAvailable && !profile.xHandle && (
-                  <small className="profile-modal-field-hint">
-                    X account linking is temporarily unavailable.
-                  </small>
-                )}
               </div>
 
-              <FramePicker
-                value={draft.frame ?? "none"}
-                photo={draft.avatarDataUrl || session?.user?.image || defaultAvatar(userId || displayName)}
-                onChange={(id) => setDraft((current) => ({ ...current, frame: id }))}
-              />
-
-              {/* Public toggle */}
-              <label className="profile-public-toggle">
-                <input
-                  type="checkbox"
-                  checked={draft.publicTrading}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, publicTrading: event.target.checked }))
-                  }
-                />
-                <span>
-                  <strong>Share my trading activity</strong>
-                  <small>Show live positions and closed trades on the public Traders page. Balances stay private unless you also switch on the next option.</small>
-                </span>
-              </label>
-              <label className="profile-public-toggle" style={{ opacity: draft.publicTrading ? 1 : 0.5 }}>
-                <input
-                  type="checkbox"
-                  checked={draft.publicTrading && draft.publicBalance === true}
-                  disabled={!draft.publicTrading}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, publicBalance: event.target.checked }))
-                  }
-                />
-                <span>
-                  <strong>Show my balance</strong>
-                  <small>Show your portfolio value, cash and the tokens you hold on your public page, with a chart that builds up over time. Only your Solana wallet is counted and its address stays hidden.</small>
-                </span>
-              </label>
-
-              {/* Single save button */}
-              <button
-                type="button"
-                className="profile-modal-save-btn"
-                onClick={() => void saveProfile()}
-                disabled={busy}
-              >
-                {busy ? <LoaderCircle size={16} className="profile-spin" /> : "Save"}
-              </button>
+              <footer className="ep-foot">
+                <button type="button" className="ep-save" onClick={() => void saveProfile()} disabled={busy}>
+                  {busy ? <LoaderCircle size={18} className="profile-spin" /> : "Save changes"}
+                </button>
+              </footer>
             </section>
           </div>
         )}

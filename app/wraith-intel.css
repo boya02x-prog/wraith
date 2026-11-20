@@ -1,0 +1,157 @@
+/* ═════════════════════ Intel feed (components/HotCalloutsFeed.tsx, components/CallSpark.tsx) ═════════════════════
+   Its own class names (ix-*) on purpose: the old hc-* rules were spread over four stylesheets, each one overriding the one before with !important,
+   and every change had to win that fight. These follow the skin (wraith-skin.css): flat tonal surfaces, no outlines, no glow, one corner scale
+   (badges 6, chips 8-10, controls 12, cards 14), one text face, bold numbers. Motion is short and only ever on opacity / transform. */
+
+.hc-scroll .ix-wrap { width: 100%; max-width: 1040px; margin: 0 auto; padding: 14px 14px 104px; }
+
+/* ── header ── */
+.ix-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 2px 2px 14px; }
+.ix-head h2 { margin: 0; color: #fff; font: 800 28px/1.05 var(--font-sans); letter-spacing: -0.035em; }
+.ix-head p { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 14px/1.3 var(--font-sans); }
+.ix-off { display: inline-flex; align-items: center; gap: 5px; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font-size: 12.5px; }
+
+.ix-live { flex: none; display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 15px 0 13px; border: 0; border-radius: 12px; background: var(--surface-2, #1a1a1d); color: #fff; font: 700 13.5px var(--font-sans); cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.ix-live:hover { background: var(--surface-3, #232327); }
+.ix-live:active { transform: scale(0.95); }
+.ix-live i { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--sk-up, #3ddc97); }
+/* the heartbeat of a live feed: a filled copy of the dot that grows and fades (no ring, no glow) */
+.ix-live i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--sk-up, #3ddc97); animation: ix-beat 1.9s ease-out infinite; }
+.ix-live.off i { background: rgba(255, 255, 255, 0.35); }
+.ix-live.off i::after { display: none; }
+@keyframes ix-beat { 0% { transform: scale(1); opacity: 0.55; } 70%, 100% { transform: scale(2.8); opacity: 0; } }
+
+/* ── All / Winning: one flat track, the lit segment slides to the chosen one ── */
+.ix-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+.ix-seg { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 3px; border-radius: 12px; background: var(--surface, #131315); }
+.ix-seg::before { content: ""; position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border-radius: 9px; background: var(--sk-fill-2, rgba(255, 255, 255, 0.11)); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.ix-seg button { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 104px; padding: 9px 16px; border: 0; background: transparent; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 700 13.5px var(--font-sans); cursor: pointer; transition: color 0.2s; }
+.ix-seg button.on { color: #fff; }
+.ix-seg button i { font-style: normal; font-weight: 700; font-size: 12px; opacity: 0.6; }
+
+/* ── the strip of tokens (phones): best calls so far / most called ── */
+.ix-railwrap { margin: 0 0 14px; }
+.ix-lbl { display: flex; align-items: center; gap: 6px; margin: 0 2px 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 700 13px var(--font-sans); }
+.ix-lbl svg { color: var(--accent, #ff7b3d); }
+.ix-rail { display: flex; gap: 8px; margin: 0 -14px; padding: 0 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.ix-rail::-webkit-scrollbar { display: none; }
+.ix-chip { flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 9px; padding: 7px 13px 7px 7px; border: 0; border-radius: 12px; background: var(--surface, #131315); color: #fff; font: 700 14px var(--font-sans); cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.ix-chip:hover { background: var(--surface-2, #1a1a1d); }
+.ix-chip:active { transform: scale(0.95); }
+.ix-chip em { font-style: normal; font-weight: 800; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); }
+.ix-chip em.up { color: var(--sk-up, #3ddc97); }
+
+/* ── "3 new calls": a call posted while you read further down waits here instead of pushing the page ── */
+.ix-new { position: sticky; top: 10px; z-index: 6; display: flex; justify-content: center; height: 0; pointer-events: none; }
+.ix-new button { pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 16px 0 13px; border: 0; border-radius: 12px; background: var(--accent, #ff7b3d); color: #1d0d05; font: 800 13.5px var(--font-sans); cursor: pointer; animation: ix-drop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; transition: transform 0.12s; }
+.ix-new button:active { transform: scale(0.95); }
+@keyframes ix-drop { from { opacity: 0; transform: translateY(-12px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+/* ── layout ── */
+.ix-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 901px) { .ix-layout { grid-template-columns: minmax(0, 1fr) 300px; } }
+.ix-list { display: grid; gap: 10px; animation: ix-fade 0.24s ease both; }
+@keyframes ix-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── a call ── */
+.ix-card { position: relative; padding: 16px; border-radius: 14px; background: var(--surface, #131315); content-visibility: auto; contain-intrinsic-size: auto 320px; transition: background 0.2s; }
+.ix-card.hot { background: #121a15; }
+.ix-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ix-who { display: flex; align-items: center; gap: 11px; min-width: 0; color: inherit; text-decoration: none; }
+.ix-av { flex: none; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--surface-3, #232327); }
+.ix-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font: 800 15.5px/1.2 var(--font-sans); letter-spacing: -0.01em; }
+.ix-age { margin-left: auto; flex: none; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 13px var(--font-sans); white-space: nowrap; }
+.ix-text { margin: 12px 0 2px; color: rgba(255, 255, 255, 0.92); font: 500 15px/1.5 var(--font-sans); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ix-text.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ix-more { padding: 4px 0; border: 0; background: transparent; color: var(--accent-text, #ffad7b); font: 700 13px var(--font-sans); cursor: pointer; }
+.ix-media { display: block; width: 100%; max-height: 420px; margin: 10px 0 2px; border-radius: 12px; object-fit: contain; background: #000; }
+
+/* the token under the call: its own flat block, the headline number on the right, the chart under it, the two prices at the bottom */
+.ix-token { display: grid; gap: 12px; width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 12px; background: var(--surface-2, #1a1a1d); color: inherit; text-align: left; cursor: pointer; transition: background 0.15s, transform 0.16s cubic-bezier(0.22, 1, 0.36, 1); }
+.ix-token:hover { background: var(--surface-3, #232327); }
+.ix-token:active { transform: scale(0.985); }
+.ix-card.hot .ix-token { background: rgba(255, 255, 255, 0.05); }
+.ix-card.hot .ix-token:hover { background: rgba(255, 255, 255, 0.08); }
+.ix-tk-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ix-tk { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.ix-tk b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font: 800 17px/1.15 var(--font-sans); letter-spacing: -0.01em; }
+.ix-tk small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12.5px/1.2 var(--font-sans); }
+.ix-x { flex: none; display: grid; justify-items: end; gap: 3px; }
+.ix-x b { font: 800 24px/1 var(--font-sans); letter-spacing: -0.035em; }
+.ix-x small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 11.5px/1 var(--font-sans); }
+.ix-x.up b { color: var(--sk-up, #3ddc97); }
+.ix-x.down b { color: var(--sk-down, #ff6b62); }
+.ix-go { flex: none; margin-left: -6px; color: rgba(255, 255, 255, 0.3); transition: transform 0.2s, color 0.2s; }
+.ix-token:hover .ix-go { transform: translateX(3px); color: rgba(255, 255, 255, 0.7); }
+.ix-stats { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+.ix-stats > span { display: grid; gap: 4px; min-width: 0; }
+.ix-stats small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1 var(--font-sans); }
+.ix-stats b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font: 750 14.5px/1.2 var(--font-sans); }
+/* what the poster of the call did with it themselves, one quiet row under the two prices */
+.ix-pos { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-top: 10px; box-shadow: inset 0 1px 0 var(--sk-line, rgba(255, 255, 255, 0.06)); }
+.ix-pos small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12.5px/1 var(--font-sans); }
+.ix-pos b { font: 800 15px/1 var(--font-sans); }
+.ix-pos b.up { color: var(--sk-up, #3ddc97); }
+.ix-pos b.down { color: var(--sk-down, #ff6b62); }
+
+/* the chart since the call */
+.cs { position: relative; display: block; height: 64px; }
+.cs svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cs.up { --cs: #3ddc97; }
+.cs.down { --cs: #ff6b62; }
+.cs.flat { --cs: #8d8d99; }
+.cs .cs-base { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1.5; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
+.cs .cs-line { fill: none; stroke: var(--cs); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.cs .cs-reveal { transform-box: fill-box; transform-origin: 0 50%; animation: cs-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes cs-reveal { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.cs .cs-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; }
+.cs .cs-dot.call { background: var(--surface-2, #1a1a1d); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75); }
+.cs .cs-dot.now { background: var(--cs); animation: cs-pop 0.35s 0.7s cubic-bezier(0.22, 1.4, 0.36, 1) both; }
+.cs .cs-dot.now::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--cs); animation: ix-beat 2.2s 1.2s ease-out infinite; }
+@keyframes cs-pop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+.cs.wait::before { content: ""; position: absolute; inset: 14px 0; border-radius: 8px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)); background-size: 200% 100%; animation: ix-shimmer 1.4s linear infinite; }
+.cs.none { display: grid; place-items: center; height: 44px; }
+.cs.none small { color: rgba(255, 255, 255, 0.36); font: 600 12.5px var(--font-sans); }
+
+/* like / repost / comment */
+.ix-foot { display: flex; align-items: center; gap: 2px; margin: 10px 0 -6px -10px; }
+.ix-act { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 11px; border: 0; border-radius: 10px; background: transparent; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 700 13.5px var(--font-sans); transition: color 0.15s, background 0.15s, transform 0.12s; }
+button.ix-act { cursor: pointer; }
+button.ix-act:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+button.ix-act:active { transform: scale(0.92); }
+.ix-act.on { color: #ff5a7a; }
+.ix-act.on svg { animation: ix-pop 0.38s cubic-bezier(0.22, 1.4, 0.36, 1); }
+.ix-act.on-c { color: var(--accent-text, #ffad7b); }
+@keyframes ix-pop { 0% { transform: scale(0.7); } 55% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.ix-card .fi-thread { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sk-line, rgba(255, 255, 255, 0.06)); animation: ix-fade 0.22s ease both; }
+
+/* ── loading and empty ── */
+.ix-sk { display: grid; gap: 12px; content-visibility: visible; }
+.ix-sk i { display: block; border-radius: 8px; background: linear-gradient(90deg, var(--surface-2, #1a1a1d), var(--surface-3, #232327), var(--surface-2, #1a1a1d)); background-size: 200% 100%; animation: ix-shimmer 1.4s linear infinite; }
+.ix-sk-row { display: flex; align-items: center; gap: 11px; }
+.ix-sk-row span { display: grid; gap: 7px; flex: 1; }
+.ix-sk .av { width: 40px; height: 40px; border-radius: 50%; }
+.ix-sk .l1 { width: 38%; height: 13px; }
+.ix-sk .l2 { width: 22%; height: 10px; }
+.ix-sk .t1 { width: 92%; height: 13px; }
+.ix-sk .t2 { width: 64%; height: 13px; }
+.ix-sk .blk { height: 150px; border-radius: 12px; }
+@keyframes ix-shimmer { to { background-position: -200% 0; } }
+.ix-empty { display: grid; justify-items: center; gap: 8px; padding: 56px 24px; border-radius: 14px; background: var(--surface, #131315); color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); text-align: center; font: 600 14px/1.5 var(--font-sans); }
+.ix-empty b { color: #fff; font: 800 17px var(--font-sans); }
+
+/* ── side column (computer) ── */
+.ix-side { position: sticky; top: 12px; display: grid; gap: 12px; }
+.ix-side section { padding: 14px 10px 8px; border-radius: 14px; background: var(--surface, #131315); }
+.ix-side h3 { display: flex; align-items: center; gap: 7px; margin: 0 4px 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 700 14px var(--font-sans); }
+.ix-side h3 svg { color: var(--accent, #ff7b3d); }
+.ix-mini { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-radius: 10px; background: transparent; color: #fff; font: 700 14px var(--font-sans); text-align: left; cursor: pointer; transition: background 0.15s; }
+.ix-mini:hover { background: rgba(255, 255, 255, 0.05); }
+.ix-mini em { margin-left: auto; font-style: normal; font-weight: 700; font-size: 13px; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); }
+.ix-mini em.up { color: var(--sk-up, #3ddc97); font-weight: 800; }
+.ix-none { margin: 0; padding: 6px 6px 10px; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 13px var(--font-sans); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-list, .ix-new button, .ix-live i::after, .ix-act.on svg, .cs .cs-reveal, .cs .cs-dot, .cs .cs-dot.now::after, .ix-card .fi-thread, .ix-sk i, .cs.wait::before { animation: none !important; }
+  .ix-seg::before { transition: none; }
+}

@@ -195,7 +195,7 @@ export default function PublicTraderPage() {
         <ShareStudio
           name={trader.displayName}
           username={trader.username}
-          avatar={trader.avatarDataUrl || defaultAvatar(userId)}
+          avatar={trader.avatarDataUrl || defaultAvatar(trader.userId)}
           bio={trader.bio}
           value={null}
           bioBig={share.bioBig}
@@ -217,14 +217,15 @@ export default function PublicTraderPage() {
             className="pub-cover"
             data-zoom
             style={
-              { backgroundImage: `url("${trader.coverDataUrl || defaultCover(userId)}")`, backgroundSize: "cover", backgroundPosition: "center" }
+              // the default picture is chosen by the account's real id, the same one the leaderboard uses: the page address can be the @username
+              { backgroundImage: `url("${trader.coverDataUrl || defaultCover(trader.userId)}")`, backgroundSize: "cover", backgroundPosition: "center" }
             }
           />
 
           <div className="pub-identity">
             <div className={`pub-avatar fx ${frameClass(trader.frame)}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img data-zoom src={trader.avatarDataUrl || defaultAvatar(userId)} alt="" className="pub-avatar-img" />
+              <img data-zoom src={trader.avatarDataUrl || defaultAvatar(trader.userId)} alt="" className="pub-avatar-img" />
               <FrameArt id={trader.frame} />
             </div>
 

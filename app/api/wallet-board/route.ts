@@ -1,6 +1,7 @@
 // GET /api/wallet-board: the wallets behind the scanner's "proven wallet" and "repeat dumper" signals, with their record.
 // Wallet addresses are public on-chain; this only shows what Wraith has measured about them (calls they were early in, and how those ended).
 import { NextResponse } from "next/server";
+import { edge } from "@/lib/edge";
 import { getDb } from "@/lib/mongoClient";
 
 export const dynamic = "force-dynamic";
@@ -17,12 +18,13 @@ let cached: { ts: number; body: unknown } | null = null;
 let inflight: Promise<unknown> | null = null;
 
 export async function GET() {
-  if (cached && Date.now() - cached.ts < 5 * 60_000) return NextResponse.json(cached.body, { headers: { "Cache-Control": "private, max-age=300" } });
+  // (also kept by the CDN for the same 5 minutes, then served stale for an hour while it refreshes: the wallets list opens at once)
+  if (cached && Date.now() - cached.ts < 5 * 60_000) return edge(NextResponse.json(cached.body), 300, 3600);
   if (!inflight) inflight = build().finally(() => { inflight = null; });
   try {
     const body = await inflight;
     cached = { ts: Date.now(), body };
-    return NextResponse.json(body, { headers: { "Cache-Control": "private, max-age=300" } });
+    return edge(NextResponse.json(body), 300, 3600);
   } catch {
     if (cached) return NextResponse.json(cached.body); // the database hiccuped: the last answer beats an error
     return NextResponse.json({ error: "Wallets unavailable" }, { status: 503 });

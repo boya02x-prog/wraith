@@ -71,7 +71,7 @@ export const DISCOVER: DocPage[] = [
       { t: "h2", text: "The buttons in the header" },
       { t: "ul", items: [
         "**Cards or table** (two small buttons): choose how the list looks.",
-        "**Patterns:** what the scanner has learned from past calls, which setups have worked, and the wallets behind them.",
+        "**Patterns:** what the scanner has learned from past calls, which setups have worked, and the wallets behind them. It opens with the last numbers it had (they only change when the scanner retrains, every few hours) and refreshes them behind the scenes.",
         "**Refresh:** score the market again now (it also updates by itself).",
       ] },
       { t: "h2", text: "Live signals (computer)" },
@@ -112,16 +112,17 @@ export const DISCOVER: DocPage[] = [
     blocks: [
       { t: "h2", text: "Reading a post" },
       { t: "ul", items: [
-        "**Who and when.** The trader's name and how long ago they posted. Tap the name to open their profile.",
-        "**The badge on the right.** If the token has risen since the call you see **Nx since call** in green. Otherwise you see the market cap when they posted, for example **$212K MC**.",
+        "**Who and when.** The trader's photo and name and how long ago they posted. Tap them to open their profile.",
         "**The text.** What they wrote. Long posts are cut short; tap **Show more**.",
-        "**The token block.** The ticker with its market cap now and how many times it has moved since the call, a small **chart of the price since the call** (it draws itself as the card scrolls into view) and, if the trader opened a position, their **entry** market cap and their profit or loss on it. Tap it to open the token.",
+        "**The token block.** The ticker, the big number on the right (how many times the token has moved **since the call**, green when it is up and red when it is down), a **chart of the price since the call** with a dashed line at the price when they called (it draws itself as the card scrolls into view), the market cap **Called at** and **Now** (re-read every 30 seconds while the feed is open) and, if the trader opened a position, their **entry** market cap and their profit or loss on it. Tap it to open the token.",
         "**Reactions.** The heart, the repost count and the comments. Tap the comment bubble to read and write replies.",
       ] },
       { t: "h2", text: "Controls" },
       { t: "ul", items: [
-        "**All or Winning.** *Winning* shows only calls that are up at least 20% since the post.",
-        "**Live or Paused.** The feed refreshes by itself about every 15 seconds. Press it to pause while you read, so nothing moves under your finger.",
+        "**All or Winning.** *Winning* shows only calls that are up at least 20% since the post. Each tab shows how many calls it holds.",
+        "**Live or Paused.** The feed refreshes by itself about every 15 seconds. Press it to pause while you read.",
+        "**New calls.** If someone posts while you are reading further down, the page does not jump: an orange **1 new call** button appears at the top. Tap it to bring the new calls in and go back to the top (scrolling to the top by hand does the same).",
+        "**The strip of tokens (phone).** Above the feed, a row you swipe sideways shows the best calls so far (or the most called tokens when none is up yet). Tap one to open the token.",
       ] },
       { t: "h2", text: "On a computer" },
       { t: "p", text: "The side panel shows **Most called** (the tokens traders are calling most) and **Best since call** (the calls that have gained the most)." },
@@ -139,7 +140,7 @@ export const DISCOVER: DocPage[] = [
       { t: "h2", text: "Hot shots" },
       { t: "p", text: "The banner at the top shows the five best traders of the period you chose (**this week** on 7D, **today** on 24H, **this month** on 30D, or **of all time**). On a phone the posters swipe sideways; on a bigger screen the first one is large and the next four sit beside it. Each poster shows the trader's cover picture, their photo with the border they picked, the gain in big type, their win rate, number of trades and best trade, and a **Follow** button. Tap the poster to open their profile, or tap their photo to see it large." },
       { t: "h2", text: "Most followed and Top earners" },
-      { t: "p", text: "Under the banner two lists show who people follow the most and who has earned the most. **Most followed** counts followers. **Top earners** is each trader's all-time realized profit. Wallet balances are private unless a trader chooses to show theirs, so \"richest\" is measured by what a trader has made, which is public. A list stays hidden until there is someone to show. Tap **Show all** to see the full ten." },
+      { t: "p", text: "Under the banner two lists show who people follow the most and who has earned the most. **Most followed** counts followers. **Top earners** is each trader's all-time realized profit. Wallet balances are private unless a trader chooses to show theirs, so \"richest\" is measured by what a trader has made, which is public. A list stays hidden until there is someone to show. Tap **Show all** to see the full ten. On **Top gains**, anyone shown in one of these two lists is not listed a second time in the cards under the heading **More traders** (the cards keep their real rank number, so a gap just means that trader is shown above)." },
       { t: "h2", text: "Choose the period and the order" },
       { t: "table", head: ["Control", "Options"], rows: [
         ["Period", "**All** (all time), **24H**, **7D**, **30D**"],

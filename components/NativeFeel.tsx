@@ -8,7 +8,7 @@
 // Neither touches the data or the layout: they only move things for a few hundred milliseconds. Both stand down for "reduce motion".
 import { useEffect } from "react";
 
-const ROW_SELECTOR = ".sg-card, .wx-tcard, .profile-trade-row, .hl-row, .tr-row, .wx-side-row, .hc-card, .la-row, .mn-row, .pt-item, .ad-user, .q-card";
+const ROW_SELECTOR = ".sg-card, .wx-tcard, .profile-trade-row, .hl-row, .tr-row, .wx-side-row, .hc-card, .ix-card, .la-row, .mn-row, .pt-item, .ad-user, .q-card";
 const SKIP_ELASTIC = "[data-no-elastic], .wx-chart-host, .wx-axis-grip, canvas, input, textarea, select, .wpl, .ps, .wx-spot-sheet";
 
 /** iOS-style resistance: the first pixels move almost 1:1, then it gets heavier and levels off near 160px. */

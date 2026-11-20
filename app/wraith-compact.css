@@ -1418,7 +1418,11 @@ html { scroll-behavior: smooth; }
 .w3d { position: relative; width: 100%; height: 100%; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
 .gs .w3d { position: absolute; inset: 0; }
 .w3d-poster, .w3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.w3d-poster { object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+.w3d-poster { object-fit: contain; pointer-events: none; -webkit-user-drag: none; transform-origin: 50% 75%; animation: w3d-breathe 3.4s ease-in-out infinite; }
+/* the still picture breathes a little (a slow lift and a hair of growth, on the compositor, so it costs nothing) while the live scene is being built
+   or when the device only ever shows the still: the character never looks frozen. It keeps going until the live scene has fully faded in over it. */
+@keyframes w3d-breathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.6%) scale(1.014); } }
+@media (prefers-reduced-motion: reduce) { .w3d-poster { animation: none; } }
 /* the still was drawn for a phone-shaped banner: on a wide one it would sit in the wrong place under the live scene, so it only shows there when 3D is off */
 @media (min-width: 600px) { .gs .w3d:not(.is-still) .w3d-poster { display: none; } }
 .w3d-canvas { opacity: 0; transition: opacity .5s ease; }

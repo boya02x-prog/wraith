@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Search, UserCheck, UserPlus, X } from "lucide-react";
 import { useWraithSession } from "@/components/SessionProvider";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 type ListUser = {
   userId: string;
@@ -182,18 +183,12 @@ export default function FollowListModal({
               return (
                 <div key={user.userId} className="follow-modal-row">
                   <Link href={href} onClick={onClose} className="follow-modal-user">
-                    {user.avatarDataUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={user.avatarDataUrl}
-                        alt=""
-                        className="follow-modal-avatar"
-                      />
-                    ) : (
-                      <span className="follow-modal-avatar-fallback">
-                        {user.displayName.slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={user.avatarDataUrl || defaultAvatar(user.userId)}
+                      alt=""
+                      className="follow-modal-avatar"
+                    />
                     <div className="follow-modal-user-info">
                       <span className="follow-modal-name">{user.displayName}</span>
                       {user.username && (

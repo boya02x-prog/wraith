@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Brain, Copy, ExternalLink, FlaskConical, ShieldAlert, Target, Wallet } from "lucide-react";
 import { fmtUsd, type MarketToken } from "@/lib/market";
 import { swrRead, swrWrite } from "@/lib/swrCache";
+import { readLast, writeLast } from "@/lib/lastGood";
 import { TokenIcon } from "@/components/TokenIcon";
 import WalletAvatar from "@/components/WalletAvatar";
 import { asKind, KIND_INFO, walletName } from "@/lib/walletIdentity";
@@ -79,7 +80,8 @@ function Wallets() {
   // The panel is only ever drawn in the browser (the scanner loads client-side), so reading storage in the first render is safe.
   const [open, setOpenState] = useState(() => ssGet(SS_OPEN) === "1");
   const [tab, setTabState] = useState<WTab>(() => { const v = ssGet(SS_TAB); return v === "holders" || v === "dumpers" ? v : "proven"; });
-  const [d, setD] = useState<WalletBoard | null>(() => swrRead<WalletBoard>("wallet-board", 15 * 60_000) ?? null);
+  // the last list first (this visit, or the last time the app was open: these numbers move slowly), the fresh one right behind it
+  const [d, setD] = useState<WalletBoard | null>(() => swrRead<WalletBoard>("wallet-board", 15 * 60_000) ?? readLast<WalletBoard>("wallet-board", 3 * 86_400_000) ?? null);
   const [err, setErr] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const setOpen = (v: boolean) => { setOpenState(v); ssSet(SS_OPEN, v ? "1" : "0"); };
@@ -88,7 +90,7 @@ function Wallets() {
   useEffect(() => {
     if (!open) return;
     let alive = true;
-    fetch("/api/wallet-board").then((r) => (r.ok ? r.json() : Promise.reject())).then((j: WalletBoard) => { swrWrite("wallet-board", j); if (alive) { setD(j); setErr(false); } }).catch(() => { if (alive) setErr(true); });
+    fetch("/api/wallet-board").then((r) => (r.ok ? r.json() : Promise.reject())).then((j: WalletBoard) => { swrWrite("wallet-board", j); writeLast("wallet-board", j); if (alive) { setD(j); setErr(false); } }).catch(() => { if (alive) setErr(true); });
     return () => { alive = false; };
   }, [open]);
   const rows = d ? (d[tab] ?? []) : [];
@@ -108,7 +110,7 @@ function Wallets() {
             ))}
           </div>
           <p className="pw-hint">{WTABS.find((t) => t.key === tab)?.hint}</p>
-          {!d && err ? <div className="pt-note">Could not load wallets right now.</div> : !d ? <div className="pt-note">Loading…</div> : rows.length === 0 ? <div className="pt-note">{tab === "holders" ? "No wallets typed as holders yet." : "None yet."}</div> : (
+          {!d && err ? <div className="pt-note">Could not load wallets right now.</div> : !d ? <div className="pw-list" aria-hidden="true">{[0, 1, 2].map((i) => <div key={i} className="wx-skel" style={{ height: 92, borderRadius: 14 }} />)}</div> : rows.length === 0 ? <div className="pt-note">{tab === "holders" ? "No wallets typed as holders yet." : "None yet."}</div> : (
             <div className="pw-list">
               {rows.map((r, i) => {
                 const kind = asKind(r.kind);
@@ -150,15 +152,16 @@ const pct = (v: number | null | undefined, d = 1) => (v === null || v === undefi
 const ago = (t: number) => { const h = Math.round((Date.now() - t) / 3_600_000); return h < 1 ? "under an hour ago" : h < 48 ? `${h}h ago` : `${Math.round(h / 24)}d ago`; };
 
 export default function PatternsPanel({ signals, onOpen }: { signals: Sig[]; onOpen: (s: Sig) => void }) {
-  // last answer first (instant when coming back from a wallet or token), fresh answer right behind it
-  const [data, setData] = useState<Learning | null>(() => swrRead<Learning>("signal-learning", 15 * 60_000) ?? null);
+  // last answer first (instant when coming back from a wallet or token, and also when the app was closed in between: it only changes when the model
+  // retrains, every few hours), fresh answer right behind it. warmPatterns (lib/warmPatterns.ts) fills the same copy while the app is idle.
+  const [data, setData] = useState<Learning | null>(() => swrRead<Learning>("signal-learning", 15 * 60_000) ?? readLast<Learning>("signal-learning", 7 * 86_400_000) ?? null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
     let alive = true;
     fetch("/api/signal-learning", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: Learning) => { swrWrite("signal-learning", d); if (alive) { setData(d); setErr(false); } })
+      .then((d: Learning) => { swrWrite("signal-learning", d); writeLast("signal-learning", d); if (alive) { setData(d); setErr(false); } })
       .catch(() => { if (alive) setErr(true); });
     return () => { alive = false; };
   }, []);
@@ -175,7 +178,11 @@ export default function PatternsPanel({ signals, onOpen }: { signals: Sig[]; onO
       {!data && err ? (
         <div className="pt-note">Could not load what the scanner has learned right now.</div>
       ) : !data ? (
-        <div className="pt-note">Loading…</div>
+        // the shape of what is coming, so the screen never sits on a bare "Loading…"
+        <div aria-hidden="true">
+          <div className="pt-cards">{[0, 1, 2, 3].map((i) => <div key={i} className="wx-skel" style={{ height: 150, borderRadius: 14 }} />)}</div>
+          <div style={{ display: "grid", gap: 8, marginTop: 14 }}>{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="wx-skel" style={{ height: 54, borderRadius: 12 }} />)}</div>
+        </div>
       ) : (
         <>
           <div className="pt-cards">

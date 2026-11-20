@@ -3,12 +3,12 @@
 //  <GhostScene />  the big banner for hero spots (the Wins screen): a crowned ghost with a gold coin on the winners' podium in a spotlight, drawn live in 3D
 //                  (components/Wraith3D.tsx) over a still picture of the same scene, so it is never empty and works on phones that cannot do 3D.
 //  <GhostMini />   a still of the ghost for empty and error states: asleep by default, "oops" for errors, waving for a welcome.
-import Wraith3D from "@/components/Wraith3D";
+import Wraith3D, { WINS_SCENE } from "@/components/Wraith3D";
 
 export default function GhostScene({ title, subtitle, height = 210 }: { title: string; subtitle?: string; height?: number }) {
   return (
     <div className="gs" style={{ height }} role="img" aria-label={title}>
-      <Wraith3D pose="king" podium={3} confetti={44} spotlight zoom={1.15} shiftX={0.85} poster="/mascot/wraith-king.webp" />
+      <Wraith3D {...WINS_SCENE} poster="/mascot/wraith-king.webp" />
       <div className="gs-copy"><b>{title}</b>{subtitle ? <small>{subtitle}</small> : null}</div>
     </div>
   );

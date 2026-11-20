@@ -12,6 +12,7 @@ import TraderBoards from "@/components/TraderBoards";
 import Frame, { frameGlow } from "@/components/Frame";
 import Radar from "@/components/Radar";
 import { useCash } from "@/lib/cash";
+import { defaultAvatar } from "@/lib/defaultArt";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { fmtHold, fmtMult, type TraderStatsResult } from "@/lib/traderStats";
 
@@ -136,8 +137,12 @@ export default function TradersPage() {
   const bannerOn = sort !== "following" && byGain.length > 0;
   const bannerN = Math.min(5, byGain.length);
   const skipTop = bannerOn && sort === "pnl" ? bannerN : 0;
-  const rest = skipTop ? sorted.slice(skipTop) : sorted;
-  const podiumBase = skipTop;
+  // the Most followed / Top earners boards sit between the banner and the cards: whoever is on show there is not listed a second time below
+  // (the cards keep their real rank number, so a gap just means "that one is above")
+  const [boardIds, setBoardIds] = useState<string[]>([]);
+  const inBoards = useMemo(() => new Set(boardIds), [boardIds]);
+  const rankOf = useMemo(() => new Map(sorted.map((t, i) => [t.userId, i] as const)), [sorted]);
+  const rest = skipTop ? sorted.slice(skipTop).filter((t) => !inBoards.has(t.userId)) : sorted;
 
   return (
     <main className="wraith-dashboard profile-page">
@@ -182,10 +187,16 @@ export default function TradersPage() {
         ) : traders.length ? (
           <>
           {bannerOn && <HotShots list={byGain} when={periodMeta.when} gainLabel={periodMeta.key === "all" ? "all-time gain" : `${periodMeta.label.toLowerCase()} gain`} pnlOf={(t) => gain(t as Trader, period)} money={money} />}
-          {bannerOn && <TraderBoards />}
+          {bannerOn && <TraderBoards onShown={setBoardIds} />}
+          {skipTop > 0 && rest.length > 0 && (
+            <header className="tl-head">
+              <h3>More traders</h3>
+              <small>ranked by {periodMeta.key === "all" ? "all-time" : periodMeta.label.toLowerCase()} gain</small>
+            </header>
+          )}
           {rest.length > 0 && <div className={`traders-grid${layout === "list" ? " is-list" : ""}`}>
             {rest.map((trader, i) => {
-              const index = i + podiumBase;
+              const index = rankOf.get(trader.userId) ?? i + skipTop;
               const s = trader.stats;
               const pnl = gain(trader, period);
               const tone = pnl > 0 ? "up" : pnl < 0 ? "down" : "flat";
@@ -196,11 +207,8 @@ export default function TradersPage() {
                   <div className="tc-main">
                     <span className="tc-rank">{index + 1}</span>
                     <Frame id={trader.frame} thick={2.5}>
-                      {trader.avatarDataUrl ? (
-                        <Image className="tc-avatar" data-zoom src={trader.avatarDataUrl} alt="" width={46} height={46} unoptimized />
-                      ) : (
-                        <span className="tc-avatar tc-avatar-fallback">{trader.displayName.slice(0, 1).toUpperCase()}</span>
-                      )}
+                      {/* the same default picture as the banner, the boards and the profile (it used to be a letter here) */}
+                      <Image className="tc-avatar" data-zoom src={trader.avatarDataUrl || defaultAvatar(trader.userId)} alt="" width={46} height={46} unoptimized />
                     </Frame>
                     <Link className="tc-id" href={`/app/u/${encodeURIComponent(trader.username ?? trader.userId)}`}>
                       <strong>{trader.displayName}</strong>

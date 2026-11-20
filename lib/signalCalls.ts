@@ -37,6 +37,10 @@ export interface SignalCall {
   rugged?: boolean;
   misses?: number;
   lastSeenAt?: number;
+  /** when the stored peak was last compared with the real chart candles (see healPeaks) */
+  peakCheckedAt?: number;
+  /** the peak the price feed had claimed before the chart showed it was too high (kept so a correction can be traced) */
+  peakWas?: number;
 }
 
 const COLLECTION = "signal_calls";
@@ -80,6 +84,62 @@ export async function chartRise(mint: string, fromMs: number): Promise<number | 
     const hi = Math.max(...cs.filter((c) => c.time + 900 > t0).map((c) => c.high));
     return base > 0 ? hi / base : null;
   } catch { return null; }
+}
+
+/**
+ * The highest market cap the REAL candles show since a call, so a peak the price feed claims can be compared with what a person sees when they
+ * open the chart (it is the same Jupiter data). pump.fun tokens always have exactly 1,000,000,000 supply, so price x 1B is exact and the margin is
+ * small; for any other token the candle rise since the call is applied to the called market cap (rougher, so the margin is wider).
+ * `margin` = how far above `peakMcap` a claim may be before it counts as wrong. null = could not check (no candles, or the chart does not reach
+ * back to the call).
+ *
+ * This exists because one wrong reading was kept forever as the "peak": CI was called at $11.2K, its chart topped out near $74K (6.6x), yet the
+ * record said $131.8K (11.7x) and the bell announced "hit 10x" for a token that never did.
+ */
+export async function chartPeak(mint: string, fromMs: number, spottedMcap: number): Promise<{ peakMcap: number; margin: number; hiAt: number } | null> {
+  try {
+    const r = await fetch(`https://datapi.jup.ag/v2/charts/${mint}?interval=15_MINUTE&to=${Date.now()}&candles=300&type=price&quote=usd`, { signal: AbortSignal.timeout(8000), headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { candles?: { time: number; high: number; close: number }[] };
+    const cs = (j.candles ?? []).filter((c) => c.high > 0);
+    if (cs.length < 3) return null;
+    const t0 = fromMs / 1000;
+    if (cs[0].time > t0 + 1800) return null; // the chart only reaches back about 3 days
+    const after = cs.filter((c) => c.time + 900 > t0);
+    if (!after.length) return null;
+    const top = after.reduce((a, b) => (b.high > a.high ? b : a), after[0]);
+    if (mint.endsWith("pump")) return { peakMcap: top.high * 1e9, margin: 1.25, hiAt: top.time * 1000 };
+    const base = after[0].close > 0 ? after[0].close : after[0].high;
+    return base > 0 && spottedMcap > 0 ? { peakMcap: spottedMcap * (top.high / base), margin: 1.6, hiAt: top.time * 1000 } : null;
+  } catch { return null; }
+}
+
+/**
+ * Re-checks the stored peak of recent calls that claim 2x or more (2x is where the public record counts a win) against the real candles, a few per run, each at most every 6 hours, and
+ * lowers the ones the chart does not support. Peaks only ever went up (`$max`), so a single bad reading from before the check above existed
+ * stayed in the record, the Wins list and the bell until now.
+ */
+async function healPeaks(c: Awaited<ReturnType<typeof col>>) {
+  const now = Date.now();
+  const rows = await c.find(
+    {
+      engine: 2, shadow: { $ne: true }, spottedMcap: { $gt: 0 }, spottedAt: { $gt: now - 70 * 3_600_000 },
+      $expr: { $gte: ["$peakMcap", { $multiply: ["$spottedMcap", 2] }] },
+      $or: [{ peakCheckedAt: { $exists: false } }, { peakCheckedAt: { $lt: now - 6 * 3_600_000 } }],
+    },
+    { projection: { address: 1, spottedAt: 1, spottedMcap: 1, peakMcap: 1, lastMcap: 1 } },
+  ).sort({ spottedAt: -1 }).limit(4).toArray();
+  await Promise.all(rows.map(async (d) => {
+    const real = await chartPeak(d.address, d.spottedAt, d.spottedMcap);
+    // could not check (no chart for it): look again in 30 minutes instead of every run, so the same few rows do not block the others
+    if (!real) return c.updateOne({ address: d.address }, { $set: { peakCheckedAt: now - 5.5 * 3_600_000 } }).catch(() => undefined);
+    if (d.peakMcap <= real.peakMcap * real.margin) return c.updateOne({ address: d.address }, { $set: { peakCheckedAt: now } }).catch(() => undefined);
+    const fixed = Math.max(real.peakMcap, d.spottedMcap);
+    return c.updateOne(
+      { address: d.address },
+      { $set: { peakMcap: fixed, peakWas: d.peakMcap, peakAt: real.hiAt, peakCheckedAt: now }, ...(fixed < d.spottedMcap * 2 ? { $unset: { hit2xAt: "" } } : {}) },
+    ).catch(() => undefined);
+  }));
 }
 
 export async function liveMcaps(items: ({ address: string; chain?: string } | string)[]): Promise<Map<string, number>> {
@@ -198,7 +258,10 @@ export async function refreshCalls(force = false) {
         .sort({ lastCheck: 1 })
         .limit(REFRESH_BATCH)
         .toArray();
-      if (!due.length) return;
+      if (!due.length) {
+        if (force) await healPeaks(c).catch((e) => console.error("[heal peaks]", e instanceof Error ? e.message : e));
+        return;
+      }
       const chunks: typeof due[] = [];
       for (let k = 0; k < due.length; k += 30) chunks.push(due.slice(k, k + 30));
       const live = new Map<string, number>();
@@ -233,18 +296,20 @@ export async function refreshCalls(force = false) {
             const confirmed = d?.pendingMcap && Math.abs(mcap / d.pendingMcap - 1) < 0.3;
             if (!confirmed) return c.updateOne({ address }, { $set: { pendingMcap: mcap, lastCheck: now } }).catch(() => undefined);
           }
-          // A big new peak is checked against the real candles before it is kept forever: the feed can return a wrong market cap for
-          // a thin pool, and one wrong number was becoming a "396x win" notification.
-          const smc = (d as { spottedMcap?: number } | undefined)?.spottedMcap ?? 0;
-          const oldPeak = (d as { peakMcap?: number } | undefined)?.peakMcap ?? smc;
-          if (smc > 0 && mcap >= smc * 10 && mcap > oldPeak * 1.5) {
-            const rise = await chartRise(address, (d as { spottedAt?: number } | undefined)?.spottedAt ?? now - 24 * 3600e3);
-            if (rise !== null && rise < (mcap / smc) * 0.35) return c.updateOne({ address }, { $set: { lastCheck: now, badTick: mcap } }).catch(() => undefined);
+          // A new peak is checked against the real candles before it is kept forever (the peak only ever goes up): the feed can return a
+          // wrong market cap for a thin pool or a pair that just changed, and one wrong number became a "396x win" notification, and later
+          // an "11.7x" for CI whose chart never passed 6.6x. Any reading 2x or more above the call that sets a new high (or would be the first
+          // 2x, the line the public record counts as a win) is compared with the highest candle since the call (see chartPeak); a reading well
+          // above it is dropped and the next reading decides.
+          const pd = d as { spottedMcap?: number; spottedAt?: number; peakMcap?: number; hit2xAt?: number; hitHalfAt?: number } | undefined;
+          const sm = pd?.spottedMcap ?? 0;
+          const oldPeak = pd?.peakMcap ?? sm;
+          if (sm > 0 && mcap >= sm * 2 && (mcap > oldPeak * 1.1 || !pd?.hit2xAt)) {
+            const real = await chartPeak(address, pd?.spottedAt ?? now - 24 * 3600e3, sm);
+            if (real && mcap > real.peakMcap * real.margin) return c.updateOne({ address }, { $set: { lastCheck: now, badTick: mcap } }).catch(() => undefined);
           }
           // Path, not only the end points: WHEN it first doubled and WHEN it first lost half. "Doubled before losing half" is the
           // question a trader actually cares about, and it is learnable from these timestamps (peak/last alone cannot tell the order).
-          const pd = d as { spottedMcap?: number; peakMcap?: number; hit2xAt?: number; hitHalfAt?: number } | undefined;
-          const sm = pd?.spottedMcap ?? 0;
           const path: Record<string, number> = {};
           if (sm > 0) {
             if (!pd?.hit2xAt && mcap >= sm * 2) path.hit2xAt = now;
@@ -254,6 +319,8 @@ export async function refreshCalls(force = false) {
           return c.updateOne({ address }, { $set: { lastMcap: mcap, lastCheck: now, lastSeenAt: now, misses: 0, ...path }, $max: { peakMcap: mcap }, $min: { troughMcap: mcap }, $unset: { pendingMcap: "", rugged: "" } }).catch(() => undefined);
         }),
       );
+      // the scheduled run (force) also re-checks old peaks that the check above did not exist for
+      if (force) await healPeaks(c).catch((e) => console.error("[heal peaks]", e instanceof Error ? e.message : e));
     } finally {
       refreshing = null;
     }

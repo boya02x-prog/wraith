@@ -39,6 +39,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         void import("@/components/HotCalloutsFeed");
         void import("@/components/SignalScanner");
         void import("@/components/Wraith3D").then((m) => m.warmWraith3D());
+        void import("@/lib/warmPatterns").then((m) => m.warmPatterns()); // the Patterns view's numbers, so it opens with them (it used to sit on "Loading…")
       } catch { /* optional */ }
     };
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
