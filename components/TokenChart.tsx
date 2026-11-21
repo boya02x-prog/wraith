@@ -1063,7 +1063,7 @@ export default function TokenChart({
     if (!list.length) list.push({ t: bucket, o: livePrice, h: livePrice, l: livePrice, c: livePrice, v: 0 });
     let last = list[list.length - 1];
     // Ignore ticks wildly off the series (stale provider glitch).
-    if (livePrice > last.c * 20 || livePrice < last.c / 20) return;
+    if (livePrice > last.c * 5 || livePrice < last.c / 5) return;
 
     if (last.t < bucket) {
       // quiet buckets between the last bar and now become flat candles, so the new bar does not jump across a hole

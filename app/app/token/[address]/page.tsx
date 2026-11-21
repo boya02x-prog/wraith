@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePresence } from "@/lib/usePresence";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import BookmarkBtn from "@/components/BookmarkBtn";
+import SavedSideList from "@/components/SavedSideList";
 import { Activity, Flame, Radar, Search, Star, Wallet } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import type { MemeTrend } from "@/app/app/page";
@@ -13,7 +13,6 @@ import { readTokenNav, cacheTokenNav } from "@/lib/tokenNav";
 import { readTokenFavorites, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
 import { SOLANA_MINT_RE } from "@/lib/market";
 import { chainOf, EVM_ADDR_RE } from "@/lib/chains";
-import { TokenIcon } from "@/components/TokenIcon";
 import SheetBoundary from "@/components/SheetBoundary";
 import TokenPageSkeleton from "@/components/TokenPageSkeleton";
 import TokenSkeleton from "@/components/TokenSkeleton";
@@ -167,17 +166,7 @@ export default function TokenPage() {
         {sideTab === "signals" && <SignalsSidebar onSelectMeme={go} selectedMeme={meme} />}
         {sideTab === "saved" &&
           (favorites.length ? (
-            <div className="wx-side-scroll">
-              {favorites.map((f) => (
-                <div key={f.contractAddress} role="button" tabIndex={0} className="wx-side-row" onClick={() => go(f)} onKeyDown={(e) => { if (e.key === "Enter") go(f); }}>
-                  <TokenIcon contractAddress={f.contractAddress} imageUrl={f.tokenImageUrl} symbol={f.keyword} size={36} />
-                  <span className="mid">
-                    <strong>{f.keyword}</strong>
-                  </span>
-                  <BookmarkBtn meme={f} />
-                </div>
-              ))}
-            </div>
+            <SavedSideList favorites={favorites} onPick={go} />
           ) : (
             <div className="wx-empty small"><span>Star a token to keep it here.</span></div>
           ))}
