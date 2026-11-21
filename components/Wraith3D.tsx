@@ -8,7 +8,7 @@
 //   1. the three.js code is fetched while the app is idle (warmWraith3D, called from AppShell), so opening the screen waits for no download;
 //   2. the first build starts only after the screen has settled, and its shaders compile without blocking the page (compileAsync);
 //   3. the built scene and its canvas are KEPT: leaving the screen only takes the canvas out of the page, coming back puts it in again at once.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { WebGLRenderer } from "three";
 import type { Pose, WraithScene } from "@/lib/wraith3d";
 
@@ -44,10 +44,10 @@ export function warmWraith3D() {
     const im = new Image();
     im.decoding = "async";
     im.src = "/mascot/wraith-king.webp";
+    // the scene is built while the app is still quiet, a moment after it opens, so it is long finished by the time anyone taps Wins
     window.setTimeout(() => {
-      if (document.visibilityState !== "visible") return;
       void build(sceneKey(WINS_SCENE), WINS_SCENE, 0).catch(() => undefined);
-    }, isPhone() ? 5000 : 2500);
+    }, isPhone() ? 900 : 500);
   } catch { /* optional */ }
 }
 
@@ -85,6 +85,8 @@ function build(key: string, o: Opts, settleMs: number): Promise<Shared | null> {
     const sc = createWraithScene(renderer, { ...o, seed: 7 });
     // compile the shaders in parallel with the page instead of freezing it on the first frame (where the browser cannot, it simply compiles then)
     try { await renderer.compileAsync(sc.scene, sc.camera); } catch { /* compiled on the first frame instead */ }
+    // one frame now, off the page: the first frame that is really shown then does not pay for uploading the textures and buffers to the graphics card
+    try { sc.update(0, 0.016, { x: 0, y: 0 }); renderer.render(sc.scene, sc.camera); } catch { /* the first real frame does it */ }
     const s: Shared = { canvas, renderer, sc, lost: false };
     canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); s.lost = true; kept.delete(key); });
     kept.set(key, s);
@@ -92,6 +94,69 @@ function build(key: string, o: Opts, settleMs: number): Promise<Shared | null> {
   })().finally(() => { building.delete(key); });
   building.set(key, p);
   return p;
+}
+
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+/**
+ * Puts a built scene into `host` and runs it; returns the function that takes it out again (the scene itself stays in `kept`).
+ * The first frame is drawn right here, before the browser paints, so the character is on screen together with the screen, not a moment after it
+ * (the still picture used to show first and the live scene fade in over it, which read as a frozen character that then started).
+ */
+function attach(sh: Shared, host: HTMLElement, interactive: boolean, onLive: () => void): () => void {
+  const { canvas, renderer, sc } = sh;
+  host.appendChild(canvas);
+  const phone = isPhone();
+  const maxDpr = phone ? 1.25 : 1.75;
+  let dpr = Math.min(sh.dpr ?? window.devicePixelRatio ?? 1, maxDpr, window.devicePixelRatio || 1);
+  const fit = () => {
+    const r = host.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) return;
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(r.width, r.height, false);
+    sc.resize(r.width, r.height);
+    renderer.render(sc.scene, sc.camera); // resizing clears the canvas: draw it again at once so it never flashes empty
+  };
+  fit();
+  const ro = new ResizeObserver(fit); ro.observe(host);
+  let visible = true;
+  const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.01 }); io.observe(host);
+  let raf = 0;
+  const ptr = { x: 0, y: 0 };
+  const move = (e: PointerEvent) => { const r = host.getBoundingClientRect(); ptr.x = ((e.clientX - r.left) / r.width - 0.5) * 2; ptr.y = ((e.clientY - r.top) / r.height - 0.5) * 2; };
+  const rest = () => { ptr.x = 0; ptr.y = 0; };
+  const tap = () => sc.poke();
+  if (interactive) {
+    host.addEventListener("pointermove", move, { passive: true });
+    host.addEventListener("pointerleave", rest);
+    host.addEventListener("pointerup", rest);
+    host.addEventListener("pointerdown", tap);
+  }
+  let last = performance.now(), slow = 0, since = performance.now();
+  sc.update(last / 1000, 0.016, ptr);
+  renderer.render(sc.scene, sc.camera);
+  onLive();
+  const loop = (now: number) => {
+    raf = requestAnimationFrame(loop);
+    if (!visible || document.hidden) { last = now; return; }
+    if (phone && now - last < 30) return; // 30 frames a second on a phone
+    const frame = now - last;
+    const dt = Math.min(0.05, frame / 1000); last = now;
+    sc.update(now / 1000, dt, ptr);
+    renderer.render(sc.scene, sc.camera);
+    // can this device keep up? If it keeps missing the frame budget, draw at a lower resolution (a quarter step at a time, never below 0.75)
+    if (frame > (phone ? 46 : 26)) slow++;
+    if (now - since > 1500) {
+      if (slow > 14 && dpr > 0.75) { dpr = Math.max(0.75, +(dpr - 0.25).toFixed(2)); sh.dpr = dpr; fit(); }
+      slow = 0; since = now;
+    }
+  };
+  raf = requestAnimationFrame(loop);
+  return () => {
+    cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
+    host.removeEventListener("pointermove", move); host.removeEventListener("pointerleave", rest); host.removeEventListener("pointerup", rest); host.removeEventListener("pointerdown", tap);
+    canvas.remove(); // kept in memory (see above), only taken out of the page
+  };
 }
 
 export default function Wraith3D({
@@ -111,75 +176,29 @@ export default function Wraith3D({
   interactive?: boolean;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
-  const [live, setLive] = useState(false);
+  const key = sceneKey({ pose, podium, confetti, spotlight, zoom, shiftX });
+  // the scene was already built (warmWraith3D, or an earlier visit): it is drawn before the first paint, so it starts out live and needs no fade-in
+  const [warm] = useState(() => { const h = kept.get(key); return !!h && !h.lost; });
+  const [live, setLive] = useState(warm);
   const [still, setStill] = useState(false); // this device cannot (or should not) draw 3D: the picture stays
-  const [warm, setWarm] = useState(false); // the scene was already built: no fade-in needed
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!can3D()) { setStill(true); return; }
+    const host = wrap.current;
+    if (!host) return;
     let alive = true;
     let stop = () => {};
-    const key = sceneKey({ pose, podium, confetti, spotlight, zoom, shiftX });
-    const wasKept = kept.has(key);
-    if (wasKept) setWarm(true);
-    void (async () => {
+    const hit = kept.get(key);
+    if (hit && !hit.lost) stop = attach(hit, host, interactive, () => setLive(true));
+    else {
       // (the wait before a first build used to be 650 / 380 ms because the screen slid in; tab switches no longer slide, so a short settle is enough)
-      const sh = await build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 300 : 150);
-      const host = wrap.current;
-      if (!alive || !sh || !host) return;
-      const { canvas, renderer, sc } = sh;
-      host.appendChild(canvas);
-      const phone = isPhone();
-      const maxDpr = phone ? 1.25 : 1.75;
-      let dpr = Math.min(sh.dpr ?? window.devicePixelRatio ?? 1, maxDpr, window.devicePixelRatio || 1);
-      const fit = () => {
-        const r = host.getBoundingClientRect();
-        if (r.width < 4 || r.height < 4) return;
-        renderer.setPixelRatio(dpr);
-        renderer.setSize(r.width, r.height, false);
-        sc.resize(r.width, r.height);
-      };
-      fit();
-      const ro = new ResizeObserver(fit); ro.observe(host);
-      let visible = true;
-      const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.01 }); io.observe(host);
-      let raf = 0;
-      const ptr = { x: 0, y: 0 };
-      const move = (e: PointerEvent) => { const r = host.getBoundingClientRect(); ptr.x = ((e.clientX - r.left) / r.width - 0.5) * 2; ptr.y = ((e.clientY - r.top) / r.height - 0.5) * 2; };
-      const rest = () => { ptr.x = 0; ptr.y = 0; };
-      const tap = () => sc.poke();
-      if (interactive) {
-        host.addEventListener("pointermove", move, { passive: true });
-        host.addEventListener("pointerleave", rest);
-        host.addEventListener("pointerup", rest);
-        host.addEventListener("pointerdown", tap);
-      }
-      let last = performance.now(), shown = false, slow = 0, since = performance.now();
-      const loop = (now: number) => {
-        raf = requestAnimationFrame(loop);
-        if (!visible || document.hidden) { last = now; return; }
-        if (phone && now - last < 30) return; // 30 frames a second on a phone
-        const frame = now - last;
-        const dt = Math.min(0.05, frame / 1000); last = now;
-        sc.update(now / 1000, dt, ptr);
-        renderer.render(sc.scene, sc.camera);
-        if (!shown) { shown = true; setLive(true); }
-        // can this device keep up? If it keeps missing the frame budget, draw at a lower resolution (a quarter step at a time, never below 0.75)
-        if (frame > (phone ? 46 : 26)) slow++;
-        if (now - since > 1500) {
-          if (slow > 14 && dpr > 0.75) { dpr = Math.max(0.75, +(dpr - 0.25).toFixed(2)); sh.dpr = dpr; fit(); }
-          slow = 0; since = now;
-        }
-      };
-      raf = requestAnimationFrame(loop);
-      stop = () => {
-        cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
-        host.removeEventListener("pointermove", move); host.removeEventListener("pointerleave", rest); host.removeEventListener("pointerup", rest); host.removeEventListener("pointerdown", tap);
-        canvas.remove(); // kept in memory (see above), only taken out of the page
-      };
-    })();
+      void build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 300 : 150).then((sh) => {
+        const h = wrap.current;
+        if (alive && sh && h) stop = attach(sh, h, interactive, () => setLive(true));
+      });
+    }
     return () => { alive = false; stop(); };
-  }, [pose, podium, confetti, spotlight, zoom, shiftX, interactive]);
+  }, [key, pose, podium, confetti, spotlight, zoom, shiftX, interactive]);
 
   return (
     <div ref={wrap} className={`w3d${live ? " is-live" : ""}${still ? " is-still" : ""}${warm ? " is-warm" : ""}${className ? ` ${className}` : ""}`} role="img" aria-label={alt || undefined} aria-hidden={alt ? undefined : true}>

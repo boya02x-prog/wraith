@@ -8,8 +8,13 @@ import { clientIp } from "@/lib/clientIp";
 // key from developers.giphy.com) in the environment. Without it this answers { configured: false } and the tab says it is not switched on.
 // Content is limited to GIPHY rating "pg-13".
 const PAGE = 24;
+// Clips come back SHORT: many GIPHY results run 10-30 seconds (and several MB), which made the card background drag on and load slowly. The page asks
+// for twice as many as it shows and keeps the ones with at most MAX_FRAMES frames (about 6 seconds) and a small video file.
+const FETCH = 48;
+const MAX_FRAMES = 64;
+const MAX_BYTES = 2_400_000;
 
-type GiphyImage = { mp4?: string; url?: string };
+type GiphyImage = { mp4?: string; url?: string; mp4_size?: string; frames?: string };
 type GiphyItem = { id?: string; title?: string; images?: Record<string, GiphyImage | undefined> };
 
 export async function GET(request: NextRequest) {
@@ -24,7 +29,7 @@ export async function GET(request: NextRequest) {
   const offset = Math.min(200, Math.max(0, Math.floor(Number(request.nextUrl.searchParams.get("offset")) || 0)));
   const url = new URL(`https://api.giphy.com/v1/gifs/${q ? "search" : "trending"}`);
   url.searchParams.set("api_key", key);
-  url.searchParams.set("limit", String(PAGE));
+  url.searchParams.set("limit", String(FETCH));
   url.searchParams.set("offset", String(offset));
   url.searchParams.set("rating", "pg-13");
   url.searchParams.set("bundle", "messaging_non_clips");
@@ -34,15 +39,21 @@ export async function GET(request: NextRequest) {
     const r = await fetch(url, { next: { revalidate: 300 } }); // the same search by anyone is reused for five minutes
     if (!r.ok) return NextResponse.json({ configured: true, error: "The clip service did not answer." }, { status: 502 });
     const d = (await r.json()) as { data?: GiphyItem[] };
-    const items = (d.data ?? [])
+    const all = (d.data ?? [])
       .map((g) => {
         const im = g.images ?? {};
         const mp4 = im.original_mp4?.mp4 ?? im.fixed_height?.mp4 ?? im.fixed_width?.mp4;
         const thumb = im.fixed_width_still?.url ?? im.fixed_height_still?.url ?? im.fixed_width?.url ?? "";
-        return g.id && mp4 && thumb ? { id: g.id, title: (g.title ?? "").slice(0, 80), thumb, mp4 } : null;
+        const frames = Number(im.original?.frames) || 0;
+        const bytes = Number(im.original_mp4?.mp4_size) || 0;
+        return g.id && mp4 && thumb ? { id: g.id, title: (g.title ?? "").slice(0, 80), thumb, mp4, frames, bytes } : null;
       })
-      .filter((x): x is { id: string; title: string; thumb: string; mp4: string } => x !== null);
-    return NextResponse.json({ configured: true, items, next: offset + PAGE }, { headers: { "Cache-Control": "private, max-age=120" } });
+      .filter((x): x is { id: string; title: string; thumb: string; mp4: string; frames: number; bytes: number } => x !== null);
+    const short = all.filter((x) => (!x.frames || x.frames <= MAX_FRAMES) && (!x.bytes || x.bytes <= MAX_BYTES));
+    // a search with hardly anything short still shows something: the lightest of the rest fill it up to a dozen
+    const rest = all.filter((x) => !short.includes(x)).sort((a, b) => (a.frames || 999) - (b.frames || 999) || a.bytes - b.bytes);
+    const items = [...short, ...rest.slice(0, Math.max(0, 12 - short.length))].slice(0, PAGE + 6).map(({ id, title, thumb, mp4 }) => ({ id, title, thumb, mp4 }));
+    return NextResponse.json({ configured: true, items, next: offset + FETCH }, { headers: { "Cache-Control": "private, max-age=120" } });
   } catch (error) {
     console.error("[clips GET]", error);
     return NextResponse.json({ configured: true, error: "The clip service is unreachable." }, { status: 502 });

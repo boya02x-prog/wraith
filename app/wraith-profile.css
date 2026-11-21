@@ -1,0 +1,21 @@
+/* ═════════════════════ Profile pages on a computer ═════════════════════
+   The own profile stretched to 1560-1900px (another person's page is 820px), the banner was capped at 250px high however wide it got (so the 3:1
+   default pictures were cut to a thin strip and the character lost its head), and the left half was bare text next to a boxed right half.
+   Now: one comfortable centred width, a banner tall enough for the whole picture with the picture placed so the character is not cut, and both
+   halves are flat cards. Phones keep their own layout (nothing here applies below 768px, except the banner picture position). */
+
+@media (min-width: 900px) {
+  html:root .profile-page .profile-shell:not(.traders-shell) { width: min(1180px, calc(100% - 96px)); }
+}
+@media (min-width: 768px) {
+  /* (wraith-polish.css pins the banner at 150px with !important, so this has to as well) */
+  html:root .profile-hero .profile-cover, html:root .pub-cover { height: clamp(210px, 22vw, 300px) !important; }
+}
+/* the built-in banners keep the character left of centre (next to the photo): that is where the picture is anchored. An uploaded cover stays centred. */
+html:root :is(.profile-cover, .pub-cover)[data-default="1"] { background-position: 44% 8% !important; }
+
+@media (min-width: 1051px) {
+  html:root .profile-body-layout { gap: 20px; }
+  /* (an older rule makes this card background-less with !important) */
+  html:root .profile-body-main > .profile-summary-card { padding: 22px 26px 20px; border-radius: 14px; background: var(--surface) !important; }
+}

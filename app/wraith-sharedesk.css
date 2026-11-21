@@ -1,0 +1,21 @@
+/* ═════════════════════ Share studio on a computer (components/ShareStudio.tsx) ═════════════════════
+   The studio was drawn for a phone and simply stretched over the window: the close button and the options sat in the far corners of a 1900px screen,
+   the card was a small thing in the middle, and the Background sheet was a slab as wide as the window with clips 470px wide. On a computer it is now ONE
+   centred panel (the column a phone shows) over a dimmed window, and the Background sheet slides up inside that panel. Below 900px nothing changes. */
+
+@media (min-width: 900px) {
+  .shs {
+    inset: auto; left: 50%; top: 50%; translate: -50% -50%;
+    width: min(600px, calc(100vw - 48px)); height: min(900px, calc(100dvh - 40px));
+    border-radius: 28px; overflow: hidden; padding-top: 14px; padding-bottom: 18px;
+    /* the dim window around the panel: a very large shadow that does not spread inside it */
+    box-shadow: 0 0 0 100vmax rgba(3, 3, 5, 0.76), 0 30px 90px rgba(0, 0, 0, 0.6);
+    --shs-w: min(340px, calc((100dvh - 330px) * 0.667));
+  }
+  /* (the panel is a containing block for its fixed children, so the sheet, the dimmer and the toast all stay inside it) */
+  .shs-track { padding: 0 calc((100% - var(--shs-w)) / 2); }
+  .shs-sheet { height: min(64%, 560px); }
+  .shs-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px 4px 12px; }
+  .shs-tile { border-radius: 10px !important; }
+  html:root .shs-clipbar { padding: 10px 16px 4px; }
+}

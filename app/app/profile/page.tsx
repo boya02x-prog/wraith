@@ -1295,6 +1295,7 @@ export default function ProfilePage() {
           {/* Cover banner */}
           <div
             className="profile-cover wx-tappable"
+            data-default={profile.coverDataUrl ? undefined : "1"}
             onClick={() => { if (profileReady) setViewerSrc(profile.coverDataUrl || defaultCover(userId || displayName)); }}
             style={
               {

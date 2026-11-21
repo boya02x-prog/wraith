@@ -122,7 +122,7 @@ function coinTexture() {
     r.addColorStop(0, "#fff0b0"); r.addColorStop(0.5, "#ffc83d"); r.addColorStop(1, "#d98a14");
     g.fillStyle = r; g.fillRect(0, 0, s, s);
     g.strokeStyle = "rgba(120,70,0,.55)"; g.lineWidth = 10; g.beginPath(); g.arc(s / 2, s / 2, s * 0.4, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = "#7a4300"; g.font = `800 ${s * 0.46}px "Plus Jakarta Sans", system-ui, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("W", s / 2, s / 2 + 8);
+    g.fillStyle = "#7a4300"; g.font = `800 ${s * 0.46}px "Plus Jakarta Sans", system-ui, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("O", s / 2, s / 2 + 8);
   });
 }
 
@@ -268,7 +268,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const leftBase = bothUp ? -UP : -DOWN, rightBase = rightUp ? UP : DOWN;
   armL.rotation.z = leftBase; armR.rotation.z = rightBase;
   if (opts.pose === "king") {
-    // a gold W coin in the right hand, a gold star in the left: the winner's pose, the same on both sides
+    // a gold O (OMEN) coin in the right hand, a gold star in the left: the winner's pose, the same on both sides
     const coin = new THREE.Mesh(own(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 48)), [goldMat, coinFace, goldMat]);
     coin.rotation.x = Math.PI / 2; coin.position.set(0, -0.68, 0);
     const holdR = new THREE.Group(); holdR.add(coin); holdR.rotation.y = 0.25; armR.add(holdR);
@@ -297,17 +297,23 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
     ghost.add(crown);
   }
 
-  // chain with a coin, lying on the front of the body (king)
+  // necklace with the coin (king): a chain that goes ALL the way round the body just under the face and hangs lowest at the front, where the coin
+  // is. It used to be a short arc laid on the front that stopped at the edges of the face, so it looked stuck on; now it wraps round the sides and
+  // disappears behind, like something worn. Its height follows the body, so it sits on the surface all the way round.
   if (opts.pose === "king") {
+    const yNeck = -0.02, sag = 0.26, N = 96;
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 28; i++) {
-      const u = (i / 28) * 2 - 1;
-      const x = u * 0.74, y = -0.3 + 0.46 * u * u;
-      pts.push(new THREE.Vector3(x, y, surfaceZ(x, y) + 0.03));
+    for (let i = 0; i < N; i++) {
+      const th = (i / N) * Math.PI * 2 - Math.PI; // -PI..PI, 0 = the front
+      const front = Math.max(0, Math.cos(th));
+      const y = yNeck - sag * front * front; // flat round the sides and the back, dipping toward the front
+      const R = surfaceZ(0, y) + 0.03; // the body's radius at that height, plus half the chain
+      pts.push(new THREE.Vector3(Math.sin(th) * R, y, Math.cos(th) * R));
     }
-    ghost.add(new THREE.Mesh(own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.02, 8, false)), goldMat));
-    const pend = new THREE.Mesh(own(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 40)), [goldMat, coinFace, goldMat]);
-    pend.rotation.x = Math.PI / 2; pend.position.set(0, -0.33, surfaceZ(0, -0.33) + 0.06); ghost.add(pend);
+    ghost.add(new THREE.Mesh(own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 220, 0.024, 8, true)), goldMat));
+    const yp = yNeck - sag - 0.11; // the coin hangs from the lowest point of the chain
+    const pend = new THREE.Mesh(own(new THREE.CylinderGeometry(0.15, 0.15, 0.045, 40)), [goldMat, coinFace, goldMat]);
+    pend.rotation.x = Math.PI / 2; pend.position.set(0, yp, surfaceZ(0, yp) + 0.065); ghost.add(pend);
   }
 
   const HOVER = 1.4; // body-origin height above the podium top: the lowest hem lobe floats about a hand's width above it

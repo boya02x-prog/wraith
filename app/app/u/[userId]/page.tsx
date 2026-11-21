@@ -216,6 +216,7 @@ export default function PublicTraderPage() {
           <div
             className="pub-cover"
             data-zoom
+            data-default={trader.coverDataUrl ? undefined : "1"}
             style={
               // the default picture is chosen by the account's real id, the same one the leaderboard uses: the page address can be the @username
               { backgroundImage: `url("${trader.coverDataUrl || defaultCover(trader.userId)}")`, backgroundSize: "cover", backgroundPosition: "center" }

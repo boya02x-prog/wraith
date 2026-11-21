@@ -151,7 +151,7 @@ function drawPreset(g: CanvasRenderingContext2D, w: number, h: number, id: strin
         g.save(); g.translate(x, y); g.globalAlpha = 0.35 + depth * 0.65; g.scale(Math.max(0.12, sx), 1);
         g.fillStyle = grad(g, -r, -r, r, r, [[0, "#fff0b0"], [0.5, "#ffc83d"], [1, "#c98410"]]); g.beginPath(); g.arc(0, 0, r, 0, 6.28); g.fill();
         g.strokeStyle = "rgba(122,67,0,.6)"; g.lineWidth = Math.max(1, r * 0.12); g.beginPath(); g.arc(0, 0, r * 0.72, 0, 6.28); g.stroke();
-        g.fillStyle = "rgba(122,67,0,.85)"; g.font = `800 ${Math.max(6, r)}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("W", 0, r * 0.04);
+        g.fillStyle = "rgba(122,67,0,.85)"; g.font = `800 ${Math.max(6, r)}px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("O", 0, r * 0.04);
         g.restore();
       }
       for (let i = 0; i < 26; i++) { // sparkles
@@ -282,6 +282,8 @@ type CardData = {
   name: string; username: string | null; bio: string; value: number | null; bigText?: string; bigCaption?: string; followers: number; following: number;
   total: number; realized: number; un: number; volume: number; pct: number | null; period: string;
   showAvatar: boolean; showStats: boolean; showMascot: boolean; ref: string; im: Imgs; fmt: (n: number) => string; sym: string;
+  /** the background is a clip, a video or a photo (not a drawn preset): the card then keeps its middle free */
+  media: boolean;
 };
 const tidy = (s: string) => s.replace(/([.,])00(?=\D*$)/, "");
 /** Big figures read cleaner without cents ("$7,855" not "$7,854.46"); small ones keep them. */
@@ -304,6 +306,108 @@ function wrapLines(g: CanvasRenderingContext2D, text: string, max: number, maxLi
   return lines.slice(0, maxLines);
 }
 
+
+/**
+ * The card on a clip or a photo: the picture is the point, so nothing sits over its middle. A small avatar and the handle go top-left, everything
+ * else is a block at the bottom-left (headline, caption, three numbers, then the brand), and the mascot has the bottom-right to itself. The normal
+ * layout puts the avatar big in the centre, which covered the subject of the clip.
+ */
+function drawMediaCard(g: CanvasRenderingContext2D, kind: "bio" | "profit", d: CardData) {
+  const L = 64;
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  const compact = (n: number) => {
+    const a = Math.abs(n);
+    if (a >= 1e6) return `${d.sym}${(a / 1e6).toFixed(2)}M`;
+    if (a >= 1e3) return `${d.sym}${(a / 1e3).toFixed(2)}K`;
+    return tidy(d.fmt(a));
+  };
+  // top-left: avatar and handle
+  const ar = 62, ay = 150;
+  let tx = L;
+  if (d.showAvatar) {
+    g.save(); g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 24; g.fillStyle = "#1b1410"; g.beginPath(); g.arc(L + ar, ay, ar, 0, Math.PI * 2); g.fill(); g.restore();
+    g.save(); g.beginPath(); g.arc(L + ar, ay, ar, 0, Math.PI * 2); g.clip();
+    if (d.im.av) {
+      const s = Math.max((ar * 2) / d.im.av.width, (ar * 2) / d.im.av.height), dw = d.im.av.width * s, dh = d.im.av.height * s;
+      g.drawImage(d.im.av, L + ar - dw / 2, ay - dh / 2, dw, dh);
+    } else { g.fillStyle = "#241711"; g.fillRect(L, ay - ar, ar * 2, ar * 2); g.fillStyle = "#ff7b3d"; g.font = `800 70px ${FONT}`; g.textBaseline = "middle"; g.textAlign = "center"; g.fillText((d.name[0] ?? "W").toUpperCase(), L + ar, ay + 4); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
+    g.restore();
+    g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 5; g.beginPath(); g.arc(L + ar, ay, ar + 2, 0, Math.PI * 2); g.stroke();
+    tx = L + ar * 2 + 22;
+  }
+  const label = `@ ${(d.username || d.name).slice(0, 20)}`;
+  g.font = `800 44px ${FONT}`;
+  const pw = g.measureText(label).width + 56;
+  g.fillStyle = "rgba(10,10,12,.62)"; g.beginPath(); g.roundRect(tx, ay - 38, pw, 76, 38); g.fill();
+  g.fillStyle = "#fff"; g.textBaseline = "middle"; g.fillText(label, tx + 28, ay + 3); g.textBaseline = "alphabetic";
+
+  // bottom-left block
+  const colW = 640; // the mascot has everything to the right of this
+  const cols = (items: [string, string, string?][], baseY: number) => {
+    const gap = colW / items.length;
+    items.forEach(([val, name, tint], i) => {
+      const x = L + gap * i;
+      g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 14;
+      g.fillStyle = tint ?? "#fff"; fitFont(g, val, gap - 22, 52); g.fillText(val, x, baseY);
+      g.restore();
+      g.fillStyle = "rgba(255,255,255,.68)"; g.font = `700 24px ${FONT}`;
+      try { (g as unknown as { letterSpacing: string }).letterSpacing = "3px"; } catch { /* older browsers */ }
+      g.fillText(name, x, baseY + 38);
+      try { (g as unknown as { letterSpacing: string }).letterSpacing = "0px"; } catch { /* older browsers */ }
+    });
+  };
+  const shade = (y0: number) => { const gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.72)"); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0); };
+  shade(900); // a soft dark fade at the bottom so the numbers read on any picture
+  if (kind === "bio") {
+    g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 26; g.fillStyle = "#fff";
+    const txt = d.bigText ?? (d.value !== null ? whole(d.value, d.fmt) : "—");
+    fitFont(g, txt, colW, 190); g.fillText(txt, L, 1130);
+    g.restore(); g.save();
+    g.fillStyle = "rgba(255,255,255,.74)"; g.font = `600 40px ${FONT}`;
+    let y = 1202;
+    if (d.bigCaption) { g.fillStyle = "rgba(255,255,255,.66)"; g.font = `700 36px ${FONT}`; g.fillText(d.bigCaption, L, y, colW); y += 58; g.fillStyle = "rgba(255,255,255,.74)"; g.font = `600 40px ${FONT}`; }
+    wrapLines(g, d.bio || "Trading on Wraith", colW, 2).forEach((l, i) => g.fillText(l, L, y + i * 54, colW));
+    g.restore();
+    if (d.showStats) cols([[d.following.toLocaleString("en-US"), "FOLLOWING"], [d.followers.toLocaleString("en-US"), "FOLLOWERS"]], 1370);
+  } else {
+    const mood = d.total > 0 ? "up" : d.total < 0 ? "down" : "flat";
+    const rgb = mood === "up" ? "55,213,138" : mood === "down" ? "255,93,77" : "255,255,255";
+    const badge = mood === "flat" ? "READY WHEN YOU ARE" : mood === "up" ? (d.pct !== null && d.pct >= 50 ? "UP BIG" : "IN THE GREEN") : (d.pct !== null && d.pct <= -25 ? "ROUGH DAY" : "DOWN A BIT");
+    g.save(); g.font = `800 28px ${FONT}`;
+    const bw = g.measureText(badge).width + 56;
+    g.fillStyle = `rgba(${rgb},.18)`; g.beginPath(); g.roundRect(L, 950, bw, 58, 29); g.fill();
+    g.fillStyle = `rgb(${rgb})`; g.textBaseline = "middle"; g.fillText(badge, L + 28, 980); g.restore();
+    g.save(); g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 26;
+    g.fillStyle = mood === "down" ? "#ff6a5a" : mood === "up" ? "#37d58a" : "#fff";
+    const big = signed(d.total, (n) => whole(n, d.fmt));
+    fitFont(g, big, colW, 200); g.fillText(big, L, 1190);
+    g.restore(); g.save();
+    g.fillStyle = "rgba(255,255,255,.7)"; g.font = `700 40px ${FONT}`; g.fillText(`Profit · ${d.period}`, L, 1256);
+    g.restore();
+    if (d.showStats) cols([
+      [signed(d.realized, compact), "REALIZED", d.realized >= 0 ? "#37d58a" : "#ff6a5a"],
+      [signed(d.un, compact), "UNREALIZED", d.un >= 0 ? "#37d58a" : "#ff6a5a"],
+      [compact(d.volume), "VOLUME"],
+    ], 1370);
+  }
+  // the mascot, bottom-right
+  if (d.showMascot) {
+    const tone = d.total > 0 ? "up" : d.total < 0 ? "down" : "flat";
+    const m = kind === "bio" ? d.im.mascot.king : tone === "up" ? d.im.mascot.wave : tone === "down" ? d.im.mascot.oops : d.im.mascot.sleep;
+    if (m) { const mh = 400, mw = mh * (m.width / m.height); g.drawImage(m, W - mw - 10, H - mh - 6, mw, mh); }
+  }
+  // footer, left: ghost + WRAITH, then the invite code or the address
+  const fy = 1528;
+  g.save(); g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 14; g.textAlign = "left";
+  g.font = `400 62px Impact, 'Arial Narrow', sans-serif`;
+  let x0 = L;
+  if (d.im.ghost) { const lh = 66, lw = lh * (d.im.ghost.width / d.im.ghost.height); g.drawImage(d.im.ghost, L, fy - 56, lw, lh); x0 = L + lw + 16; }
+  g.fillStyle = "#fff"; g.fillText("WRAITH", x0, fy);
+  g.restore();
+  g.fillStyle = "rgba(255,255,255,.7)"; g.font = `700 30px ${FONT}`; g.textAlign = "left";
+  g.fillText(d.ref ? `Join with my code ${d.ref}` : "wraith.farm", L, fy + 54);
+}
+
 function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg: HTMLCanvasElement) {
   const g = c.getContext("2d");
   if (!g) return;
@@ -311,6 +415,7 @@ function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg:
   if (c.height !== H) c.height = H;
   g.clearRect(0, 0, W, H);
   g.drawImage(bg, 0, 0);
+  if (d.media) { drawMediaCard(g, kind, d); return; }
   const cx = W / 2;
   g.textAlign = "center"; g.textBaseline = "alphabetic";
   const compact = (n: number) => {
@@ -413,18 +518,22 @@ function drawCard(c: HTMLCanvasElement, kind: "bio" | "profit", d: CardData, bg:
   }
 
   // footer: ghost + WRAITH, then the invite code or the address
+  // (with the mascot in the lower right the footer is left-aligned, so the two never run into each other)
   const fy = H - 120;
+  const left = d.showMascot;
   g.save(); g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 14;
   g.font = `400 70px Impact, 'Arial Narrow', sans-serif`;
   const tw = g.measureText("WRAITH").width;
   if (d.im.ghost) {
-    const lh = 74, lw = lh * (d.im.ghost.width / d.im.ghost.height), x0 = cx - (lw + 18 + tw) / 2;
+    const lh = 74, lw = lh * (d.im.ghost.width / d.im.ghost.height), x0 = left ? 64 : cx - (lw + 18 + tw) / 2;
     g.drawImage(d.im.ghost, x0, fy - 62, lw, lh);
     g.textAlign = "left"; g.fillStyle = "#fff"; g.fillText("WRAITH", x0 + lw + 18, fy); g.textAlign = "center";
-  } else { g.fillStyle = "#fff"; g.fillText("WRAITH", cx, fy); }
+  } else { g.fillStyle = "#fff"; g.textAlign = left ? "left" : "center"; g.fillText("WRAITH", left ? 64 : cx, fy); g.textAlign = "center"; }
   g.restore();
   g.fillStyle = "rgba(255,255,255,.64)"; g.font = `700 34px ${FONT}`;
-  g.fillText(d.ref ? `Join with my code ${d.ref}` : "wraith.farm", cx, fy + 62);
+  g.textAlign = left ? "left" : "center";
+  g.fillText(d.ref ? `Join with my code ${d.ref}` : "wraith.farm", left ? 64 : cx, fy + 62);
+  g.textAlign = "center";
 }
 
 function Thumb({ id, im }: { id: string; im: Imgs }) {
@@ -575,8 +684,8 @@ export default function ShareStudio({
   const data: CardData = useMemo(() => ({
     name, username, bio: bio ?? "", value, bigText: bioBig?.text, bigCaption: bioBig?.caption, followers: followers ?? 0, following: following ?? 0,
     total: stats.total, realized: stats.realized, un: stats.un, volume: stats.volume, pct: stats.pct, period: rangeInfo.label,
-    showAvatar, showStats, showMascot, ref, im, fmt, sym,
-  }), [name, username, bio, value, bioBig, followers, following, stats, rangeInfo, showAvatar, showStats, showMascot, ref, im, fmt, sym]);
+    showAvatar, showStats, showMascot, ref, im, fmt, sym, media: bg.startsWith("video:") || bg.startsWith("photo:"),
+  }), [name, username, bio, value, bioBig, followers, following, stats, rangeInfo, showAvatar, showStats, showMascot, ref, im, fmt, sym, bg]);
 
   // build the background once per change, then draw the cards (and the adjust preview) on top of it
   useEffect(() => {
@@ -641,7 +750,7 @@ export default function ShareStudio({
       const r = await fetch(`/api/clips?q=${encodeURIComponent(q)}&offset=${offset}`);
       const d = (await r.json()) as { configured?: boolean; items?: GifItem[]; next?: number };
       if (!r.ok || d.configured === false) { setGif((g0) => ({ ...g0, busy: false, ok: false })); return; }
-      setGif((g0) => ({ q: more ? g0.q : q, items: more ? [...g0.items, ...(d.items ?? []).filter((n) => !g0.items.some((o) => o.id === n.id))] : d.items ?? [], busy: false, ok: true, next: d.next ?? offset + 24 }));
+      setGif((g0) => ({ q: more ? g0.q : q, items: more ? [...g0.items, ...(d.items ?? []).filter((n) => !g0.items.some((o) => o.id === n.id))] : d.items ?? [], busy: false, ok: true, next: d.next ?? offset + 48 }));
     } catch { setGif((g0) => ({ ...g0, busy: false, ok: g0.ok ?? false })); }
   }, [gif.next]);
   const useClip = (it: GifItem) => {
@@ -830,7 +939,7 @@ export default function ShareStudio({
                     </button>
                   ))}
                   {gif.busy && <p className="shs-clipnote">Loading…</p>}
-                  {gif.ok === true && gif.items.length >= 24 && !gif.busy && <button type="button" className="shs-more" onClick={() => void findClips(gif.q, true)}>More</button>}
+                  {gif.ok === true && gif.items.length >= 12 && !gif.busy && <button type="button" className="shs-more" onClick={() => void findClips(gif.q, true)}>More</button>}
                   {gif.ok === true && <p className="shs-clipnote shs-giphy">Powered by GIPHY</p>}
                 </>
               ) : tab === "yours" ? (

@@ -38,13 +38,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         void import("@/components/WinsBoard");
         void import("@/components/HotCalloutsFeed");
         void import("@/components/SignalScanner");
-        void import("@/components/Wraith3D").then((m) => m.warmWraith3D());
         void import("@/lib/warmPatterns").then((m) => m.warmPatterns()); // the Patterns view's numbers, so it opens with them (it used to sit on "Loading…")
       } catch { /* optional */ }
     };
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const w = window.setTimeout(() => { if (ric) ric(warm, { timeout: 4000 }); else warm(); }, 2500);
-    return () => { window.clearTimeout(t); window.clearTimeout(w); };
+    // The Wins ghost is warmed first and soon (under a second after the app opens, its scene is built a moment later): it is the heaviest of these and the
+    // one whose late start people notice, a still picture that sat there and then "started". Opening Wins now shows it already moving.
+    const g = window.setTimeout(() => {
+      try {
+        const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+        if (c?.saveData || /(^|-)2g$/.test(c?.effectiveType ?? "")) return;
+        void import("@/components/Wraith3D").then((m) => m.warmWraith3D());
+      } catch { /* optional */ }
+    }, 800);
+    return () => { window.clearTimeout(t); window.clearTimeout(w); window.clearTimeout(g); };
   }, [router]);
   const [hasSelect, setHasSelect] = useState(false);
   const setSelect = useCallback((fn: SelectFn | null) => { select.current = fn; setHasSelect(!!fn); }, []);
