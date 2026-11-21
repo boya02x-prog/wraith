@@ -168,9 +168,3 @@ button.ix-act:active { transform: scale(0.92); }
 .ix-rail .ix-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ix-rail .ix-chip em { margin-left: auto; white-space: nowrap; }
 
-/* the "now" end of a call's chart is a sparkler: a bright head with sparks flickering round it */
-.cs .cs-dot.now { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); }
-.cs .cs-dot.now::before { content: ""; position: absolute; inset: -11px; border-radius: 50%; background: repeating-conic-gradient(var(--cs) 0 7deg, transparent 7deg 45deg); -webkit-mask: radial-gradient(circle, transparent 0 7px, #000 7.5px 10.5px, transparent 11px); mask: radial-gradient(circle, transparent 0 7px, #000 7.5px 10.5px, transparent 11px); animation: cs-sparkle 0.9s steps(1) infinite, cs-flick 0.4s ease-in-out infinite alternate; }
-@keyframes cs-sparkle { 0% { transform: rotate(0deg); } 50% { transform: rotate(22deg); } }
-@keyframes cs-flick { from { opacity: 0.25; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .cs .cs-dot.now::before { animation: none; } }

@@ -111,29 +111,33 @@ function Spark({ token }: { token: MarketToken }) {
   if (pts.length < 2) return null;
   pts.push(1);
   const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
-  const xy = pts.map((v, i) => [(i / (pts.length - 1)) * 60, 4 + (1 - (v - min) / span) * 14] as const);
-  const d = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const xy = pts.map((v, i) => [(i / (pts.length - 1)) * 58, 4 + (1 - (v - min) / span) * 13] as const);
+  // a smooth curve through the points (Catmull-Rom turned into bezier segments), not a stack of straight kinks
+  let d = `M${xy[0][0].toFixed(1)} ${xy[0][1].toFixed(1)}`;
+  for (let i = 0; i < xy.length - 1; i++) {
+    const p0 = xy[i - 1] ?? xy[i], p1 = xy[i], p2 = xy[i + 1], p3 = xy[i + 2] ?? xy[i + 1];
+    const c1y = Math.min(Math.max(p1[1] + (p2[1] - p0[1]) / 6, 2), 20), c2y = Math.min(Math.max(p2[1] - (p3[1] - p1[1]) / 6, 2), 20);
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${c1y.toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
   const [tx, ty] = xy[xy.length - 1];
   const first = c.h24 ?? c.h6 ?? c.h1 ?? 0;
   const col = first >= 0 ? "#22c55e" : "#ef4444";
   const gid = `sp${Math.round(tx * 7 + ty * 13)}${first >= 0 ? "u" : "d"}`;
-  // a hand-held sparkler: the line fades in behind a bright head, and the head throws sparks
+  // the line, a soft fill under it, a quiet light that travels along it now and then, and a head that breathes
   return (
     <svg className="wx-spark" viewBox="0 0 64 22" width="64" height="22" aria-hidden="true" style={{ overflow: "visible", color: col }}>
       <defs>
-        <linearGradient id={gid} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="60" y2="0">
-          <stop offset="0" stopColor={col} stopOpacity="0.18" />
-          <stop offset="1" stopColor={col} stopOpacity="1" />
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={col} stopOpacity="0.26" />
+          <stop offset="1" stopColor={col} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={d} fill="none" stroke={`url(#${gid})`} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <g transform={`translate(${tx.toFixed(1)} ${ty.toFixed(1)})`}>
-        <g className="wx-sparks">
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => <line key={a} x1="2.6" y1="0" x2={a % 90 ? "4.6" : "6"} y2="0" transform={`rotate(${a})`} />)}
-        </g>
-        <circle r="2.1" fill="#fff" />
-        <circle r="3.2" fill={col} opacity="0.45" className="wx-spark-halo" />
-      </g>
+      <path d={`${d} L${tx.toFixed(1)} 22 L0 22 Z`} fill={`url(#${gid})`} />
+      <path d={d} fill="none" stroke={col} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" pathLength="100" className="wx-spark-glint" />
+      <circle cx={tx} cy={ty} r="2.2" fill={col} className="wx-spark-ring" />
+      <circle cx={tx} cy={ty} r="2.1" fill={col} />
+      <circle cx={tx} cy={ty} r="0.9" fill="#fff" />
     </svg>
   );
 }

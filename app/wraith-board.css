@@ -34,12 +34,25 @@ html:root .fi-actions button.save.on, html:root .fp-feed .fp-actions button.save
   html:root .wraith-dashboard .wx-board-bar { padding-top: 6px !important; padding-bottom: 6px !important; gap: 8px 12px !important; }
 }
 
-/* sparkler tip on the little trend lines: bright head, sparks that flicker round it */
-.wx-spark .wx-sparks { stroke: currentColor; stroke-width: 1; stroke-linecap: round; transform-box: fill-box; transform-origin: center; animation: wx-sparkle 0.9s steps(1) infinite; }
-.wx-spark .wx-sparks line { animation: wx-flick 0.45s ease-in-out infinite alternate; }
-.wx-spark .wx-sparks line:nth-child(2n) { animation-delay: 0.18s; }
-.wx-spark .wx-sparks line:nth-child(3n) { animation-delay: 0.3s; }
-.wx-spark .wx-spark-halo { animation: wx-flick 0.6s ease-in-out infinite alternate; }
-@keyframes wx-sparkle { 0% { transform: rotate(0deg); } 50% { transform: rotate(22deg); } }
-@keyframes wx-flick { from { opacity: 0.2; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .wx-spark .wx-sparks, .wx-spark .wx-sparks line, .wx-spark .wx-spark-halo { animation: none; } }
+/* trend lines: a smooth curve with a soft fill, a light that glides along it every few seconds, and a head that breathes */
+.wx-spark .wx-spark-glint { stroke-dasharray: 9 91; stroke-dashoffset: 9; opacity: 0.85; animation: wx-glint 3.4s ease-in-out infinite; }
+.wx-spark .wx-spark-ring { transform-box: fill-box; transform-origin: center; opacity: 0.5; animation: wx-ring 2.4s ease-out infinite; }
+@keyframes wx-glint { 0% { stroke-dashoffset: 9; opacity: 0; } 12% { opacity: 0.85; } 62% { stroke-dashoffset: -100; opacity: 0.85; } 70%, 100% { stroke-dashoffset: -100; opacity: 0; } }
+@keyframes wx-ring { 0% { transform: scale(1); opacity: 0.55; } 70%, 100% { transform: scale(3.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .wx-spark .wx-spark-glint, .wx-spark .wx-spark-ring { animation: none; opacity: 0; } }
+
+/* Columns that line up: every row is its own grid, and a plain "1fr" column is never narrower than its text, so rows with longer numbers pushed their columns sideways.
+   Every column is now fixed or "minmax(0, …)", so a header sits exactly over its values on every row. */
+html:root .wx-trow:not(.sg-trow) { grid-template-columns: minmax(170px, 2.4fr) minmax(0, 0.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 0.7fr) 84px; }
+html:root .sg-trow { grid-template-columns: minmax(150px, 2.2fr) 56px minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.7fr); }
+html:root .sg-trow > :nth-child(2) { justify-self: center; text-align: center; }
+html:root .sg-trow > :nth-child(n+3) { justify-self: end; text-align: right; }
+@media (max-width: 1099px) {
+  html:root .wx-trow:not(.sg-trow) { grid-template-columns: minmax(130px, 2fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr) 84px; }
+}
+@media (max-width: 767px) {
+  html:root .wx-trow:not(.sg-trow) { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 74px 44px !important; }
+  html:root .wx-trow:not(.sg-trow) > :nth-child(7) { justify-self: end; text-align: right; }
+  html:root .wx-trow:not(.sg-trow) > :nth-child(10), html:root .wx-trow.head:not(.sg-trow) > .c-buy { justify-self: center; text-align: center; padding: 0 !important; }
+  html:root .sg-trow { grid-template-columns: minmax(0, 1.6fr) 44px minmax(0, 1fr) 66px !important; }
+}

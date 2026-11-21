@@ -167,7 +167,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
   const rail = bestAll.length >= 2
     ? { label: "Best since call", icon: <TrendingUp size={14} aria-hidden="true" />, rows: bestAll.slice(0, 4).map(({ c, x }) => ({ key: c.id, mint: c.mint ?? "", note: `${fx(x)}x`, up: true, go: () => openToken(c) })) }
     : trending.length >= 2
-      ? { label: "Most called", icon: <Flame size={14} aria-hidden="true" />, rows: trending.slice(0, 4).map((t) => ({ key: t.mint, mint: t.mint, note: `${t.n} calls`, up: false, go: () => openMint(t.mint) })) }
+      ? { label: "Most called", icon: <Flame size={14} aria-hidden="true" />, rows: trending.slice(0, 4).map((t) => ({ key: t.mint, mint: t.mint, note: `${t.n} ${t.n === 1 ? "call" : "calls"}`, up: false, go: () => openMint(t.mint) })) }
       : null;
 
   return (
