@@ -14,6 +14,7 @@ import Frame, { frameGlow } from "@/components/Frame";
 import Radar from "@/components/Radar";
 import { useCash } from "@/lib/cash";
 import { defaultAvatar } from "@/lib/defaultArt";
+import PetStill from "@/components/PetStill";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { fmtHold, fmtMult, type TraderStatsResult } from "@/lib/traderStats";
 
@@ -229,6 +230,7 @@ export default function TradersPage() {
                       <strong className={tone}>{money(pnl, true)}</strong>
                       <Spark curve={s?.curve ?? []} />
                     </div>
+                    <PetStill seed={trader.userId} size={62} stats={{ closed: trader.closedTradeCount, winRate: s?.winRate ?? null, pnlSol: s?.pnlSol.d7 ?? 0, bestPct: s?.bestPct ?? 0, topPct: null, rank: index < 10 ? index + 1 : null, of: 0, cashUsd: null }} />
                     <Radar values={s?.radar.map((p) => p.value) ?? [0, 0, 0, 0, 0, 0]} size={92} />
                   </div>
 

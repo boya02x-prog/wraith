@@ -5,6 +5,7 @@
 import { useState } from "react";
 import FollowingIntelSidebar from "@/components/FollowingIntelSidebar";
 import ProfileCallouts from "@/components/ProfileCallouts";
+import YourWraith from "@/components/YourWraith";
 
 type Tab = "following" | "mine";
 
@@ -14,6 +15,8 @@ export default function ProfileFeed({ userId }: { userId?: string | null }) {
 
   return (
     <div className="fp-feed">
+      {/* your Wraith sits at the top of this panel (it used to be a wide card of its own that took too much room) */}
+      {userId && <YourWraith variant="rail" />}
       <div className="fp-tabs" role="tablist">
         <button type="button" role="tab" aria-selected={active === "following"} className={active === "following" ? "on" : ""} onClick={() => setTab("following")}>
           Following
