@@ -7,6 +7,8 @@ import { useState } from "react";
 import { TokenIcon } from "@/components/TokenIcon";
 import type { TokenMeta } from "@/lib/useTokenMeta";
 import { defaultAvatar } from "@/lib/defaultArt";
+import { ChevronRight } from "lucide-react";
+import CallSpark from "@/components/CallSpark";
 
 export function timeAgo(ts: number) {
   const diff = Math.max(0, (Date.now() - ts) / 1000);
@@ -91,5 +93,43 @@ export function TokenCard({
     <Link href={`/app/token/${mint}`} className={`fp-call${tone}`}>{body}</Link>
   ) : (
     <div className={`fp-call${tone}`}>{body}</div>
+  );
+}
+
+/** The token block of a call, the same one the Hot intel feed shows (logo, how far it went since the call, a chart from the call to now, called-at and now), so every list of calls looks alike. */
+export function IntelToken({ mint, meta, symbol, calledMcap, calledAt, pnlPct, entryMcap }: { mint: string; meta?: TokenMeta; symbol?: string; calledMcap?: number | null; calledAt: number; pnlPct?: number | null; entryMcap?: number | null }) {
+  const sym = meta?.symbol ?? symbol ?? `${mint.slice(0, 4)}…${mint.slice(-4)}`;
+  const now = meta?.mcap && meta.mcap > 0 ? meta.mcap : null;
+  const x = calledMcap && now ? now / calledMcap : null;
+  const fx = (v: number) => (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2));
+  const ago = timeAgo(calledAt);
+  return (
+    <Link href={`/app/token/${mint}`} className="ix-token" data-hover-mint={mint} data-hover-img={meta?.imageUrl ?? undefined} data-hover-called={calledMcap ?? undefined} data-hover-at={calledAt}>
+      <span className="ix-tk-top">
+        <TokenIcon contractAddress={mint} imageUrl={meta?.imageUrl} symbol={sym} size={44} />
+        <span className="ix-tk">
+          <b>${sym.replace(/^\$/, "")}</b>
+          <small>Called {ago === "now" ? "just now" : `${ago} ago`}</small>
+        </span>
+        {x !== null && (
+          <span className={`ix-x ${x >= 1 ? "up" : "down"}`}>
+            <b>{fx(x)}x</b>
+            <small>since the call</small>
+          </span>
+        )}
+        <ChevronRight size={18} className="ix-go" aria-hidden="true" />
+      </span>
+      <CallSpark mint={mint} since={calledAt} />
+      <span className="ix-stats">
+        <span><small>Called at</small><b>{mcapLabel(calledMcap) ?? "-"}</b></span>
+        <span><small>Now</small><b>{mcapLabel(now ?? calledMcap) ?? "-"}</b></span>
+      </span>
+      {pnlPct !== undefined && pnlPct !== null && (
+        <span className="ix-pos">
+          <small>Their entry {mcapLabel(entryMcap) ?? "-"}</small>
+          <b className={pnlPct >= 0 ? "up" : "down"}>{pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(0)}%</b>
+        </span>
+      )}
+    </Link>
   );
 }

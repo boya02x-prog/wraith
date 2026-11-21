@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, MessageCircle, Repeat2, Rss, Send, Smile, Star, X } from "lucide-react";
 import StickerSheet from "@/components/StickerSheet";
-import { Face as PostFace, TokenCard, isFresh, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
+import { Face as PostFace, IntelToken, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
 import { useTokenMeta, type TokenMeta } from "@/lib/useTokenMeta";
 import { swrPeek, swrWrite } from "@/lib/swrCache";
 import { defaultAvatar } from "@/lib/defaultArt";
@@ -276,51 +276,48 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
           <span>Follow traders to see their intel here.</span>
         </div>
       ) : (
-        <div className="fi-feed">
+        <div className="ix-list">
           {callouts.map((c) => {
             const m = c.mint ? meta[c.mint] : undefined;
             const isSaved = !!c.mint && saved.has(c.mint);
             return (
-              <article key={c.id} className="fi-card fp-post">
+              <article key={c.id} className="ix-card">
                 {c.repostedFrom && (
                   <div className="fp-repost">
                     <Repeat2 size={12} />
                     <span>Reposted from {c.repostedFrom.displayName}</span>
                   </div>
                 )}
-                <div className="fp-row">
-                  <PostFace src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
-                  <div className="fp-body">
-                    <div className="fp-head">
-                      <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="fp-name">{c.displayName}</Link>
-                      <span className="fp-age">{ago(c.createdAt)}</span>
-                      {isFresh(c.createdAt) && <i className="fp-live" aria-label="New" />}
-                    </div>
-                    <p className="fp-text">{c.text}</p>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {c.imageUrl && <img src={c.imageUrl} alt="" className="fp-img" />}
-                    {c.mint && <TokenCard mint={c.mint} meta={m} calledMcap={c.mcapAtPost} />}
-                <div className="fi-actions fp-actions">
-                  <button type="button" className={c.hearted ? "on heart" : ""} onClick={() => void heart(c)} aria-label="Like" aria-pressed={!!c.hearted}>
-                    <Heart size={14} fill={c.hearted ? "currentColor" : "none"} /> {c.hearts > 0 && <span>{c.hearts}</span>}
+                <div className="ix-top">
+                  <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="ix-who">
+                    <PostFace src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
+                    <span className="ix-name">{c.displayName}</span>
+                  </Link>
+                  <span className="ix-age">{ago(c.createdAt)}</span>
+                </div>
+                <p className="ix-text">{c.text}</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {c.imageUrl && <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
+                {c.mint && <IntelToken mint={c.mint} meta={m} calledMcap={c.mcapAtPost} calledAt={c.createdAt} />}
+                <div className="ix-foot">
+                  <button type="button" className={`ix-act${c.hearted ? " on" : ""}`} onClick={() => void heart(c)} aria-label="Like" aria-pressed={!!c.hearted}>
+                    <Heart size={17} fill={c.hearted ? "currentColor" : "none"} /> {c.hearts > 0 && <span>{c.hearts}</span>}
                   </button>
-                  <button type="button" className={openThread === c.id ? "on" : ""} onClick={() => setOpenThread(openThread === c.id ? null : c.id)} aria-label="Comments" aria-expanded={openThread === c.id}>
-                    <MessageCircle size={14} /> {c.comments > 0 && <span>{c.comments}</span>}
+                  <button type="button" className={`ix-act${openThread === c.id ? " on-c" : ""}`} onClick={() => setOpenThread(openThread === c.id ? null : c.id)} aria-label="Comments" aria-expanded={openThread === c.id}>
+                    <MessageCircle size={17} /> {c.comments > 0 && <span>{c.comments}</span>}
                   </button>
-                  <button type="button" className={c.reposted ? "on repost" : ""} onClick={() => void repost(c)} aria-label="Repost" aria-pressed={!!c.reposted}>
-                    <Repeat2 size={15} /> {c.reposts > 0 && <span>{c.reposts}</span>}
+                  <button type="button" className={`ix-act${c.reposted ? " on-c" : ""}`} onClick={() => void repost(c)} aria-label="Repost" aria-pressed={!!c.reposted}>
+                    <Repeat2 size={17} /> {c.reposts > 0 && <span>{c.reposts}</span>}
                   </button>
-                  <button type="button" className={isSaved ? "on save" : ""} onClick={() => save(c)} aria-label={isSaved ? "Remove saved token" : "Save token"} title={isSaved ? "Saved. Click to remove" : "Save this token"} aria-pressed={isSaved}>
-                    <Star size={14} fill={isSaved ? "currentColor" : "none"} />
+                  <button type="button" className={`ix-act${isSaved ? " on-c" : ""}`} onClick={() => save(c)} aria-label={isSaved ? "Remove saved token" : "Save token"} title={isSaved ? "Saved. Click to remove" : "Save this token"} aria-pressed={isSaved}>
+                    <Star size={17} fill={isSaved ? "currentColor" : "none"} />
                   </button>
-                  {(m?.mcap || c.mcapAtPost) ? <span className="fp-mc"><b>{mcapLabel(m?.mcap || c.mcapAtPost)}</b> MC</span> : null}
+                  {(m?.mcap || c.mcapAtPost) ? <span className="ix-act" style={{ marginLeft: "auto" }}>{mcapLabel(m?.mcap || c.mcapAtPost)} MC</span> : null}
                 </div>
 
                 {openThread === c.id && (
                   <Thread callout={c} meta={m} onCount={(n) => patch(c.id, (x) => ({ ...x, comments: n }))} />
                 )}
-                  </div>
-                </div>
               </article>
             );
           })}

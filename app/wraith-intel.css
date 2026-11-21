@@ -155,3 +155,22 @@ button.ix-act:active { transform: scale(0.92); }
   .ix-list, .ix-new button, .ix-live i::after, .ix-act.on svg, .cs .cs-reveal, .cs .cs-dot, .cs .cs-dot.now::after, .ix-card .fi-thread, .ix-sk i, .cs.wait::before { animation: none !important; }
   .ix-seg::before { transition: none; }
 }
+
+/* the Following / My intel lists use the same cards as Hot intel: only the room around them is set here */
+.fp-feed .ix-list { padding: 12px 14px 104px; }
+.fp-feed .ix-card .fp-repost { margin-bottom: 8px; }
+.ix-card .ix-who .fp-face { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; }
+.ix-card .ix-token { text-decoration: none; }
+/* nothing in the intel screens scrolls sideways: the "Most called" strip is a tidy two-column block instead of a swipe row */
+.hc-scroll { overflow-x: hidden; }
+.ix-rail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; padding: 0; overflow: visible; }
+.ix-rail .ix-chip { min-width: 0; }
+.ix-rail .ix-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ix-rail .ix-chip em { margin-left: auto; white-space: nowrap; }
+
+/* the "now" end of a call's chart is a sparkler: a bright head with sparks flickering round it */
+.cs .cs-dot.now { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); }
+.cs .cs-dot.now::before { content: ""; position: absolute; inset: -11px; border-radius: 50%; background: repeating-conic-gradient(var(--cs) 0 7deg, transparent 7deg 45deg); -webkit-mask: radial-gradient(circle, transparent 0 7px, #000 7.5px 10.5px, transparent 11px); mask: radial-gradient(circle, transparent 0 7px, #000 7.5px 10.5px, transparent 11px); animation: cs-sparkle 0.9s steps(1) infinite, cs-flick 0.4s ease-in-out infinite alternate; }
+@keyframes cs-sparkle { 0% { transform: rotate(0deg); } 50% { transform: rotate(22deg); } }
+@keyframes cs-flick { from { opacity: 0.25; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cs .cs-dot.now::before { animation: none; } }

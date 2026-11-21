@@ -33,3 +33,13 @@ html:root .fi-actions button.save.on, html:root .fp-feed .fp-actions button.save
   html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { padding: 7px 14px !important; min-height: 0 !important; font-size: 13.5px !important; line-height: 1.2; }
   html:root .wraith-dashboard .wx-board-bar { padding-top: 6px !important; padding-bottom: 6px !important; gap: 8px 12px !important; }
 }
+
+/* sparkler tip on the little trend lines: bright head, sparks that flicker round it */
+.wx-spark .wx-sparks { stroke: currentColor; stroke-width: 1; stroke-linecap: round; transform-box: fill-box; transform-origin: center; animation: wx-sparkle 0.9s steps(1) infinite; }
+.wx-spark .wx-sparks line { animation: wx-flick 0.45s ease-in-out infinite alternate; }
+.wx-spark .wx-sparks line:nth-child(2n) { animation-delay: 0.18s; }
+.wx-spark .wx-sparks line:nth-child(3n) { animation-delay: 0.3s; }
+.wx-spark .wx-spark-halo { animation: wx-flick 0.6s ease-in-out infinite alternate; }
+@keyframes wx-sparkle { 0% { transform: rotate(0deg); } 50% { transform: rotate(22deg); } }
+@keyframes wx-flick { from { opacity: 0.2; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wx-spark .wx-sparks, .wx-spark .wx-sparks line, .wx-spark .wx-spark-halo { animation: none; } }

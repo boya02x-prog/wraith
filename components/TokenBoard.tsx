@@ -111,12 +111,29 @@ function Spark({ token }: { token: MarketToken }) {
   if (pts.length < 2) return null;
   pts.push(1);
   const min = Math.min(...pts), max = Math.max(...pts), span = max - min || 1;
-  const d = pts.map((v, i) => `${i ? "L" : "M"}${((i / (pts.length - 1)) * 64).toFixed(1)} ${(20 - ((v - min) / span) * 18).toFixed(1)}`).join(" ");
+  const xy = pts.map((v, i) => [(i / (pts.length - 1)) * 60, 4 + (1 - (v - min) / span) * 14] as const);
+  const d = xy.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const [tx, ty] = xy[xy.length - 1];
   const first = c.h24 ?? c.h6 ?? c.h1 ?? 0;
   const col = first >= 0 ? "#22c55e" : "#ef4444";
+  const gid = `sp${Math.round(tx * 7 + ty * 13)}${first >= 0 ? "u" : "d"}`;
+  // a hand-held sparkler: the line fades in behind a bright head, and the head throws sparks
   return (
-    <svg className="wx-spark" viewBox="0 0 64 22" width="64" height="22" aria-hidden="true">
-      <path d={d} fill="none" stroke={col} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className="wx-spark" viewBox="0 0 64 22" width="64" height="22" aria-hidden="true" style={{ overflow: "visible", color: col }}>
+      <defs>
+        <linearGradient id={gid} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="60" y2="0">
+          <stop offset="0" stopColor={col} stopOpacity="0.18" />
+          <stop offset="1" stopColor={col} stopOpacity="1" />
+        </linearGradient>
+      </defs>
+      <path d={d} fill="none" stroke={`url(#${gid})`} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <g transform={`translate(${tx.toFixed(1)} ${ty.toFixed(1)})`}>
+        <g className="wx-sparks">
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => <line key={a} x1="2.6" y1="0" x2={a % 90 ? "4.6" : "6"} y2="0" transform={`rotate(${a})`} />)}
+        </g>
+        <circle r="2.1" fill="#fff" />
+        <circle r="3.2" fill={col} opacity="0.45" className="wx-spark-halo" />
+      </g>
     </svg>
   );
 }

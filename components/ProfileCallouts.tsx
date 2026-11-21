@@ -4,7 +4,7 @@ import XBadge from "@/components/XBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Heart, MessageCircle, Repeat2 } from "lucide-react";
-import { Face, TokenCard, isFresh, mcapLabel, timeAgo } from "@/components/CalloutParts";
+import { Face, IntelToken, mcapLabel, timeAgo } from "@/components/CalloutParts";
 import { useTokenMeta } from "@/lib/useTokenMeta";
 
 interface CalloutItem {
@@ -70,44 +70,35 @@ export default function ProfileCallouts({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="fi-feed">
+    <div className="ix-list">
       {callouts.map((c) => {
         const m = c.mint ? meta[c.mint] : undefined;
         const nowMcap = m?.mcap || c.mcapAtPost;
         return (
-          <article key={c.id} className="fi-card fp-post">
+          <article key={c.id} className="ix-card">
             {c.repostedFrom && (
               <div className="fp-repost">
                 <Repeat2 size={12} />
                 <span>Reposted from {c.repostedFrom.displayName}</span>
               </div>
             )}
-            <div className="fp-row">
-              <Face src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
-              <div className="fp-body">
-                <div className="fp-head">
-                  <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="fp-name">{c.displayName}</Link>
-                  <XBadge handle={c.xHandle} />
-                  <span className="fp-age">{timeAgo(c.createdAt)}</span>
-                  {isFresh(c.createdAt) && <i className="fp-live" aria-label="New" />}
-                </div>
-                <p className="fp-text">{c.text}</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {c.imageUrl && <img src={c.imageUrl} alt="" className="fp-img" />}
-                <TokenCard
-                  mint={c.mint}
-                  meta={m}
-                  symbol={c.position?.symbol}
-                  calledMcap={c.position?.entryMcap ?? c.mcapAtPost}
-                  pnlPct={c.position ? c.position.currentPnlPct : undefined}
-                />
-                <div className="fp-actions">
-                  <span className="fp-stat"><Heart size={15} />{c.hearts > 0 && c.hearts}</span>
-                  <span className="fp-stat"><MessageCircle size={15} />{c.comments > 0 && c.comments}</span>
-                  <span className="fp-stat"><Repeat2 size={16} />{c.reposts > 0 && c.reposts}</span>
-                  {nowMcap ? <span className="fp-mc"><b>{mcapLabel(nowMcap)}</b> MC</span> : null}
-                </div>
-              </div>
+            <div className="ix-top">
+              <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="ix-who">
+                <Face src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
+                <span className="ix-name">{c.displayName}</span>
+              </Link>
+              <XBadge handle={c.xHandle} />
+              <span className="ix-age">{timeAgo(c.createdAt)}</span>
+            </div>
+            <p className="ix-text">{c.text}</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {c.imageUrl && <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
+            {c.mint && <IntelToken mint={c.mint} meta={m} symbol={c.position?.symbol} calledMcap={c.mcapAtPost ?? c.position?.entryMcap} calledAt={c.createdAt} pnlPct={c.position ? c.position.currentPnlPct : undefined} entryMcap={c.position?.entryMcap} />}
+            <div className="ix-foot">
+              <span className="ix-act"><Heart size={17} /> {c.hearts}</span>
+              <span className="ix-act"><Repeat2 size={17} /> {c.reposts}</span>
+              <span className="ix-act"><MessageCircle size={17} /> {c.comments}</span>
+              {nowMcap ? <span className="ix-act" style={{ marginLeft: "auto" }}>{mcapLabel(nowMcap)} MC</span> : null}
             </div>
           </article>
         );
