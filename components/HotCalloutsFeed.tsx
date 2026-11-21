@@ -4,7 +4,8 @@
 // Keeps the last good list when the connection drops, can be paused, and never moves under your thumb: while you are reading further down, a call
 // posted in the meantime waits behind a "new" button instead of pushing the page. The numbers under each call ("called at ... now ...") are re-read
 // every 30 seconds, and the token block is its own flat card with a chart since the call. Styles: app/wraith-intel.css (the ix-* classes).
-import { threadOrder } from "@/lib/intelThreads";
+import { threadOrder, threadHidden } from "@/lib/intelThreads";
+import { UpdateChip, ThreadGap } from "@/components/CalloutParts";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, ChevronRight, Flame, Heart, MessageCircle, Repeat2, TrendingUp, WifiOff } from "lucide-react";
@@ -150,6 +151,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
     return () => { window.clearInterval(t); window.removeEventListener("online", back); };
   }, [load]);
 
+  const [openThreads, setOpenThreads] = useState<Set<string>>(() => new Set());
   const waitingN = waiting ? waiting.filter((c) => !items.some((i) => i.id === c.id)).length : 0;
   const showWaiting = () => {
     if (waiting) { setItems(waiting); setWaiting(null); }
@@ -235,7 +237,9 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
               </div>
             ) : (
               <div className="ix-list" key={filter}>
-                {threadOrder(shown).map(({ item: c, up, down }) => {
+                {threadOrder(shown).map((th) => {
+                  const { item: c, up, down, lead } = th;
+                  if (threadHidden(th, openThreads)) return th.idx === 1 ? <ThreadGap key={`gap-${th.gid}`} n={th.len - 2} onOpen={() => setOpenThreads((s) => new Set(s).add(th.gid as string))} /> : null;
                   const long = c.text.length > 180;
                   const expanded = open.has(c.id);
                   const x = xSince(c);
@@ -256,7 +260,8 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
                       <p className={`ix-text${long && !expanded ? " clamp" : ""}`}>{c.text}</p>
                       {long && <button type="button" className="ix-more" onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; })}>{expanded ? "Show less" : "Show more"}</button>}
                       {c.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
-                      {c.mint && (
+                      {c.mint && up && <UpdateChip at={c.mcapAtPost} first={lead.mcapAtPost} />}
+                      {c.mint && !up && (
                         <button type="button" className="ix-token" onClick={() => openToken(c)} aria-label={`Open ${tagOf(c)}`} data-hover-mint={c.mint} data-hover-img={c.mint ? meta[c.mint]?.imageUrl ?? undefined : undefined} data-hover-called={c.mcapAtPost ?? undefined} data-hover-at={c.createdAt}>
                           <span className="ix-tk-top">
                             <TokenIcon contractAddress={c.mint} imageUrl={meta[c.mint]?.imageUrl} symbol={symOf(c) || "T"} size={44} />

@@ -1,11 +1,11 @@
 "use client";
 
-import { threadOrder } from "@/lib/intelThreads";
+import { threadOrder, threadHidden } from "@/lib/intelThreads";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, MessageCircle, Repeat2, Rss, Send, Smile, Star, X } from "lucide-react";
 import StickerSheet from "@/components/StickerSheet";
-import { Face as PostFace, IntelToken, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
+import { Face as PostFace, IntelToken, UpdateChip, ThreadGap, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
 import { useTokenMeta, type TokenMeta } from "@/lib/useTokenMeta";
 import { swrPeek, swrWrite } from "@/lib/swrCache";
 import { defaultAvatar } from "@/lib/defaultArt";
@@ -189,6 +189,7 @@ export function Thread({ callout, meta, onCount }: { callout: CalloutItem; meta?
 }
 
 export default function FollowingIntelSidebar({ embedded = false }: { embedded?: boolean } = {}) {
+  const [openThreads, setOpenThreads] = useState<Set<string>>(() => new Set());
   const warm = swrPeek<CalloutItem[]>("fi:following");
   const [callouts, setCallouts] = useState<CalloutItem[]>(warm ?? []);
   const [loading, setLoading] = useState(!warm);
@@ -278,7 +279,9 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
         </div>
       ) : (
         <div className="ix-list">
-          {threadOrder(callouts).map(({ item: c, up, down }) => {
+          {threadOrder(callouts).map((th) => {
+        const { item: c, up, down, lead } = th;
+        if (threadHidden(th, openThreads)) return th.idx === 1 ? <ThreadGap key={`gap-${th.gid}`} n={th.len - 2} onOpen={() => setOpenThreads((s) => new Set(s).add(th.gid as string))} /> : null;
             const m = c.mint ? meta[c.mint] : undefined;
             const isSaved = !!c.mint && saved.has(c.mint);
             return (
@@ -299,7 +302,8 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
                 <p className="ix-text">{c.text}</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {c.imageUrl && <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
-                {c.mint && <IntelToken mint={c.mint} meta={m} calledMcap={c.mcapAtPost} calledAt={c.createdAt} />}
+                {c.mint && up && <UpdateChip at={c.mcapAtPost} first={lead.mcapAtPost} />}
+            {c.mint && !up && <IntelToken mint={c.mint} meta={m} calledMcap={c.mcapAtPost} calledAt={c.createdAt} />}
                 <div className="ix-foot">
                   <button type="button" className={`ix-act${c.hearted ? " on" : ""}`} onClick={() => void heart(c)} aria-label="Like" aria-pressed={!!c.hearted}>
                     <Heart size={17} fill={c.hearted ? "currentColor" : "none"} /> {c.hearts > 0 && <span>{c.hearts}</span>}

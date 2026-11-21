@@ -133,3 +133,21 @@ export function IntelToken({ mint, meta, symbol, calledMcap, calledAt, pnlPct, e
     </Link>
   );
 }
+
+/** under a later post in a thread (the token block is shown once, on the first post): where the token was when this update was posted, and how far it had moved from the first call */
+export function UpdateChip({ at, first }: { at?: number | null; first?: number | null }) {
+  if (!at) return null;
+  const x = first && first > 0 ? at / first : null;
+  return (
+    <span className="ix-upd">
+      <small>Update at</small>
+      <b>{mcapLabel(at)}</b>
+      {x !== null && <em className={x >= 1 ? "up" : "down"}>{x >= 1 ? "+" : ""}{Math.round((x - 1) * 100)}% since first call</em>}
+    </span>
+  );
+}
+
+/** the dotted gap in a long thread */
+export function ThreadGap({ n, onOpen }: { n: number; onOpen: () => void }) {
+  return <button type="button" className="ix-gap" onClick={onOpen}>Show {n} more {n === 1 ? "update" : "updates"}</button>;
+}

@@ -1,11 +1,11 @@
 "use client";
 
-import { threadOrder } from "@/lib/intelThreads";
+import { threadOrder, threadHidden } from "@/lib/intelThreads";
 import XBadge from "@/components/XBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Heart, MessageCircle, Repeat2 } from "lucide-react";
-import { Face, IntelToken, mcapLabel, timeAgo } from "@/components/CalloutParts";
+import { Face, IntelToken, UpdateChip, ThreadGap, mcapLabel, timeAgo } from "@/components/CalloutParts";
 import { useTokenMeta } from "@/lib/useTokenMeta";
 
 interface CalloutItem {
@@ -34,6 +34,7 @@ interface CalloutItem {
 export default function ProfileCallouts({ userId }: { userId: string }) {
   const [callouts, setCallouts] = useState<CalloutItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openThreads, setOpenThreads] = useState<Set<string>>(() => new Set());
   const meta = useTokenMeta(callouts.map((c) => c.mint ?? ""));
 
   const load = useCallback(async () => {
@@ -72,7 +73,9 @@ export default function ProfileCallouts({ userId }: { userId: string }) {
 
   return (
     <div className="ix-list">
-      {threadOrder(callouts).map(({ item: c, up, down }) => {
+      {threadOrder(callouts).map((th) => {
+        const { item: c, up, down, lead } = th;
+        if (threadHidden(th, openThreads)) return th.idx === 1 ? <ThreadGap key={`gap-${th.gid}`} n={th.len - 2} onOpen={() => setOpenThreads((s) => new Set(s).add(th.gid as string))} /> : null;
         const m = c.mint ? meta[c.mint] : undefined;
         const nowMcap = m?.mcap || c.mcapAtPost;
         return (
@@ -94,7 +97,8 @@ export default function ProfileCallouts({ userId }: { userId: string }) {
             <p className="ix-text">{c.text}</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {c.imageUrl && <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
-            {c.mint && <IntelToken mint={c.mint} meta={m} symbol={c.position?.symbol} calledMcap={c.mcapAtPost ?? c.position?.entryMcap} calledAt={c.createdAt} pnlPct={c.position ? c.position.currentPnlPct : undefined} entryMcap={c.position?.entryMcap} />}
+            {c.mint && up && <UpdateChip at={c.mcapAtPost} first={lead.mcapAtPost} />}
+            {c.mint && !up && <IntelToken mint={c.mint} meta={m} symbol={c.position?.symbol} calledMcap={c.mcapAtPost ?? c.position?.entryMcap} calledAt={c.createdAt} pnlPct={c.position ? c.position.currentPnlPct : undefined} entryMcap={c.position?.entryMcap} />}
             <div className="ix-foot">
               <span className="ix-act"><Heart size={17} /> {c.hearts}</span>
               <span className="ix-act"><Repeat2 size={17} /> {c.reposts}</span>
