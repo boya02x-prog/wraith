@@ -1,5 +1,6 @@
 "use client";
 
+import { threadOrder } from "@/lib/intelThreads";
 import XBadge from "@/components/XBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -71,11 +72,11 @@ export default function ProfileCallouts({ userId }: { userId: string }) {
 
   return (
     <div className="ix-list">
-      {callouts.map((c) => {
+      {threadOrder(callouts).map(({ item: c, up, down }) => {
         const m = c.mint ? meta[c.mint] : undefined;
         const nowMcap = m?.mcap || c.mcapAtPost;
         return (
-          <article key={c.id} className="ix-card">
+          <article key={c.id} className={`ix-card${up ? " t-up" : ""}${down ? " t-down" : ""}`}>
             {c.repostedFrom && (
               <div className="fp-repost">
                 <Repeat2 size={12} />

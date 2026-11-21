@@ -1,5 +1,6 @@
 "use client";
 
+import { threadOrder } from "@/lib/intelThreads";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Heart, MessageCircle, Repeat2, Rss, Send, Smile, Star, X } from "lucide-react";
@@ -277,11 +278,11 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
         </div>
       ) : (
         <div className="ix-list">
-          {callouts.map((c) => {
+          {threadOrder(callouts).map(({ item: c, up, down }) => {
             const m = c.mint ? meta[c.mint] : undefined;
             const isSaved = !!c.mint && saved.has(c.mint);
             return (
-              <article key={c.id} className="ix-card">
+              <article key={c.id} className={`ix-card${up ? " t-up" : ""}${down ? " t-down" : ""}`}>
                 {c.repostedFrom && (
                   <div className="fp-repost">
                     <Repeat2 size={12} />

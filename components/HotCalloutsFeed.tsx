@@ -4,6 +4,7 @@
 // Keeps the last good list when the connection drops, can be paused, and never moves under your thumb: while you are reading further down, a call
 // posted in the meantime waits behind a "new" button instead of pushing the page. The numbers under each call ("called at ... now ...") are re-read
 // every 30 seconds, and the token block is its own flat card with a chart since the call. Styles: app/wraith-intel.css (the ix-* classes).
+import { threadOrder } from "@/lib/intelThreads";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, ChevronRight, Flame, Heart, MessageCircle, Repeat2, TrendingUp, WifiOff } from "lucide-react";
@@ -234,7 +235,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
               </div>
             ) : (
               <div className="ix-list" key={filter}>
-                {shown.map((c) => {
+                {threadOrder(shown).map(({ item: c, up, down }) => {
                   const long = c.text.length > 180;
                   const expanded = open.has(c.id);
                   const x = xSince(c);
@@ -242,7 +243,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
                   const isLiked = liked[c.id] ?? c.hearted ?? false;
                   const pnl = c.position?.currentPnlPct ?? 0;
                   return (
-                    <article key={c.id} className={`ix-card${x !== null && x >= 2 ? " hot" : ""}`}>
+                    <article key={c.id} className={`ix-card${x !== null && x >= 2 ? " hot" : ""}${up ? " t-up" : ""}${down ? " t-down" : ""}`}>
                       <div className="ix-top">
                         <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="ix-who">
                           {/* eslint-disable-next-line @next/next/no-img-element */}

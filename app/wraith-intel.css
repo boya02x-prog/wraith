@@ -168,3 +168,14 @@ button.ix-act:active { transform: scale(0.92); }
 .ix-rail .ix-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ix-rail .ix-chip em { margin-left: auto; white-space: nowrap; }
 
+
+/* a thread: the same trader posting about the same token again. The cards join up and a line runs down the left from avatar to avatar. */
+.ix-card.t-down { margin-bottom: -10px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; padding-bottom: 18px; }
+.ix-card.t-up { border-top-left-radius: 0; border-top-right-radius: 0; padding-top: 12px; }
+/* like X: the avatar has its own narrow column on the left, the post sits to the right of it, and the line runs through that column */
+.ix-card:is(.t-up, .t-down) > :not(.ix-top):not(.fp-repost):not(.fi-thread) { margin-left: 52px; }
+.ix-card:is(.t-up, .t-down) > .ix-token { width: calc(100% - 52px); }
+.ix-card:is(.t-up, .t-down) > .ix-media { width: calc(100% - 52px); }
+.ix-card.t-down::after { content: ""; position: absolute; left: 35px; top: 64px; bottom: 0; width: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.16); }
+.ix-card.t-up::before { content: ""; position: absolute; left: 35px; top: 0; height: 8px; width: 2px; border-radius: 2px; background: rgba(255, 255, 255, 0.16); }
+.ix-card.t-up.t-down + .ix-card.t-up { padding-top: 12px; }
