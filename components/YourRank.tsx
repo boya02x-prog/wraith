@@ -51,6 +51,12 @@ export default function YourRank({ period }: { period: RankPeriod }) {
 
   // nobody has a rank until their first closed trade: that card is its own, simpler layout (no PnL column, no share button) so "Unranked" never wraps
   const unranked = !d.rank;
+  // "Start trading" means the Market section: say so before the screen opens, or it opens on whatever section was open last (Intel) while the bottom bar still shows Traders
+  const goMarket = () => {
+    try { localStorage.setItem("wraith_home_view", "market"); } catch { /* storage unavailable */ }
+    window.dispatchEvent(new CustomEvent("wraith:view", { detail: "market" }));
+    window.dispatchEvent(new CustomEvent("wraith:view-changed", { detail: "market" }));
+  };
   return (
     <section className={`yr${unranked ? " yr-new" : ""}${res.period !== period ? " stale" : ""}`} aria-label="Your rank">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -82,7 +88,7 @@ export default function YourRank({ period }: { period: RankPeriod }) {
       ) : unranked ? (
         <div className="yr-note yr-go">
           <span className="yr-txt"><span>Close your first trade to get on the board. Paper trades count.</span></span>
-          <Link href="/app" className="yr-cta">Start trading</Link>
+          <Link href="/app" className="yr-cta" onClick={goMarket}>Start trading</Link>
         </div>
       ) : (
         <p className="yr-note"><span>You are the only trader on the board so far.</span></p>
