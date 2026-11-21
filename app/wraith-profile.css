@@ -19,3 +19,23 @@ html:root :is(.profile-cover, .pub-cover)[data-default="1"] { background-positio
   /* (an older rule makes this card background-less with !important) */
   html:root .profile-body-main > .profile-summary-card { padding: 22px 26px 20px; border-radius: 14px; background: var(--surface) !important; }
 }
+
+/* ═════ Another trader's page on a phone (app/app/u/[userId]/page.tsx): one left-aligned column, like the profile header Fomo has ═════
+   The photo overlaps the banner at the left with the buttons (link, share, Follow) on the same row at the right, then the name with its
+   badge, the @handle, the bio, the two counts in one line, and the small facts. Before, the name sat beside the big photo while the counts and the
+   buttons sat under it at the page edge, so nothing lined up. (.pub-actions only groups the three buttons; on a computer it changes nothing.) */
+.pub-actions { display: flex; align-items: center; gap: 14px; }
+@media (max-width: 767px) {
+  html:root .pub-identity { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "avatar actions" "name name" "bio bio" "social social" "meta meta"; column-gap: 12px; row-gap: 0; align-items: end; }
+  html:root .pub-id-right { display: contents; }
+  html:root .pub-actions { grid-area: actions; justify-self: end; align-self: end; gap: 10px; padding-bottom: 2px; }
+  html:root .pub-id-name { padding-top: 12px; }
+  html:root .pub-name { font-size: 24px; letter-spacing: -0.02em; }
+  html:root .pub-handle { margin-top: 3px; }
+  html:root .pub-social { grid-area: social; flex: none; display: flex; gap: 22px; margin: 14px 0 0; }
+  html:root .pub-social-count { display: inline-flex; flex-direction: row; align-items: baseline; gap: 6px; padding: 0; border: 0; background: none; }
+  html:root .pub-social-count strong { font-size: 17px; font-weight: 800; }
+  html:root .pub-social-count span { font-size: 14px; letter-spacing: 0; color: var(--text-muted); }
+  html:root .pub-bio { margin-top: 12px; font-size: 14.5px; }
+  html:root .pub-meta-bar { margin-top: 14px; }
+}

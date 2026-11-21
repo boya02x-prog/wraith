@@ -49,19 +49,25 @@ export default function YourRank({ period }: { period: RankPeriod }) {
     } catch { /* cancelled */ }
   };
 
+  // nobody has a rank until their first closed trade: that card is its own, simpler layout (no PnL column, no share button) so "Unranked" never wraps
+  const unranked = !d.rank;
   return (
-    <section className={`yr${res.period !== period ? " stale" : ""}`} aria-label="Your rank">
+    <section className={`yr${unranked ? " yr-new" : ""}${res.period !== period ? " stale" : ""}`} aria-label="Your rank">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="yr-av" src={avatar} alt="" draggable={false} />
       <div className="yr-who">
         <small>Your rank{d.rank ? ` · ${d.of.toLocaleString("en-US")} traders` : ""}</small>
-        {d.rank ? <b><i>#</i>{d.rank.toLocaleString("en-US")}</b> : <b>Not ranked yet</b>}
+        {d.rank ? <b><i>#</i>{d.rank.toLocaleString("en-US")}</b> : <b>Unranked</b>}
       </div>
-      <button type="button" className="yr-share" onClick={() => void share()} aria-label="Share your rank"><Share2 size={17} /></button>
-      <div className="yr-pnl">
-        <small>PnL · {NAME[period]}</small>
-        <strong className={tone}>{money(d.pnlSol, true)}</strong>
-      </div>
+      {!unranked && (
+        <>
+          <button type="button" className="yr-share" onClick={() => void share()} aria-label="Share your rank"><Share2 size={17} /></button>
+          <div className="yr-pnl">
+            <small>PnL · {NAME[period]}</small>
+            <strong className={tone}>{money(d.pnlSol, true)}</strong>
+          </div>
+        </>
+      )}
       {d.rank && ahead !== null ? (
         <div className="yr-note">
           <span className="yr-bar" aria-hidden="true"><i style={{ width: `${Math.max(3, ahead)}%` }} /></span>
@@ -73,8 +79,13 @@ export default function YourRank({ period }: { period: RankPeriod }) {
             {!d.publicTrading && <em>Only you see this. <Link href="/app/profile">Show me on the board</Link></em>}
           </span>
         </div>
+      ) : unranked ? (
+        <div className="yr-note yr-go">
+          <span className="yr-txt"><span>Close your first trade to get on the board. Paper trades count.</span></span>
+          <Link href="/app" className="yr-cta">Start trading</Link>
+        </div>
       ) : (
-        <p className="yr-note"><span>Close your first trade to get a rank. Paper trades count.</span></p>
+        <p className="yr-note"><span>You are the only trader on the board so far.</span></p>
       )}
     </section>
   );

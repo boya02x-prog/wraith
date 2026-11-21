@@ -19,3 +19,23 @@
   .shs-tile { border-radius: 10px !important; }
   html:root .shs-clipbar { padding: 10px 16px 4px; }
 }
+
+/* The Clips / Presets / Yours tabs of the background sheet: plain text with the same flat ember underline as every other tab row.
+   (They used a 3px bottom border, which curved along the rounded corners every button gets and read like a smile under the word.) */
+html:root .shs-seg { gap: 24px; border-bottom: 0; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07); }
+html:root .shs-seg button { position: relative; border: 0 !important; border-radius: 0 !important; background: none; }
+html:root .shs-seg button.on { color: #fff; }
+html:root .shs-seg button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--accent); }
+
+/* The background tiles are squares made with aspect-ratio, but their pictures are absolutely positioned, so a grid row was sized from the 40px
+   minimum height every button has, and the next row slid up over the bottom of the one above: tiles overlapped and the grid looked like a ragged
+   masonry. A pseudo-element as tall as the tile is wide gives every row its real height. */
+html:root .shs-tile { aspect-ratio: auto; min-height: 0; }
+html:root .shs-tile::before { content: ""; display: block; width: 100%; padding-top: 100%; }
+html:root .shs-tile.add { aspect-ratio: 1; }
+html:root .shs-tile.add::before { display: none; }
+html:root .shs-tile:not(.add) { display: block; } /* (a block, so the percentage padding above is worked out against the tile's own width) */
+/* The real cause of the overlapping tiles: the grid has a fixed height and its rows were "auto", which a grid squeezes to fit when the items can
+   shrink (these tiles hide their overflow), so every row collapsed to a few pixels while the tiles kept their square size and spilled over the next
+   rows. Rows now keep the height of their content and the grid scrolls. */
+html:root .shs-grid { grid-auto-rows: max-content; }

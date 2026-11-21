@@ -240,10 +240,9 @@ export default function PublicTraderPage() {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                      padding: "3px 10px 3px 6px",
-                      borderRadius: 999,
-                      border: `1px solid ${GLYPH_PALETTE[trader.tier].mid}66`,
-                      background: `${GLYPH_PALETTE[trader.tier].mid}1a`,
+                      padding: "3px 9px 3px 5px",
+                      borderRadius: 8,
+                      background: `${GLYPH_PALETTE[trader.tier].mid}24`,
                       color: GLYPH_PALETTE[trader.tier].mid,
                       fontFamily: "var(--font-mono), 'IBM Plex Mono', monospace",
                       fontSize: 11,
@@ -278,6 +277,7 @@ export default function PublicTraderPage() {
                   <span>Followers</span>
                 </button>
               </div>
+              <div className="pub-actions">
               <button
                 type="button"
                 className="pub-icon-btn"
@@ -314,6 +314,7 @@ export default function PublicTraderPage() {
                   setData((d) => d ? { ...d, trader: { ...d.trader, followerCount: followers } } : d);
                 }}
               />
+              </div>
             </div>
 
             {trader.bio && <p className="pub-bio">{trader.bio}</p>}

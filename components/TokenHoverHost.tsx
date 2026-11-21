@@ -26,7 +26,7 @@ const cache = new Map<string, { at: number; v: Snap | null }>();
 const inflight = new Map<string, Promise<Snap | null>>();
 function snapshot(mint: string): Promise<Snap | null> {
   const hit = cache.get(mint);
-  if (hit && Date.now() - hit.at < 20_000) return Promise.resolve(hit.v);
+  if (hit && Date.now() - hit.at < 30_000) return Promise.resolve(hit.v); // (the same 30 s the batch read ahead uses)
   let p = inflight.get(mint);
   if (!p) {
     p = fetch(`/api/token-price?mint=${encodeURIComponent(mint)}`)
@@ -41,11 +41,47 @@ function snapshot(mint: string): Promise<Snap | null> {
 const usd = usdShort, price = priceShort, age = ageShort;
 const W = 330;
 const SEL = "[data-hover-mint]";
+/** Whatever was last read for the token, however old: an old number on the card at once beats a blank card while a new one loads. */
+const peekSnap = (mint: string): Snap | null | undefined => cache.get(mint)?.v;
+
+type Quick = { mcap: number; priceUsd: number; liquidity: number; symbol: string; name: string; imageUrl?: string; change24h: number | null; change1h: number | null; volume24h?: number; buys24h?: number; sells24h?: number; createdAt?: number | null };
+/**
+ * The card used to wait for its own request after the mouse had rested for over a third of a second, so it appeared a second or more after you
+ * pointed. Now every token on screen is read ahead in ONE batched request as soon as the mouse moves on the page (at most every 8 seconds), so by the
+ * time you rest on one its numbers are already here and the card shows at once.
+ */
+let warmAt = 0;
+function warmVisible() {
+  if (Date.now() - warmAt < 8000) return;
+  warmAt = Date.now();
+  const mints: string[] = [];
+  for (const el of document.querySelectorAll(SEL)) {
+    const m = el.getAttribute("data-hover-mint") ?? "";
+    if (!SOLANA_MINT_RE.test(m) || mints.includes(m)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight) continue; // only what can be seen
+    const hit = cache.get(m);
+    if (hit && Date.now() - hit.at < 30_000) continue;
+    mints.push(m);
+    if (mints.length >= 30) break; // what the batch lookup takes at once
+  }
+  if (!mints.length) return;
+  fetch(`/api/signal-prices?mints=${mints.join(",")}`)
+    .then((r) => (r.ok ? (r.json() as Promise<{ prices?: Record<string, Quick> }>) : null))
+    .then((j) => {
+      for (const [m, p] of Object.entries(j?.prices ?? {})) {
+        const hit = cache.get(m);
+        if (hit && Date.now() - hit.at < 30_000) continue; // a fuller read arrived meanwhile
+        cache.set(m, { at: Date.now(), v: { symbol: p.symbol, name: p.name, imageUrl: p.imageUrl ?? null, priceUsd: p.priceUsd, marketCap: p.mcap, liquidity: p.liquidity, volume24h: p.volume24h, priceChange: { h1: p.change1h, h24: p.change24h }, buys24h: p.buys24h, sells24h: p.sells24h, pairCreatedAt: p.createdAt ?? null } });
+      }
+    })
+    .catch(() => undefined);
+}
 
 export default function TokenHoverHost() {
   const pathname = usePathname();
   const [shown, setShown] = useState<Shown | null>(null);
-  const [snap, setSnap] = useState<Snap | null | undefined>(undefined); // undefined = loading
+  const [fresh, setFresh] = useState<{ mint: string; v: Snap | null } | null>(null); // the latest read for the token on the card (null inside = nothing found)
   const [copied, setCopied] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const card = useRef<HTMLDivElement>(null);
@@ -55,6 +91,9 @@ export default function TokenHoverHost() {
   const pathRef = useRef(pathname);
   useEffect(() => { shownRef.current = shown; }, [shown]); // read by the pointer handler below, which runs between renders
   useEffect(() => { pathRef.current = pathname; }, [pathname]);
+  // undefined = still loading and nothing read yet; null = looked and found nothing. A read from an earlier time on the card is used until the new one lands.
+  const have = shown && fresh && fresh.mint === shown.mint ? fresh.v : undefined;
+  const snap: Snap | null | undefined = shown ? (have !== undefined ? have : peekSnap(shown.mint)) : undefined;
 
   useEffect(() => {
     let ok = false;
@@ -65,6 +104,7 @@ export default function TokenHoverHost() {
     const onCard = (t: Element | null) => !!(card.current && t && card.current.contains(t));
     const over = (e: PointerEvent) => {
       pt.current = { x: e.clientX, y: e.clientY, known: true };
+      warmVisible();
       const t = e.target as Element | null;
       if (onCard(t)) { window.clearTimeout(hideT); return; } // the pointer went onto the card (to copy the contract)
       const el = t?.closest?.(SEL) ?? null;
@@ -74,13 +114,14 @@ export default function TokenHoverHost() {
       if (!el) { hideT = window.setTimeout(hide, 160); return; }
       const mint = el.getAttribute("data-hover-mint") ?? "";
       if (!SOLANA_MINT_RE.test(mint)) return;
+      void snapshot(mint); // start reading its numbers now, in parallel with the short wait below
       showT = window.setTimeout(() => {
         setShown({
           mint, x: pt.current.x, y: pt.current.y, path: pathRef.current,
           called: Number(el.getAttribute("data-hover-called")) || undefined, at: Number(el.getAttribute("data-hover-at")) || undefined,
           img: el.getAttribute("data-hover-img") || undefined,
         });
-      }, shownRef.current ? 90 : 360); // moving from one token to the next is quick, the first one waits a moment
+      }, shownRef.current ? 40 : 120); // moving from one token to the next is almost at once, the first one waits just long enough that sweeping the mouse across a list does not flash cards
     };
     const move = (e: PointerEvent) => { pt.current = { x: e.clientX, y: e.clientY, known: true }; };
     // a press is a click on the token (it opens): the card has done its job. A press on the card itself (the copy button) keeps it.
@@ -124,8 +165,8 @@ export default function TokenHoverHost() {
   useEffect(() => {
     if (!mint) return;
     let alive = true;
-    void snapshot(mint).then((v) => { if (alive) setSnap(v); });
-    return () => { alive = false; setSnap(undefined); setCopied(false); };
+    void snapshot(mint).then((v) => { if (alive) setFresh({ mint, v }); });
+    return () => { alive = false; setCopied(false); };
   }, [mint]);
 
   // keep the card inside the window: to the right of and below the pointer, flipped when there is no room
