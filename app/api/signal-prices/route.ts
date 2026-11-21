@@ -16,12 +16,13 @@ export async function GET(req: NextRequest) {
   try {
     const solUsd = await getSolUsd();
     const pairs = arr(await getJson(`https://api.dexscreener.com/tokens/v1/solana/${mints.join(",")}`, undefined, 10000));
-    const best = new Map<string, { mcap: number; priceUsd: number; liquidity: number; symbol: string; name: string; imageUrl?: string }>();
+    // change24h / change1h (percent) ride along for the saved-token bar; the Wins board and the others ignore them
+    const best = new Map<string, { mcap: number; priceUsd: number; liquidity: number; symbol: string; name: string; imageUrl?: string; change24h: number | null; change1h: number | null }>();
     for (const p of pairs) {
       const t = parseDexPair(obj(p), solUsd);
       if (!t || !(t.mcap > 0)) continue;
       const old = best.get(t.address);
-      if (!old || t.liquidity > old.liquidity) best.set(t.address, { mcap: t.mcap, priceUsd: t.priceUsd, liquidity: t.liquidity, symbol: t.symbol, name: t.name, imageUrl: t.imageUrl });
+      if (!old || t.liquidity > old.liquidity) best.set(t.address, { mcap: t.mcap, priceUsd: t.priceUsd, liquidity: t.liquidity, symbol: t.symbol, name: t.name, imageUrl: t.imageUrl, change24h: t.change.h24, change1h: t.change.h1 });
     }
     return edge(NextResponse.json({ prices: Object.fromEntries(best) }), 3, 10);
   } catch {

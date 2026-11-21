@@ -9,6 +9,7 @@ import DiscoverNav from "@/components/DiscoverNav";
 import TraderFollowButton from "@/components/TraderFollowButton";
 import HotShots from "@/components/HotShots";
 import TraderBoards from "@/components/TraderBoards";
+import YourRank from "@/components/YourRank";
 import Frame, { frameGlow } from "@/components/Frame";
 import Radar from "@/components/Radar";
 import { useCash } from "@/lib/cash";
@@ -170,6 +171,7 @@ export default function TradersPage() {
             ))}
           </div>
         </section>
+        <YourRank period={period} />
         {stale && traders.length > 0 && <div className="profile-message" style={{ fontSize: 12 }}>Offline: showing the last saved ranking.</div>}
         {error && !traders.length && <div className="profile-message is-error">{error}</div>}
         {loading ? (

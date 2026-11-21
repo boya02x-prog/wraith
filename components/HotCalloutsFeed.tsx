@@ -256,7 +256,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
                       {long && <button type="button" className="ix-more" onClick={() => setOpen((s) => { const n = new Set(s); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; })}>{expanded ? "Show less" : "Show more"}</button>}
                       {c.imageUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.imageUrl} alt="" className="ix-media" loading="lazy" />}
                       {c.mint && (
-                        <button type="button" className="ix-token" onClick={() => openToken(c)} aria-label={`Open ${tagOf(c)}`}>
+                        <button type="button" className="ix-token" onClick={() => openToken(c)} aria-label={`Open ${tagOf(c)}`} data-hover-mint={c.mint} data-hover-called={c.mcapAtPost ?? undefined} data-hover-at={c.createdAt}>
                           <span className="ix-tk-top">
                             <TokenIcon contractAddress={c.mint} imageUrl={meta[c.mint]?.imageUrl} symbol={symOf(c) || "T"} size={44} />
                             <span className="ix-tk">
@@ -300,7 +300,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
             <section>
               <h3><Flame size={14} aria-hidden="true" /> Most called</h3>
               {trending.length ? trending.map((t) => (
-                <button key={t.mint} type="button" className="ix-mini" onClick={() => openMint(t.mint)}>
+                <button key={t.mint} type="button" className="ix-mini" onClick={() => openMint(t.mint)} data-hover-mint={t.mint}>
                   <TokenIcon contractAddress={t.mint} imageUrl={meta[t.mint]?.imageUrl} symbol={meta[t.mint]?.symbol || "T"} size={28} />
                   <b>{mintTag(t.mint)}</b><em>{t.n} {t.n === 1 ? "call" : "calls"}</em>
                 </button>
@@ -309,7 +309,7 @@ export default function HotCalloutsFeed({ onSelectMeme }: { onSelectMeme: (meme:
             <section>
               <h3><TrendingUp size={14} aria-hidden="true" /> Best since call</h3>
               {best.length ? best.map(({ c, x }) => (
-                <button key={c.id} type="button" className="ix-mini" onClick={() => openToken(c)}>
+                <button key={c.id} type="button" className="ix-mini" onClick={() => openToken(c)} data-hover-mint={c.mint} data-hover-called={c.mcapAtPost ?? undefined} data-hover-at={c.createdAt}>
                   <TokenIcon contractAddress={c.mint ?? ""} imageUrl={c.mint ? meta[c.mint]?.imageUrl : undefined} symbol={symOf(c) || "T"} size={28} />
                   <b>{tagOf(c)}</b><em className="up">{fx(x)}x</em>
                 </button>

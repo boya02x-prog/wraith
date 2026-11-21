@@ -11,6 +11,8 @@ import { useWraithSession } from "@/components/SessionProvider";
 import { PRIVY_WALLETS_ENABLED } from "@/lib/privyConfig";
 import ReferralPrompt from "@/components/ReferralPrompt";
 import PhotoZoomHost from "@/components/PhotoZoomHost";
+import TokenHoverHost from "@/components/TokenHoverHost";
+import SavedStrip from "@/components/SavedStrip";
 
 type SelectFn = (meme: MemeTrend) => void;
 type ShellCtx = { setSelect: (fn: SelectFn | null) => void };
@@ -80,6 +82,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <ReferralPrompt />
       <PhotoZoomHost />
+      <TokenHoverHost />
+      <SavedStrip />
       {/* the one element that slides / fades when the screen changes (see RouteFade and the .wx-route rules): it stays mounted while pages swap inside it */}
       <div className="wx-route">{children}</div>
     </Ctx.Provider>

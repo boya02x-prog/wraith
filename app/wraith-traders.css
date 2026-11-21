@@ -145,3 +145,34 @@ html:root .tc[style*="--frc"]::after { content: ""; position: absolute; inset: 0
 .pf-more { padding: 11px; border: 0; border-radius: 10px; background: transparent; color: rgba(255, 255, 255, 0.7); font: 700 13px var(--font-sans); cursor: pointer; }
 .pf-more:hover { background: rgba(255, 255, 255, 0.05); }
 .pf-private { display: flex; align-items: center; gap: 8px; margin: 12px 4px 4px; color: rgba(255, 255, 255, 0.45); font: 600 13px var(--font-sans); }
+
+/* ── Your rank (components/YourRank.tsx): the row under the Leaderboard title ── */
+.yr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; margin: 0 0 16px; padding: 14px 16px; border-radius: 14px; background: var(--surface, #131315); transition: opacity 0.15s; }
+.yr.stale { opacity: 0.55; }
+.yr-sk { min-height: 108px; background: linear-gradient(90deg, var(--surface, #131315), var(--surface-2, #1a1a1d), var(--surface, #131315)); background-size: 200% 100%; animation: pf-shimmer 1.4s linear infinite; }
+.yr-sk i { display: none; }
+.yr-av { grid-row: 1; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--surface-3, #232327); }
+.yr-who { min-width: 0; display: grid; gap: 2px; }
+.yr-who small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 13px/1 var(--font-sans); }
+.yr-who b { color: #fff; font: 800 24px/1.1 var(--font-sans); letter-spacing: -0.03em; }
+.yr-who b i { font-style: normal; margin-right: 2px; color: var(--accent-text, #ffad7b); }
+html:root .yr .yr-share { display: grid; place-items: center; width: 40px; height: 40px; min-height: 0; padding: 0; border: 0; border-radius: 12px; background: var(--sk-fill, rgba(255, 255, 255, 0.07)); color: #fff; cursor: pointer; transition: background 0.15s, transform 0.12s; }
+html:root .yr .yr-share:hover { background: var(--sk-fill-2, rgba(255, 255, 255, 0.11)); }
+html:root .yr .yr-share:active { transform: scale(0.93); }
+.yr-pnl { display: grid; justify-items: end; gap: 2px; padding-left: 6px; }
+.yr-pnl small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1 var(--font-sans); white-space: nowrap; }
+.yr-pnl strong { font: 800 22px/1.1 var(--font-sans); letter-spacing: -0.03em; color: #fff; white-space: nowrap; }
+.yr-pnl strong.up { color: var(--sk-up, #3ddc97); }
+.yr-pnl strong.down { color: var(--sk-down, #ff6b62); }
+.yr-note { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin: 10px 0 0; padding-top: 10px; box-shadow: inset 0 1px 0 var(--sk-line, rgba(255, 255, 255, 0.06)); color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 600 13px/1.45 var(--font-sans); }
+.yr-note a { color: var(--accent-text, #ffad7b); text-decoration: none; }
+.yr-bar { flex: none; width: 84px; height: 5px; border-radius: 3px; background: var(--sk-fill-2, rgba(255, 255, 255, 0.11)); overflow: hidden; }
+.yr-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent, #ff7b3d); }
+.yr-txt { display: grid; gap: 3px; min-width: 0; }
+.yr-txt em { font-style: normal; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); }
+@media (max-width: 480px) {
+  .yr { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .yr-share { display: none !important; }
+  .yr-note { flex-direction: column; align-items: stretch; gap: 8px; }
+  .yr-bar { width: 100%; }
+}

@@ -183,7 +183,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
                   const pk = peakMult(c), m = mult(c);
                   rank += 1;
                   return (
-                    <div key={c.address} className="wb-win" role="link" tabIndex={0} onClick={() => open(c)} onKeyDown={(e) => { if (e.key === "Enter") open(c); }}>
+                    <div key={c.address} className="wb-win" role="link" tabIndex={0} onClick={() => open(c)} onKeyDown={(e) => { if (e.key === "Enter") open(c); }} data-hover-mint={c.chain && c.chain !== "solana" ? undefined : c.address} data-hover-called={c.spottedMcap} data-hover-at={c.spottedAt}>
                       <span className="wb-win-rank">{rank}</span>
                       <TokenIcon contractAddress={c.address} imageUrl={c.imageUrl} symbol={c.symbol} size={34} />
                       <div className="wb-win-id">
@@ -227,7 +227,7 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
             const up = m >= 1;
             const barPct = Math.min(100, Math.max(4, (m / Math.max(pk, 1)) * 100));
             return (
-              <div key={c.address} className={`wb-card${up ? " up" : " down"}`} role="link" tabIndex={0} onClick={() => open(c)} onKeyDown={(e) => { if (e.key === "Enter") open(c); }}>
+              <div key={c.address} className={`wb-card${up ? " up" : " down"}`} role="link" tabIndex={0} onClick={() => open(c)} onKeyDown={(e) => { if (e.key === "Enter") open(c); }} data-hover-mint={c.chain && c.chain !== "solana" ? undefined : c.address} data-hover-called={c.spottedMcap} data-hover-at={c.spottedAt}>
                 <div className="wb-card-top">
                   <TokenIcon contractAddress={c.address} imageUrl={c.imageUrl} symbol={c.symbol} size={42} />
                   <div className="wb-id">
