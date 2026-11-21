@@ -27,6 +27,39 @@ import { UpdatedAgo } from "@/components/UpdatedAgo";
 import { QuickBuyButton } from "@/components/QuickBuyButton";
 import { getActivePreset } from "@/lib/quickBuyPresets";
 import { HOVER_DELAY_MS, TokenHoverPreview } from "@/components/TokenHoverChart";
+import BookmarkBtn from "@/components/BookmarkBtn";
+
+// ── sorting the table by a column, and holding the order while the mouse is on the list ──
+// The first click on a column puts the biggest first (the youngest first for Age), a second click reverses, a third goes back to the tab's own order.
+type SortKey = "age" | "mcap" | "liq" | "vol" | "m5" | "h1" | "h24" | "tx";
+type Sort = { k: SortKey; dir: 1 | -1 } | null;
+const SORTERS: Record<SortKey, { value: (t: MarketToken) => number | null; first: 1 | -1 }> = {
+  age: { value: (t) => (t.createdAt ? -t.createdAt : null), first: 1 }, // smaller = newer, so ascending is youngest first
+  mcap: { value: (t) => t.mcap, first: -1 },
+  liq: { value: (t) => t.liquidity, first: -1 },
+  vol: { value: (t) => t.volume.h24, first: -1 },
+  m5: { value: (t) => t.change.m5, first: -1 },
+  h1: { value: (t) => t.change.h1, first: -1 },
+  h24: { value: (t) => t.change.h24, first: -1 },
+  tx: { value: (t) => t.txns.buys + t.txns.sells, first: -1 },
+};
+function sortTokens(list: MarketToken[], sort: Sort): MarketToken[] {
+  if (!sort) return list;
+  const { value } = SORTERS[sort.k];
+  return [...list].sort((a, b) => {
+    const x = value(a), y = value(b);
+    const nx = x == null || !Number.isFinite(x), ny = y == null || !Number.isFinite(y);
+    if (nx || ny) return nx === ny ? 0 : nx ? 1 : -1; // a token with no figure for this column goes last
+    return ((x as number) - (y as number)) * sort.dir;
+  });
+}
+/** Keeps rows where they were when the pointer came onto the list: the numbers still update, a token that is new goes to the end. */
+function holdOrder(list: MarketToken[], order: string[] | null): MarketToken[] {
+  if (!order) return list;
+  const at = new Map(order.map((a, i) => [a, i]));
+  return [...list].sort((a, b) => (at.get(a.address) ?? 1e9) - (at.get(b.address) ?? 1e9));
+}
+const pointerIsMouse = () => { try { return window.matchMedia("(hover: hover) and (pointer: fine)").matches; } catch { return false; } };
 
 type HoverFns = { enter: (e: React.MouseEvent, t: MarketToken) => void; leave: () => void };
 
@@ -123,6 +156,8 @@ function CardBase({ token, onOpen, quickSol }: { token: MarketToken; onOpen: () 
           <span className="wx-tcard-name">{safeName(token.name, token.symbol)}</span>
         </div>
         <span className="wx-tcard-age">{fmtAge(token.createdAt)}</span>
+        {/* the star saves it (it then sits in the saved bar on a computer); the wrapper keeps a click or a key on it from opening the card */}
+        <span className="wx-bm" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}><BookmarkBtn meme={toMeme(token)} size={16} /></span>
       </div>
 
       <div className="wx-tcard-mc">
@@ -163,6 +198,7 @@ function RowBase({ token, onOpen, quickSol, hover }: { token: MarketToken; onOpe
       onMouseEnter={() => prefetchChart(token.address, token.onCurve)} onTouchStart={() => prefetchChart(token.address, token.onCurve, true)}
     >
       <span className="wx-trow-id" onMouseEnter={(e) => hover.enter(e, token)} onMouseLeave={hover.leave}>
+        <span className="wx-bm" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}><BookmarkBtn meme={toMeme(token)} size={16} /></span>
         <TokenIcon contractAddress={token.address} imageUrl={token.imageUrl} symbol={token.symbol} size={34} />
         <span>
           <strong>{token.symbol}</strong>
@@ -227,6 +263,10 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
   const { tokens, loading, error, stale, updatedAt, refresh } = useMarket(category);
   const [quickSol, setQuickSol] = useState(0.1);
   const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<Sort>(null);
+  // the order the rows were in when the mouse came onto the list (null = not holding): rows must not move under the pointer, or a click
+  // meant for one token (the quick-buy button above all) lands on another one that was just re-ranked into its place
+  const [held, setHeld] = useState<string[] | null>(null);
   const [hoverPreview, setHoverPreview] = useState<{ token: MarketToken; top: number; left: number } | null>(null);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -276,11 +316,36 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
     });
   }, [tokens, query, hideThin]);
 
+  const sorted = useMemo(() => sortTokens(shown, sort), [shown, sort]);
+  const ordered = useMemo(() => holdOrder(sorted, held), [sorted, held]);
+  const holdRows = () => { if (pointerIsMouse()) setHeld(ordered.map((t) => t.address)); };
+  const releaseRows = () => setHeld(null);
+  const pickSort = (k: SortKey) => {
+    const first = SORTERS[k].first;
+    const next: Sort = sort?.k !== k ? { k, dir: first } : sort.dir === first ? { k, dir: (first === 1 ? -1 : 1) as 1 | -1 } : null;
+    setSort(next);
+    setPage(0);
+    if (held) setHeld(sortTokens(shown, next).map((t) => t.address)); // the pointer is on the table: hold the NEW order, not the old one
+  };
+  const head = (k: SortKey, label: string, cls?: string) => (
+    <span
+      role="columnheader"
+      tabIndex={0}
+      className={`sortable${cls ? ` ${cls}` : ""}${sort?.k === k ? " on" : ""}`}
+      aria-sort={sort?.k === k ? (sort.dir === 1 ? "ascending" : "descending") : undefined}
+      title={`Sort by ${label}`}
+      onClick={() => pickSort(k)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickSort(k); } }}
+    >
+      {label}{sort?.k === k && <i aria-hidden="true">{sort.dir === 1 ? "↑" : "↓"}</i>}
+    </span>
+  );
+
   useEffect(() => { setPage(0); }, [category, query, hideThin, view]);
   const size = PAGE_SIZE[view];
-  const pages = Math.max(1, Math.ceil(shown.length / size));
+  const pages = Math.max(1, Math.ceil(ordered.length / size));
   const curPage = Math.min(page, pages - 1);
-  const pageRows = shown.slice(curPage * size, (curPage + 1) * size);
+  const pageRows = ordered.slice(curPage * size, (curPage + 1) * size);
 
   return (
     <section className="wx-board">
@@ -295,6 +360,7 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
               className={category === c.key ? "on" : ""}
               onClick={() => {
                 setCategory(c.key);
+                setSort(null); // a column sort belongs to the tab it was made on
                 try { localStorage.setItem("wraith_board_cat", c.key); } catch { /* ignore */ }
               }}
             >
@@ -320,10 +386,10 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
 
         <div style={{ flex: 1 }} />
 
-        <span className="wx-live">
-          <i className={stale ? "stale" : ""} />
-          {stale ? "Delayed" : "Live"}
-          {updatedAt ? <small> · <UpdatedAgo at={updatedAt} />s</small> : null}
+        <span className="wx-live" title={held ? "The rows stay where they are while the pointer is on the list, so a click never lands on a different token. The numbers keep updating." : undefined}>
+          <i className={held ? "held" : stale ? "stale" : ""} />
+          {held ? "Order locked" : stale ? "Delayed" : "Live"}
+          {updatedAt && !held ? <small> · <UpdatedAgo at={updatedAt} />s</small> : null}
         </span>
 
         <div className="wx-seg" aria-label="View">
@@ -339,7 +405,7 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
         </button>
       </div>
 
-      <div className="wx-board-body">
+      <div className="wx-board-body" onMouseEnter={holdRows} onMouseLeave={releaseRows}>
         {loading && !tokens.length ? (
           <div className={view === "grid" ? "wx-grid" : "wx-table"}>
             {Array.from({ length: view === "grid" ? 12 : 14 }).map((_, i) => (
@@ -369,14 +435,14 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
           <div className="wx-table" role="table">
             <div className="wx-trow head" role="row">
               <span>Token</span>
-              <span className="c-age">Age</span>
-              <span>MCap</span>
-              <span className="c-liq">Liq</span>
-              <span className="c-vol">Vol 24h</span>
-              <span className="c-5m">5m</span>
-              <span>1h</span>
-              <span className="c-24h">24h</span>
-              <span className="c-tx">Txns</span>
+              {head("age", "Age", "c-age")}
+              {head("mcap", "MCap")}
+              {head("liq", "Liq", "c-liq")}
+              {head("vol", "Vol 24h", "c-vol")}
+              {head("m5", "5m", "c-5m")}
+              {head("h1", "1h")}
+              {head("h24", "24h", "c-24h")}
+              {head("tx", "Txns", "c-tx")}
               <span className="c-buy">Buy</span>
             </div>
             {pageRows.map((t) => (

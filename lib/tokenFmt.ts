@@ -19,6 +19,9 @@ export const ageShort = (ms?: number | null): string => {
   return m < 60 ? `${m}m` : m < 1440 ? `${Math.floor(m / 60)}h` : `${Math.floor(m / 1440)}d`;
 };
 
+/** "just now" for the first minute, then 5m ago, 3h ago, 2d ago. */
+export const agoShort = (ms?: number | null): string => (ms && Date.now() - ms < 60_000 ? "just now" : `${ageShort(ms)} ago`);
+
 /** +12.4% / -3.1% (whole numbers once it is past a thousand percent). */
 export const pctShort = (n: number): string => `${n >= 0 ? "+" : "-"}${Math.abs(n) >= 1000 ? Math.abs(n).toFixed(0) : Math.abs(n).toFixed(1)}%`;
 
@@ -27,3 +30,10 @@ export const shortAddr = (a: string): string => (a.length > 10 ? `${a.slice(0, 4
 
 /** 3.15x, or 12.4x once it is past ten. */
 export const timesShort = (x: number): string => `${x >= 10 ? x.toFixed(1) : x.toFixed(2)}x`;
+
+/** How a saved token has done since it was saved: its market cap now over its market cap then (null when either one is unknown). */
+export const sinceSaved = (savedMcap?: number | null, nowMcap?: number | null): number | null =>
+  savedMcap && nowMcap && savedMcap > 0 && nowMcap > 0 ? nowMcap / savedMcap : null;
+
+/** A multiple as a gain: +35.0% below 2x, 3.15x from 2x up. */
+export const gainShort = (x: number): string => (x >= 2 ? timesShort(x) : pctShort((x - 1) * 100));

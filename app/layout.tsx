@@ -18,6 +18,7 @@ import "./wraith-profile.css";
 import "./wraith-sharedesk.css";
 import "./wraith-hover.css";
 import "./wraith-saved.css";
+import "./wraith-board.css";
 import WalletProvider from "@/components/WalletProvider";
 import BootSplash from "@/components/BootSplash";
 import NativePush from "@/components/NativePush";

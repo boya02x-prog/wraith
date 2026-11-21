@@ -21,6 +21,9 @@ export const DISCOVER: DocPage[] = [
         "**Hide thin liquidity.** On by default. It hides tokens with under $5,000 of liquidity, because those are hard to sell. Tokens still on their bonding curve are always shown.",
         "**Live.** The green dot means the list is updating on its own, and the number is how long ago it last updated. **Delayed** (yellow) means the data source is slow right now; the list keeps working.",
         "**Cards or table.** The two buttons switch between cards and a compact table. The refresh button reloads the list.",
+        "**Sort the table.** Click a column name (Age, MCap, Liq, Vol 24h, 5m, 1h, 24h or Txns). The first click puts the biggest first (the youngest first for Age), a second click reverses it, a third goes back to the tab's own order. Changing tab clears the sort.",
+        "**The star.** Saves the token (see Saved tokens below). It is on every card, and on the table rows on a computer or a wide tablet.",
+        "**Order locked.** While your mouse is on the list the rows stay where they are, so a click, the quick-buy button above all, never lands on a different token that was just re-ranked into its place. The light next to **Live** turns grey and says **Order locked**; the numbers keep updating, and the list re-ranks when you move away.",
       ] },
       { t: "h2", text: "Reading a card" },
       { t: "ul", items: [
@@ -33,7 +36,7 @@ export const DISCOVER: DocPage[] = [
       { t: "h2", text: "On a computer" },
       { t: "p", text: "A rail on the left shows **Called by traders you follow** (recent calls from people you follow) and **Top signals now** (the scanner's best-scored tokens), so you can jump from the market to a call in one click." },
       { t: "h2", text: "Saved tokens" },
-      { t: "p", text: "Press the **bookmark** on a token (in the market list, the signals rail or on its token page) to save it. On a computer your saved tokens sit in a bar under the top bar, each with its market cap and its move over 24 hours, kept up to date. Click one and a chart window opens under it: a market-cap chart (**1H, 4H, 1D, 7D, 1M** or **ALL**), the key numbers, and three tabs: **Wraith call** (where Wraith called it, its peak and where it stands now), **Holders** (the ten biggest) and **Swaps** (the latest trades). Drag the window by its top bar to move it; **Esc** or the X closes it. **Buy** opens the token page, where you place the trade. The small x on a saved token takes it off the list. With nothing saved there is no bar, and phones do not show it." },
+      { t: "p", text: "Press the **bookmark** on a token (in the market list, the signals rail or on its token page) to save it. On a computer your saved tokens sit in a bar under the top bar, each with its market cap and its move over 24 hours, kept up to date. Click one and a chart window opens under it: a market-cap chart (**1H, 4H, 1D, 7D, 1M** or **ALL**), the key numbers, and three tabs: **Wraith call** (where Wraith called it, its peak and where it stands now), **Holders** (the ten biggest) and **Swaps** (the latest trades). Drag the window by its top bar to move it; **Esc** or the X closes it. **Buy** opens the token page, where you place the trade. The small x on a saved token takes it off the list. A saved token's market cap washes green or red when it really moves. For tokens you save from now on, point at one in the bar to see how it has done since you saved it (the chart window shows the same as **Since you saved it**). With nothing saved there is no bar, and phones do not show it." },
       { t: "callout", kind: "tip", text: "Tap any card to open the token page. On a computer, hover a token to get a quick chart card without leaving the list. Hover a call in **Wins**, **Intel** or the **Scanner** to see its price, market cap, volume, liquidity, age and contract (with a copy button), and where it was called and its multiple now." },
     ],
   },
@@ -184,7 +187,7 @@ export const DISCOVER: DocPage[] = [
       { t: "h2", text: "Open it" },
       { t: "ul", items: [
         "**Phone:** the round search button at the bottom right. It turns into an **X** while search is open; tap the X to close.",
-        "**Computer:** the search box in the top bar, or press **Ctrl+K** (**Cmd+K** on a Mac). **Esc** closes it.",
+        "**Computer:** the search box in the top bar, or press **/** (when you are not typing somewhere) or **Ctrl+K** (**Cmd+K** on a Mac). **Esc** closes it.",
       ] },
       { t: "h2", text: "What you can search" },
       { t: "table", head: ["Tab", "Searches"], rows: [

@@ -36,6 +36,8 @@ export interface MemeTrend {
   contractAddress?: string;
   celebMention?: string;
   aiContext?: string;
+  /** when the person saved this token (set by toggleTokenFavorite); with `mcap` it gives "since you saved it" */
+  savedAt?: number;
 }
 
 type View = "market" | "scanner" | "wins" | "intel";

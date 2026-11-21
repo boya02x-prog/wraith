@@ -30,7 +30,7 @@ export function toggleTokenFavorite(token: MemeTrend): MemeTrend[] {
   const exists = favorites.some((item) => item.contractAddress === token.contractAddress);
   const next = exists
     ? favorites.filter((item) => item.contractAddress !== token.contractAddress)
-    : [token, ...favorites];
+    : [{ ...token, savedAt: token.savedAt ?? Date.now() }, ...favorites];
   try {
     localStorage.setItem(TOKEN_FAVORITES_KEY, JSON.stringify(next));
     window.dispatchEvent(new Event(TOKEN_FAVORITES_EVENT));

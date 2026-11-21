@@ -14,7 +14,8 @@ import { TokenIcon } from "@/components/TokenIcon";
 import { SOLANA_MINT_RE } from "@/lib/market";
 import { cacheTokenNav } from "@/lib/tokenNav";
 import { parseTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT, TOKEN_FAVORITES_KEY } from "@/lib/tokenFavorites";
-import { pctShort, usdShort } from "@/lib/tokenFmt";
+import { useTick } from "@/lib/useTick";
+import { agoShort, gainShort, pctShort, sinceSaved, usdShort } from "@/lib/tokenFmt";
 
 // the chart library is a separate download that only arrives the first time a window is opened
 const TokenPeek = dynamic(() => import("@/components/TokenPeek"), { ssr: false });
@@ -34,6 +35,28 @@ function onFavs(cb: () => void) {
 }
 function favsText(): string {
   try { return localStorage.getItem(TOKEN_FAVORITES_KEY) ?? "[]"; } catch { return "[]"; }
+}
+
+/** One saved token in the bar. Its market cap washes green or red when it really moves (the same flash the market list uses), and hovering it says how it has done since you saved it. */
+function SavedChip({ f, p, active, onPick }: { f: MemeTrend; p?: Px; active: boolean; onPick: (f: MemeTrend, el: HTMLElement) => void }) {
+  const addr = f.contractAddress ?? "";
+  const sym = (f.keyword || p?.symbol || "").replace(/^\$/, "");
+  const mc = p?.mcap ?? f.mcap;
+  const ch = p?.change24h ?? null;
+  const tick = useTick(mc, { shakePct: 1e9 }); // no shake on a small chip, just the wash
+  const since = sinceSaved(f.mcap, p?.mcap);
+  const tip = since !== null && f.savedAt ? `Saved ${agoShort(f.savedAt)} at ${usdShort(f.mcap)} · now ${gainShort(since)}` : undefined;
+  return (
+    <div className={`sv-chip${active ? " on" : ""}${tick ? ` ${tick.cls}` : ""}`} style={tick ? { animationDelay: `${tick.delay}ms` } : undefined} title={tip}>
+      <button type="button" className="sv-open" onClick={(e) => onPick(f, e.currentTarget)} aria-expanded={active}>
+        <TokenIcon contractAddress={addr} imageUrl={f.tokenImageUrl ?? p?.imageUrl} symbol={sym || "T"} size={22} />
+        <b>${sym || "token"}</b>
+        {mc ? <span>{usdShort(mc)}</span> : null}
+        {ch !== null && Number.isFinite(ch) ? <em className={ch >= 0 ? "up" : "down"}>{pctShort(ch)}</em> : null}
+      </button>
+      <button type="button" className="sv-x" aria-label={`Remove ${sym || "token"} from saved`} title="Remove from saved" onClick={() => toggleTokenFavorite(f)}><X size={11} /></button>
+    </div>
+  );
 }
 
 export default function SavedStrip() {
@@ -104,24 +127,9 @@ export default function SavedStrip() {
           data-more={more ? "1" : undefined}
           onWheel={(e) => { if (track.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) track.current.scrollLeft += e.deltaY; }}
         >
-          {favs.map((f) => {
-            const addr = f.contractAddress ?? "";
-            const p = px[addr];
-            const sym = (f.keyword || p?.symbol || "").replace(/^\$/, "");
-            const mc = p?.mcap ?? f.mcap;
-            const ch = p?.change24h ?? null;
-            return (
-              <div key={addr} className={`sv-chip${openAddr === addr ? " on" : ""}`}>
-                <button type="button" className="sv-open" onClick={(e) => pick(f, e.currentTarget)} aria-expanded={openAddr === addr}>
-                  <TokenIcon contractAddress={addr} imageUrl={f.tokenImageUrl ?? p?.imageUrl} symbol={sym || "T"} size={22} />
-                  <b>${sym || "token"}</b>
-                  {mc ? <span>{usdShort(mc)}</span> : null}
-                  {ch !== null && Number.isFinite(ch) ? <em className={ch >= 0 ? "up" : "down"}>{pctShort(ch)}</em> : null}
-                </button>
-                <button type="button" className="sv-x" aria-label={`Remove ${sym || "token"} from saved`} title="Remove from saved" onClick={() => toggleTokenFavorite(f)}><X size={11} /></button>
-              </div>
-            );
-          })}
+          {favs.map((f) => (
+            <SavedChip key={f.contractAddress ?? f.keyword} f={f} p={px[f.contractAddress ?? ""]} active={openAddr === f.contractAddress} onPick={pick} />
+          ))}
         </div>
       </div>
       {open && <TokenPeek token={open.token} anchor={{ left: open.left, top: open.top }} onClose={() => setOpen(null)} />}

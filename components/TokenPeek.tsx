@@ -13,7 +13,7 @@ import BookmarkBtn from "@/components/BookmarkBtn";
 import { TokenIcon } from "@/components/TokenIcon";
 import { getCandles, type Candle } from "@/lib/candleCache";
 import { cacheTokenNav } from "@/lib/tokenNav";
-import { ageShort, pctShort, priceShort, shortAddr, timesShort, usdShort } from "@/lib/tokenFmt";
+import { ageShort, agoShort, gainShort, pctShort, priceShort, shortAddr, sinceSaved, timesShort, usdShort } from "@/lib/tokenFmt";
 import type { SignalCall } from "@/lib/signalCalls";
 
 type Snap = {
@@ -168,6 +168,7 @@ export default function TokenPeek({ token, anchor, onClose }: { token: MemeTrend
   const now = snap?.marketCap ?? null;
   const h24 = snap?.priceChange?.h24 ?? null;
   const call = calls?.calls?.[0] ?? null;
+  const sinceX = token.savedAt ? sinceSaved(token.mcap, now) : null; // only tokens saved since this was added carry the time they were saved
 
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("button") || !win.current) return;
@@ -209,6 +210,14 @@ export default function TokenPeek({ token, anchor, onClose }: { token: MemeTrend
         <div ref={box} className="tp-plot" />
         {(!have || have.length < 2) && <p className="tp-chart-note">{!have ? "Loading the chart…" : "No chart yet. It is too new for the chart sources."}</p>}
       </div>
+
+      {sinceX !== null && token.savedAt && (
+        <div className="tp-since">
+          <span>Since you saved it</span>
+          <b className={sinceX >= 1 ? "up" : "down"}>{gainShort(sinceX)}</b>
+          <small>saved at {usdShort(token.mcap)} · {agoShort(token.savedAt)}</small>
+        </div>
+      )}
 
       <div className="tp-stats">
         <div><small>Liquidity</small><b>{usdShort(snap?.liquidity)}</b></div>

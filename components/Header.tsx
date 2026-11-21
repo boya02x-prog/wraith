@@ -709,10 +709,19 @@ function CoinSearch({
     window.dispatchEvent(new CustomEvent("wraith:search-state", { detail: open && !closing }));
   }, [open, closing]);
 
-  // ⌘K shortcut
+  // ⌘K / Ctrl+K opens search, and so does "/" (the key Telemetry, GitHub and most terminals use) when you are not typing somewhere
   useEffect(() => {
+    const typing = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      const tag = el?.tagName;
+      return !!el && (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable);
+    };
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      } else if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e.target)) {
         e.preventDefault();
         setOpen(true);
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -840,6 +849,8 @@ function CoinSearch({
       {/* ── Trigger ── */}
       <button
         className="wx-cs-trigger"
+        title="Search (press / or Ctrl+K)"
+        aria-keyshortcuts="/ Control+K Meta+K"
         onClick={() => {
           setOpen((v) => !v);
           if (!open) setTimeout(() => inputRef.current?.focus(), 50);
@@ -908,7 +919,7 @@ function CoinSearch({
             flexShrink: 0,
           }}
         >
-          ⌘K
+          /
         </kbd>
       </button>
 
