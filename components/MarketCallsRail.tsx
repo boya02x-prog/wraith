@@ -112,9 +112,40 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
     onSelectMeme({ keyword: symbol, score: 0, posts: 0, source: chain && chain !== "solana" ? chain : "calls", contractAddress: mint, tokenImageUrl: imageUrl, mcap });
 
   return (
-    <aside className="mc-rail" aria-label="Followed traders and signals">
+    <div className="mc-rails">
+    <aside className="mc-rail mc-rail-signals" aria-label="Top signals">
       <section className="mc-sec">
-        <header><UsersRound size={14} /><strong>Called by traders you follow</strong></header>
+        <header><Flame size={14} /><strong>Top signals now</strong></header>
+        {!canSignals ? (
+          <div style={{ margin: "6px 14px 10px", padding: "16px 14px", borderRadius: 12, background: "var(--surface-2, #151517)", textAlign: "center", display: "grid", gap: 8, justifyItems: "center" }}>
+            <TierGlyph tier="WRAITH" size={40} />
+            <strong style={{ fontSize: 13 }}>Live signals are a WRAITH feature</strong>
+            <small style={{ color: "var(--text-dim, #8d8d99)", lineHeight: 1.5 }}>Hold {TIERS.WRAITH.minTokens.toLocaleString("en-US")} OMEN to unlock the scored live feed. The scanner stays open to everyone.</small>
+            <a href="/#omen" style={{ color: "var(--accent-text, #ffad7b)", fontSize: 12, fontWeight: 700 }}>See tiers →</a>
+          </div>
+        ) : signals.length === 0 ? (
+          <p className="mc-empty">Scoring live markets…</p>
+        ) : (
+          signals.map((s) => (
+            <button key={s.token.address} type="button" className="mc-row" onClick={() => open(s.token.address, s.token.symbol, s.token.imageUrl, s.token.mcap, s.token.chain)}>
+              <TokenIcon contractAddress={s.token.address} imageUrl={s.token.imageUrl} symbol={s.token.symbol} size={34} />
+              <span className="mid">
+                <strong>{s.token.symbol}</strong>
+                <small><ChainLogo chain={s.token.chain ?? "solana"} size={12} /> {fmtUsd(s.token.mcap)}</small>
+              </span>
+              <span className="end">
+                <b className={(s.token.change.h1 ?? 0) >= 0 ? "up" : "down"}>{(s.token.change.h1 ?? 0) >= 0 ? "+" : ""}{(s.token.change.h1 ?? 0).toFixed(0)}%</b>
+                {canScore && <small>score {s.score}</small>}
+              </span>
+            </button>
+          ))
+        )}
+        <button type="button" className="mc-more" onClick={onOpenScanner}>Open scanner →</button>
+      </section>
+    </aside>
+    <aside className="mc-rail mc-rail-intel" aria-label="Hot intel">
+      <section className="mc-sec">
+        <header><UsersRound size={14} /><strong>Hot intel</strong></header>
         {state === "loading" ? (
           Array.from({ length: 3 }).map((_, i) => <div key={i} className="wx-skel" style={{ height: 78, margin: "6px 14px", borderRadius: 12 }} />)
         ) : signedOut ? (
@@ -158,34 +189,7 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
         )}
       </section>
 
-      <section className="mc-sec">
-        <header><Flame size={14} /><strong>Top signals now</strong></header>
-        {!canSignals ? (
-          <div style={{ margin: "6px 14px 10px", padding: "16px 14px", borderRadius: 14, border: "1px dashed rgba(255,123,61,.4)", background: "linear-gradient(160deg, rgba(255,123,61,.10), rgba(255,123,61,.02))", textAlign: "center", display: "grid", gap: 8, justifyItems: "center" }}>
-            <TierGlyph tier="WRAITH" size={40} />
-            <strong style={{ fontSize: 13 }}>Live signals are a WRAITH feature</strong>
-            <small style={{ color: "var(--text-dim, #8d8d99)", lineHeight: 1.5 }}>Hold {TIERS.WRAITH.minTokens.toLocaleString("en-US")} OMEN to unlock the scored live feed. The scanner stays open to everyone.</small>
-            <a href="/#omen" style={{ color: "var(--accent-text, #ffad7b)", fontSize: 12, fontWeight: 700 }}>See tiers →</a>
-          </div>
-        ) : signals.length === 0 ? (
-          <p className="mc-empty">Scoring live markets…</p>
-        ) : (
-          signals.map((s) => (
-            <button key={s.token.address} type="button" className="mc-row" onClick={() => open(s.token.address, s.token.symbol, s.token.imageUrl, s.token.mcap, s.token.chain)}>
-              <TokenIcon contractAddress={s.token.address} imageUrl={s.token.imageUrl} symbol={s.token.symbol} size={34} />
-              <span className="mid">
-                <strong>{s.token.symbol}</strong>
-                <small><ChainLogo chain={s.token.chain ?? "solana"} size={12} /> {fmtUsd(s.token.mcap)}</small>
-              </span>
-              <span className="end">
-                <b className={(s.token.change.h1 ?? 0) >= 0 ? "up" : "down"}>{(s.token.change.h1 ?? 0) >= 0 ? "+" : ""}{(s.token.change.h1 ?? 0).toFixed(0)}%</b>
-                {canScore && <small>score {s.score}</small>}
-              </span>
-            </button>
-          ))
-        )}
-        <button type="button" className="mc-more" onClick={onOpenScanner}>Open scanner →</button>
-      </section>
     </aside>
+    </div>
   );
 }

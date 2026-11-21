@@ -60,11 +60,19 @@ html:root .sg-trow > :nth-child(n+3) { justify-self: end; text-align: right; }
   html:root .sg-trow { grid-template-columns: minmax(0, 1.6fr) 44px minmax(0, 1fr) 66px !important; }
 }
 
-/* Left panel of the Market screen: the same flat tonal cards as the intel feed (no lines, no pills, one corner size) */
-html:root .wx-market-layout .mc-rail { background: transparent !important; border: 0 !important; border-radius: 0 !important; padding: 0 2px 16px 0 !important; }
-html:root .wx-market-layout .mc-rail .mc-sec { background: var(--surface, #0f0f11); border-radius: 14px; padding: 4px 0 12px !important; margin: 0 0 10px !important; border: 0 !important; }
-html:root .wx-market-layout .mc-rail .mc-sec > header { padding: 12px 14px 10px; gap: 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); background: transparent; }
-html:root .wx-market-layout .mc-rail .mc-sec > header strong { text-transform: none; letter-spacing: 0; font: 700 13.5px var(--font-sans); color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); }
+/* Market screen, three panels: Top signals, Hot intel, then the market. The first two are the same size, each a flat card that scrolls on its own.
+   On a screen too narrow for both side by side they stack in one column. */
+html:root .wx-market-layout .mc-rails { display: flex; flex-direction: column; gap: 14px; flex: 0 0 300px; width: 300px; min-height: 0; min-width: 0; }
+@media (min-width: 1500px) {
+  html:root .wx-market-layout .mc-rails { flex-direction: row; flex-basis: auto; width: auto; }
+}
+html:root .wx-market-layout .mc-rails > .mc-rail { flex: 1 1 0; width: 300px; min-height: 0; background: var(--surface, #0f0f11) !important; border: 0 !important; border-radius: 14px !important; padding: 0 0 12px !important; overflow-y: auto; }
+@media (min-width: 1500px) { html:root .wx-market-layout .mc-rails > .mc-rail { flex: 0 0 290px; width: 290px; } }
+@media (max-width: 1099px) { html:root .wx-market-layout .mc-rails { display: none !important; } }
+html:root .wx-market-layout .mc-rail .mc-sec { background: transparent; border-radius: 0; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: visible; }
+html:root .wx-market-layout .mc-rail .mc-sec > header { position: sticky; top: 0; z-index: 1; background: var(--surface, #0f0f11); padding: 14px 14px 10px; gap: 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); }
+html:root .wx-market-layout .mc-rail .mc-sec > header strong { text-transform: none; letter-spacing: 0; font: 700 14px var(--font-sans); color: #fff; }
+html:root .wx-market-layout .mc-rail .mc-sec > header svg { width: 16px; height: 16px; }
 html:root .wx-market-layout .mc-rail .mc-call { width: calc(100% - 20px); margin: 0 10px 8px; padding: 12px; border-radius: 12px; background: var(--surface-2, #151517); gap: 8px; }
 html:root .wx-market-layout .mc-rail .mc-call:hover:not(:disabled) { background: var(--surface-3, #1c1c1f); }
 html:root .wx-market-layout .mc-rail .mc-call-top img, html:root .wx-market-layout .mc-rail .mc-call-top i { width: 28px; height: 28px; flex-basis: 28px; }

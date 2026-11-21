@@ -45,7 +45,7 @@ export const YOU: DocPage[] = [
       { t: "ul", items: [
         "Press **Follow** on a leaderboard card, a Hot shots poster or a profile. It turns into **Following**; press it again to unfollow.",
         "The **Following** filter on the [Leaderboard](/docs/leaderboard) shows only the people you follow.",
-        "On the Market screen, the **Called by traders you follow** panel shows their latest calls.",
+        "On the Market screen, the **Hot intel** panel shows their latest calls.",
         "You can get a notification when someone you follow trades or posts a call. See [Notifications, push and Telegram](/docs/notifications).",
       ] },
       { t: "p", text: "On a trader's page you also see their calls, their stats and what they are holding live. If their wallet is private, the page shows only what they made public. If they chose to **show their balance**, it sits at the very top of their page: portfolio value, a chart, cash and holdings, like the trader pages in other trading apps." },

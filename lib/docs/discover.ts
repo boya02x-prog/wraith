@@ -34,7 +34,7 @@ export const DISCOVER: DocPage[] = [
         "**The lightning button.** Quick buy, straight from the list. It uses your quick-buy amount and your cash balance.",
       ] },
       { t: "h2", text: "On a computer" },
-      { t: "p", text: "A rail on the left shows **Called by traders you follow** (recent calls from people you follow) and **Top signals now** (the scanner's best-scored tokens), so you can jump from the market to a call in one click." },
+      { t: "p", text: "Two panels of the same size sit to the left of the list on a wide screen: **Top signals now** (the scanner's best-scored tokens) and **Hot intel** (recent calls from traders you follow, or the latest from the community when you follow nobody), so you can jump from the market to a call in one click." },
       { t: "h2", text: "Top calls this week and your Wraith" },
       { t: "p", text: "The list opens with **Top calls this week**: the best calls Wraith made in the last seven days, each with how far it went from where it was called to its peak (**6.3x**, **1K to 1K**). Swipe through them, tap one to open the token, or tap **See all** for the full Wins screen. Above it, on a phone, sits **your Wraith** (see [Your profile](/docs/profile)); on a computer it is at the top of the left panel." },
       { t: "h2", text: "Saved tokens" },
