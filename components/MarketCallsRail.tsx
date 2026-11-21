@@ -18,7 +18,6 @@ import { useWraithTier } from "@/hooks/useWraithTier";
 import TierGlyph from "@/components/TierGlyph";
 import { TIERS } from "@/lib/tiers";
 import { defaultAvatar } from "@/lib/defaultArt";
-import YourWraith, { useWide } from "@/components/YourWraith";
 
 interface Callout {
   id: string;
@@ -112,10 +111,8 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
   const open = (mint: string, symbol: string, imageUrl?: string, mcap?: number, chain?: string) =>
     onSelectMeme({ keyword: symbol, score: 0, posts: 0, source: chain && chain !== "solana" ? chain : "calls", contractAddress: mint, tokenImageUrl: imageUrl, mcap });
 
-  const wide = useWide();
   return (
     <aside className="mc-rail" aria-label="Followed traders and signals">
-      {wide && <YourWraith variant="rail" />}
       <section className="mc-sec">
         <header><UsersRound size={14} /><strong>Called by traders you follow</strong></header>
         {state === "loading" ? (
