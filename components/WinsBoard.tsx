@@ -67,7 +67,8 @@ export default function WinsBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeT
     const local = readCalls().filter((c) => !serverSet.has(c.address));
     const merged = [...server, ...local].sort((a, b) => b.spottedAt - a.spottedAt);
     setCalls(merged);
-    if (server.length) swrWrite("wins:calls", merged.slice(0, 120));
+    // kept for the next first paint: every winner plus the newest calls (the whole list can be 300 calls, written every 15 seconds)
+    if (server.length) swrWrite("wins:calls", [...merged.filter((c) => peakMult(c) >= 2), ...merged.slice(0, 120)].filter((c, i, a) => a.findIndex((x) => x.address === c.address) === i));
     const mints = local.slice(0, 30).map((c) => c.address);
     if (!mints.length) return;
     setChecking(true);

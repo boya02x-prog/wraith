@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   try {
     // the stored calls are returned at once; re-pricing them (a slow job, throttled inside refreshCalls) happens after the answer is sent
     after(() => refreshCalls().catch((e) => console.error("[signal-calls refresh]", e)));
-    const calls = await listCalls(mint ? 1 : 120, mint || undefined);
+    // the whole 7-day record (about 200-300 calls), not only the newest 120: with the cap, a big winner called a few days ago (HOGE, 70x) dropped off the
+    // Wins page while the site header and the landing page still counted it
+    const calls = await listCalls(mint ? 1 : 600, mint || undefined);
     return edge(NextResponse.json({ calls, updatedAt: Date.now() }), 8, 30);
   } catch (e) {
     console.error("[signal-calls GET]", e);

@@ -115,12 +115,13 @@ async function sampleSignal(origin: string, calls: SignalCall[], now: number): P
 function shape(calls: SignalCall[], now: number) {
   const hit2 = calls.filter((c) => xOf(c) >= 2).length;
   const stats = { calls: calls.length, hit2, rate: calls.length ? Math.round((hit2 / calls.length) * 100) : 0 };
-  // Showcase the calls that STAYED up (still well above the call price now), not ones that spiked and dumped.
+  // The record shows the BEST calls by their best point after the call (the peak), like the Wins page. It used to rank by where each call stood
+  // right now, so a call that made 70x and then dipped slid down the list and the number shrank with it, which looked like it was not being recorded.
   const held = calls.filter((c) => nowOf(c) >= 1.5).sort((a, b) => nowOf(b) - nowOf(a));
-  const winCalls = held.length >= 3 ? held : calls.filter((c) => xOf(c) >= 1.5).sort((a, b) => xOf(b) - xOf(a));
+  const winCalls = calls.filter((c) => xOf(c) >= 1.5).sort((a, b) => xOf(b) - xOf(a));
   const wins = winCalls.slice(0, 8).map(slim);
   const recent = calls.filter((c) => c.spottedAt < now - 3_600_000).sort((a, b) => b.spottedAt - a.spottedAt).slice(0, 8).map(slim);
-  const topWin = held.find((c) => nowOf(c) >= 2) ?? calls.filter((c) => xOf(c) >= 2).sort((a, b) => xOf(b) - xOf(a))[0];
+  const topWin = winCalls.find((c) => xOf(c) >= 2) ?? held.find((c) => nowOf(c) >= 2);
   const win: TgBlock | null = topWin
     ? { html: winMessage(topWin, milestoneFor(topWin.lastMcap / topWin.spottedMcap) || 2), kb: tokenKeyboard(topWin.address, topWin.chain ?? "solana") }
     : null;

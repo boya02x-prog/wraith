@@ -70,3 +70,8 @@
 .wd2-from { display: grid; gap: 6px; }
 .wd2-from small { color: rgba(255, 255, 255, 0.5); font: 700 12.5px var(--font-sans); }
 .wd2-fine { margin: 0; text-align: center; color: rgba(255, 255, 255, 0.4); font: 600 12.5px/1.5 var(--font-sans); }
+
+/* ═══ the deposit / withdraw sheet: the close button no longer sits on top of the first row (the tabs); the content starts below it ═══ */
+html:root .is-sheet .wraith-account-modal-body { padding-top: 58px; }
+html:root .is-sheet .wraith-account-modal-heading { top: 12px; right: 12px; }
+html:root .is-sheet .wraith-modal-close { width: 36px; height: 36px; min-height: 0; padding: 0; border-radius: 12px !important; }

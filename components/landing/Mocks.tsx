@@ -3,7 +3,6 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import ChainLogo from "@/components/ChainLogo";
-import GhostSpot from "./GhostSpot";
 
 export interface Call { address: string; chain: string; symbol: string; imageUrl: string | null; tier: "HOT" | "WATCH"; score: number; spottedAt: number; spottedMcap: number; peakMcap: number; lastMcap: number; x: number; nowX?: number }
 export interface Candle { t: number; o: number; h: number; l: number; c: number; v?: number }
@@ -83,11 +82,11 @@ export function LiveBoard({ data, loading }: { data: LandingData | null; loading
           <div key={c.address} className="lp-board-row">
             <Coin c={c} />
             <div className="nm"><b>${c.symbol.toUpperCase()}</b><span><ChainLogo chain={c.chain} size={12} /> called at {fmtUsd(c.spottedMcap)}</span></div>
-            <div className="mx"><strong>{xf(nowMult(c))}</strong><span>now {fmtUsd(c.lastMcap)} · peak {fmtUsd(c.peakMcap)}</span></div>
+            <div className="mx"><strong>{xf(c.x)}</strong><span>peak {fmtUsd(c.peakMcap)} · now {fmtUsd(c.lastMcap)}</span></div>
           </div>
         ))}
       </div>
-      <p className="lp-board-foot">Measured from the market cap where Wraith flagged each token. Past results do not predict future ones.</p>
+      <p className="lp-board-foot">Best point after the call, measured from the market cap where Wraith flagged each token. Past results do not predict future ones.</p>
     </div>
   );
 }
@@ -156,14 +155,15 @@ export function PaperExample({ data }: { data: LandingData | null }) {
   if (!data) return <Skeleton rows={4} />;
   if (!c) return <Empty text="An example appears once a call has been tracked." />;
   const size = 100;
-  const nowX = c.spottedMcap > 0 ? c.lastMcap / c.spottedMcap : 1;
+  // the example uses the call's best point (its peak), so it does not shrink when the token dips later
+  const nowX = c.spottedMcap > 0 ? Math.max(c.peakMcap, c.lastMcap) / c.spottedMcap : 1;
   const pnl = (nowX - 1) * 100;
   return (
     <div className="lp-paper">
       <div className="lp-pos">
-        <div className="lp-pos-h"><b>${c.symbol.toUpperCase()}</b><span>Paper position · example from a real call</span></div>
+        <div className="lp-pos-h"><b>${c.symbol.toUpperCase()}</b><span>Paper position · a real call at its best point</span></div>
         <div className="lp-pos-grid">
-          <div><small>Entry</small><b>{fmtUsd(c.spottedMcap)}</b></div><div><small>Now</small><b>{fmtUsd(c.lastMcap)}</b></div>
+          <div><small>Entry</small><b>{fmtUsd(c.spottedMcap)}</b></div><div><small>Peak</small><b>{fmtUsd(Math.max(c.peakMcap, c.lastMcap))}</b></div>
           <div><small>Size</small><b>${size}</b></div><div><small>Value</small><b>${(size * nowX).toFixed(0)}</b></div>
           <div><small>Stop loss</small><b>you set</b></div><div><small>Take profit</small><b>you set</b></div>
         </div>
@@ -190,7 +190,7 @@ export function WinsReal({ data }: { data: LandingData | null }) {
         <div key={c.address} className="lp-win">
           <span className="id"><Coin c={c} /><b>${c.symbol.toUpperCase()}</b><ChainLogo chain={c.chain} size={13} /></span>
           <i style={{ color: TIER_COLOR[c.tier], borderColor: TIER_COLOR[c.tier] }}>{c.tier}</i>
-          <em>{xf(nowMult(c))}</em>
+          <em>{xf(c.x)}</em>
         </div>
       ))}
     </div>
@@ -320,8 +320,6 @@ export function HeroStage({ data, loading }: { data: LandingData | null; loading
       {ch && ch.candles.length >= 8 && (
         <div className="lp-float chart"><ChartReal data={data} /></div>
       )}
-      {/* the app's own 3D Wraith, waving beside the board (wide screens only; tap it for an emote) */}
-      <GhostSpot className="lp-mascot" when="idle" pose="wave" />
     </div>
   );
 }
