@@ -27,3 +27,9 @@ html:root .fi-actions button.save.on, html:root .fp-feed .fp-actions button.save
 
 /* the light beside "Live" turns grey while the rows are held in place under the pointer */
 .wx-live i.held { background: var(--text-dim, rgba(255, 255, 255, 0.4)); animation: none; box-shadow: none; }
+
+/* Market category tabs (Trending / New / Gainers / Top Volume): a slim row on a computer, the filter row tucked close under it */
+@media (min-width: 900px) {
+  html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { padding: 7px 14px !important; min-height: 0 !important; font-size: 13.5px !important; line-height: 1.2; }
+  html:root .wraith-dashboard .wx-board-bar { padding-top: 6px !important; padding-bottom: 6px !important; gap: 8px 12px !important; }
+}

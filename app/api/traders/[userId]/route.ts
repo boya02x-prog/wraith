@@ -42,7 +42,7 @@ export async function GET(
     let profile = null;
     if (/^[a-f\d]{24}$/i.test(userId)) {
       profile = await db.collection("profiles").findOne(
-        { userId, publicTrading: true },
+        { userId },
         {
           projection: {
             _id: 0,
@@ -55,6 +55,7 @@ export async function GET(
             avatarUrl: 1,
             coverDataUrl: 1,
             frame: 1,
+            publicTrading: 1,
             updatedAt: 1,
           },
         },
@@ -66,7 +67,7 @@ export async function GET(
       if (!/^[A-Za-z0-9_.-]{1,32}$/.test(handle)) return NextResponse.json({ error: "Trader not found" }, { status: 404 });
       const safeHandle = handle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       profile = await db.collection("profiles").findOne(
-        { username: new RegExp(`^${safeHandle}$`, "i"), publicTrading: true },
+        { username: new RegExp(`^${safeHandle}$`, "i") },
         {
           projection: {
             _id: 0,
@@ -79,6 +80,7 @@ export async function GET(
             avatarUrl: 1,
             coverDataUrl: 1,
             frame: 1,
+            publicTrading: 1,
             updatedAt: 1,
           },
         },
@@ -123,7 +125,9 @@ export async function GET(
         tier = u.tier;
       }
     } catch { /* badge is optional */ }
-    const allTrades: Trade[] = Array.isArray(tradeDoc?.trades)
+    // someone who keeps their trading private still has a page (they show up in follower lists, and you can follow them): their trades stay hidden
+    const isPublic = profile.publicTrading === true;
+    const allTrades: Trade[] = isPublic && Array.isArray(tradeDoc?.trades)
       ? tradeDoc.trades
       : [];
     const closedTrades = allTrades
@@ -133,7 +137,7 @@ export async function GET(
           trade.status !== "failed",
       )
       .slice(0, 100);
-    const openPositions: Position[] = Array.isArray(positionDoc?.positions)
+    const openPositions: Position[] = isPublic && Array.isArray(positionDoc?.positions)
       ? positionDoc.positions
           .filter(
             (position: Position) => position.status === "watching",
@@ -143,6 +147,7 @@ export async function GET(
 
     const viewer = await getPrivySession().catch(() => null);
     return NextResponse.json({
+      private: !isPublic,
       isSelf: !!viewer?.user?.id && viewer.user.id === profile.userId,
       trader: {
         userId: profile.userId,

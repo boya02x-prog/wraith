@@ -5,6 +5,8 @@
 //  - <YourWraith> is yours: it reads your numbers itself and sits on the Market screen (top of the left panel on a computer, top of the list on a phone).
 //  - <WraithPetCard> is the same card for anyone else's numbers (a trader's profile).
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+import { Maximize2, X } from "lucide-react";
 import Wraith3D from "@/components/Wraith3D";
 import { useCash } from "@/lib/cash";
 import { genomeOf, lookOf, moodOf, petKey, type PetLook, type PetStats } from "@/lib/wraithPet";
@@ -26,6 +28,38 @@ function framing(l: PetLook): { zoom: number; lift: number } {
   return { zoom: 0.86, lift: 0.34 };
 }
 
+/** the big view of a pet: tap the little one and it comes up large on its own stage (a separate 3D scene, so the card's keeps running) */
+function PetViewer({ look, hue, title, name, line, chips, facts, onClose }: { look: PetLook; hue: number; title: string; name: string; line: string; chips: { t: string; earned: boolean }[]; facts: { k: string; v: string }[]; onClose: () => void }) {
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", key);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", key); document.body.style.overflow = prev; };
+  }, [onClose]);
+  const { zoom, lift } = framing(look);
+  // (a slightly different zoom is a different scene key: the card keeps its own scene and canvas)
+  return createPortal(
+    <div className="pv" role="dialog" aria-modal="true" aria-label={title} onClick={onClose}>
+      <div className="pv-card" onClick={(e) => e.stopPropagation()} style={{ "--pet-hue": `${Math.round(hue * 360)}deg` } as React.CSSProperties}>
+        <button type="button" className="pv-x" onClick={onClose} aria-label="Close"><X size={18} /></button>
+        <div className="pv-stage">
+          <Wraith3D pose="wave" podium={0} confetti={0} spotlight={false} zoom={+(zoom * 1.12).toFixed(3)} lift={lift} pet={look} poster="/mascot/wraith-wave.webp" alt={`${title}: ${name}`} />
+          <span className="pv-hint">Move around or tap it</span>
+        </div>
+        <div className="pv-info">
+          <small>{title}</small>
+          <b>{name}</b>
+          <p>{line}</p>
+          {chips.length > 0 && <div className="yw-chips">{chips.map((c) => <span key={c.t} className={c.earned ? "earned" : undefined}>{c.t}</span>)}</div>}
+          {facts.length > 0 && <dl className="pv-facts">{facts.map((f) => <div key={f.k}><dt>{f.k}</dt><dd>{f.v}</dd></div>)}</dl>}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function WraithPetCard({ seed, stats, title, variant, fmtMoney }: { seed: string; stats: PetStats | null; title: string; variant: "rail" | "card" | "profile"; fmtMoney?: (sol: number) => string }) {
   const read = useMemo(() => {
     const g = genomeOf(seed, stats);
@@ -41,9 +75,17 @@ export function WraithPetCard({ seed, stats, title, variant, fmtMoney }: { seed:
   // (the narrow left panel has room for the one thing it earned, nothing more)
   const earnedChips = read.g.earned.slice(0, variant === "rail" ? 1 : 2).map((t) => ({ t, earned: true }));
   const chips = variant === "rail" ? earnedChips : [...earnedChips, { t: closed ? `${closed} ${closed === 1 ? "trade" : "trades"}` : "No trades yet", earned: false }];
+  const [big, setBig] = useState(false);
+  const facts: { k: string; v: string }[] = [];
+  if (closed) facts.push({ k: "Trades", v: String(closed) });
+  if (stats?.winRate != null) facts.push({ k: "Win rate", v: `${Math.round(stats.winRate)}%` });
+  if (stats?.rank != null && stats.of) facts.push({ k: "Rank", v: `#${stats.rank} of ${stats.of}` });
+  if (stats?.bestPct) facts.push({ k: "Best call", v: `+${Math.round(stats.bestPct)}%` });
   return (
     <section className={`yw yw-${variant}`} aria-label={title}>
-      <div className="yw-pet" style={{ "--pet-hue": `${Math.round(look.hue * 360)}deg` } as React.CSSProperties}>
+      {big && <PetViewer look={look} hue={look.hue} title={title} name={read.m.title} line={read.m.line} chips={[...earnedChips, ...read.g.earned.slice(earnedChips.length).map((t) => ({ t, earned: true }))]} facts={facts} onClose={() => setBig(false)} />}
+      <div className="yw-pet" role="button" tabIndex={0} aria-label={`Look at ${title} up close`} onClick={() => setBig(true)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setBig(true); } }} style={{ "--pet-hue": `${Math.round(look.hue * 360)}deg` } as React.CSSProperties}>
+        <span className="yw-zoom" aria-hidden="true"><Maximize2 size={12} /></span>
         <Wraith3D pose="wave" podium={0} confetti={0} spotlight={false} zoom={zoom} lift={lift} pet={look} poster="/mascot/wraith-wave.webp" alt={`${title}: ${read.m.title}`} />
       </div>
       <div className="yw-info">

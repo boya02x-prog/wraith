@@ -51,6 +51,7 @@ type PublicTrade = {
 
 type TraderDetails = {
   isSelf?: boolean;
+  private?: boolean;
   trader: {
     userId: string;
     username: string | null;
@@ -320,13 +321,13 @@ export default function PublicTraderPage() {
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
               </button>
-              <TraderFollowButton
+              {!data.private && <TraderFollowButton
                 traderId={trader.userId}
                 onChange={(_following, followers) => {
                   if (followers === undefined) return;
                   setData((d) => d ? { ...d, trader: { ...d.trader, followerCount: followers } } : d);
                 }}
-              />
+              />}
               </div>
             </div>
 
@@ -335,7 +336,7 @@ export default function PublicTraderPage() {
             <div className="pub-meta-bar">
               <span className="pub-meta-item">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                {data.closedTrades.length + data.openPositions.length} trades
+                {data.private ? "Private trading" : `${data.closedTrades.length + data.openPositions.length} trades`}
               </span>
               {joinedLabel && (
                 <span className="pub-meta-item">
@@ -358,6 +359,11 @@ export default function PublicTraderPage() {
           </div>
         </div>
 
+        {data.private ? (
+          <div className="pub-empty" style={{ margin: "18px 0", padding: "28px 16px", textAlign: "center" }}>
+            {trader.displayName} keeps their trading private, so there is nothing to show here.
+          </div>
+        ) : (<>
         {/* ── their Wraith: a 3D pet whose look and mood come from how they trade ── */}
         <WraithPetCard seed={trader.userId} stats={pet} title={`${trader.displayName}'s Wraith`} variant="profile" fmtMoney={petMoney} />
 
@@ -505,6 +511,7 @@ export default function PublicTraderPage() {
             )}
           </div>
         </div>
+        </>)}
 
       </div>
 

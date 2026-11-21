@@ -570,11 +570,12 @@ html.wraith-blur-balances :is(
 .wx-warn ul { margin: 0; padding: 0 12px 12px 32px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-muted); list-style: disc; }
 .wx-warn li b { color: var(--text); font-weight: 600; }
 
-/* Market rail: two equal halves, each scrolls on its own */
-.wx-market-layout .mc-rail { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
-.wx-market-layout .mc-rail .mc-sec { flex: 1 1 0; min-height: 0; overflow-y: auto; margin-top: 0; padding-top: 0; padding-bottom: 12px; }
-.wx-market-layout .mc-rail .mc-sec + .mc-sec { margin-top: 0; padding-top: 0; }
-.wx-market-layout .mc-rail .mc-sec > header { position: sticky; top: 0; z-index: 1; background: var(--surface); padding-top: 14px; }
+/* Market rail: one panel that scrolls as a whole (the pet card, the feed and the signals each take the room they need, no little scroll boxes inside) */
+.wx-market-layout .mc-rail { display: block; overflow-y: auto; overflow-x: hidden; padding-bottom: 16px; scrollbar-width: thin; }
+.wx-market-layout .mc-rail .mc-sec { flex: none; min-height: 0; overflow: visible; margin-top: 0; padding-top: 0; padding-bottom: 8px; }
+.wx-market-layout .mc-rail .mc-sec + .mc-sec { margin-top: 6px; padding-top: 0; }
+.wx-market-layout .mc-rail .mc-sec > header { position: static; padding-top: 14px; }
+.wx-market-layout .mc-rail .mc-sec:first-of-type, .wx-market-layout .mc-rail .yw + .mc-sec { padding-bottom: 4px; }
 
 /* Sub-nav: no white focus box on the active tab */
 .wx-subnav button:focus, .wx-subnav button:focus-visible { outline: none; box-shadow: none; }
