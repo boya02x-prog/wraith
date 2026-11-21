@@ -17,13 +17,13 @@ html:root {
   --radius-control: 12px; /* the app-wide button radius (globals.css, .wraith-dashboard button) */
   --radius-card: 14px;
   /* the surface steps every older stylesheet already reads (var(--surface) ...): lighter than the page, outlines almost gone */
-  --surface: #131315;
-  --surface-2: #1a1a1d;
-  --surface-3: #232327;
+  --surface: #0f0f11;
+  --surface-2: #151517;
+  --surface-3: #1c1c1f;
   --border: rgba(255, 255, 255, .05);
   --border-strong: rgba(255, 255, 255, .1);
-  --sk-card: #131315;
-  --sk-inner: #1a1a1d;
+  --sk-card: #0f0f11;
+  --sk-inner: #151517;
   --sk-fill: rgba(255, 255, 255, .07);
   --sk-fill-2: rgba(255, 255, 255, .11);
   --sk-line: rgba(255, 255, 255, .06);
@@ -370,7 +370,7 @@ html:root .wx-cs-rq-ico { border: 0 !important; background: var(--surface-2); }
 @media (prefers-reduced-motion: reduce) { .wx-sicon, .wx-sicon * { transition: none !important; } html:root .wx-cs-drop, html:root .wx-cs-inputrow { animation: none !important; } }
 
 /* search bar parts share ONE colour (the bar, the round button and the field were three different greys, so the change did not read as one thing) */
-html:root { --sk-bar: #1c1c20; }
+html:root { --sk-bar: #161619; }
 @media (max-width: 767px) {
   html:root .wx-tabbar-pill { background: var(--sk-bar) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .5) !important; }
   html:root .wx-tabbar-search, html:root .wx-tabbar-search.is-open { background: var(--sk-bar) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .5) !important; }

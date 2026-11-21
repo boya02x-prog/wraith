@@ -1343,7 +1343,7 @@ html { scroll-behavior: smooth; }
 .wx-td-amt:focus { outline: 0 !important; border-color: rgba(var(--accent-rgb), .6) !important; }
 .wx-td-presets { gap: 8px !important; margin-top: 10px !important; }
 .wx-td-preset { padding: 10px 2px !important; border-radius: 10px !important; background: #0d0d0f !important; font-weight: 600 !important; transition: background-color .15s ease !important; }
-.wx-td-preset:hover:not(:disabled) { background: #131315 !important; }
+.wx-td-preset:hover:not(:disabled) { background: #0f0f11 !important; }
 .wx-td-note { margin-top: 12px !important; padding: 12px 14px !important; border-radius: 12px !important; border: 1px solid rgba(255, 255, 255, .06) !important; background: #0b0b0c !important; line-height: 1.55 !important; }
 .wx-td-exit { margin-top: 12px !important; padding: 13px 14px !important; border-radius: 12px !important; background: #0d0d0f; border-color: rgba(255, 255, 255, .07) !important; transition: border-color .2s ease; }
 .wx-td-exit.on { border-color: rgba(var(--accent-rgb), .5) !important; }

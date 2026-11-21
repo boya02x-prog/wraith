@@ -22,7 +22,7 @@
 .wd2-chips button:disabled { opacity: 0.45; }
 
 .wd2-netwrap { position: relative; }
-.wd2-net { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--surface-2, #1a1a1d); color: #fff; text-align: left; cursor: pointer; }
+.wd2-net { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--surface-2, #151517); color: #fff; text-align: left; cursor: pointer; }
 .wd2-net .t { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .wd2-net .t small { color: rgba(255, 255, 255, 0.5); font: 600 12px var(--font-sans); }
 .wd2-net .t b { font: 750 15px var(--font-sans); }
@@ -44,7 +44,7 @@
 .wd2-h { margin: 0; color: #fff; font: 800 26px/1.15 var(--font-sans); letter-spacing: -0.025em; }
 .wd2-lead { margin: -6px 0 0; color: rgba(255, 255, 255, 0.6); font: 600 15px/1.5 var(--font-sans); }
 .wd2-lead b { color: #fff; }
-.wd2-addr { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-radius: 14px; background: var(--surface-2, #1a1a1d); box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow 0.15s; }
+.wd2-addr { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-radius: 14px; background: var(--surface-2, #151517); box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow 0.15s; }
 .wd2-addr.ok { box-shadow: inset 0 0 0 1.5px rgba(61, 220, 151, 0.6); }
 .wd2-addr.bad { box-shadow: inset 0 0 0 1.5px rgba(255, 107, 98, 0.6); }
 .wd2-addr input { flex: 1; min-width: 0; height: 48px; padding: 0; border: 0; outline: 0; background: transparent; color: #fff; font-family: var(--font-code), ui-monospace, monospace; }
@@ -54,14 +54,14 @@
 .wd2-valid.bad { color: #ff8a80; }
 .wd2-recent { display: grid; gap: 6px; }
 .wd2-recent small { color: rgba(255, 255, 255, 0.5); font: 700 12.5px var(--font-sans); }
-.wd2-recent button { padding: 12px 14px; border: 0; border-radius: 12px; background: var(--surface-2, #1a1a1d); color: #fff; text-align: left; font: 600 13.5px var(--font-code), ui-monospace, monospace; cursor: pointer; }
+.wd2-recent button { padding: 12px 14px; border: 0; border-radius: 12px; background: var(--surface-2, #151517); color: #fff; text-align: left; font: 600 13.5px var(--font-code), ui-monospace, monospace; cursor: pointer; }
 .wd2-warn { padding: 12px 14px; border-radius: 12px; background: rgba(245, 165, 36, 0.1); color: #ffd28a; font: 600 13.5px/1.5 var(--font-sans); }
 .wd2-warn b { color: #fff; }
 
 .wd2-big { display: grid; justify-items: center; gap: 4px; padding: 6px 0 2px; }
 .wd2-big span { color: rgba(255, 255, 255, 0.55); font: 700 13px var(--font-sans); }
 .wd2-big b { color: #fff; font: 800 46px/1 var(--font-sans); letter-spacing: -0.04em; }
-.wd2-rows { display: grid; border-radius: 14px; background: var(--surface-2, #1a1a1d); }
+.wd2-rows { display: grid; border-radius: 14px; background: var(--surface-2, #151517); }
 .wd2-rows > div { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 13px 16px; }
 .wd2-rows > div + div { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
 .wd2-rows span { flex: none; color: rgba(255, 255, 255, 0.55); font: 650 14px var(--font-sans); }

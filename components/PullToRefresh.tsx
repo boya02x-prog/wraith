@@ -88,7 +88,7 @@ export default function PullToRefresh() {
         position: "fixed", top: "calc(var(--sai-top) + 8px)", left: "50%", zIndex: 5000, pointerEvents: "none",
         transform: `translate(-50%, ${Math.min(pull, 70) - 40}px)`, opacity: Math.min(1, pull / 40),
         width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center",
-        background: "var(--surface-2, #1a1a1d)", border: "1px solid var(--border)", boxShadow: "0 6px 18px rgba(0,0,0,.5)",
+        background: "var(--surface-2, #151517)", border: "1px solid var(--border)", boxShadow: "0 6px 18px rgba(0,0,0,.5)",
         transition: busy ? "none" : "opacity .1s",
       }}
     >

@@ -1,7 +1,7 @@
 /* ═════════ Everyone's own Wraith (components/YourWraith.tsx): the 3D pet and its card ═════════
    Flat like the rest: a tonal card, no outline, no glow. The pet is drawn with a transparent background over a tonal tile. */
-.yw { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--surface, #131315); }
-.yw-pet { position: relative; flex: none; width: 124px; height: 150px; border-radius: 12px; background: var(--surface-2, #1a1a1d); overflow: hidden; }
+.yw { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--surface, #0f0f11); }
+.yw-pet { position: relative; flex: none; width: 124px; height: 150px; border-radius: 12px; background: var(--surface-2, #151517); overflow: hidden; }
 .yw-pet .w3d { position: absolute; inset: 0; }
 /* a pet is its own picture: the standard ghost poster only shows on a device that cannot draw 3D (then tinted toward the pet's colour) */
 .w3d.is-pet:not(.is-still) .w3d-poster { display: none; }
@@ -38,9 +38,9 @@ html:root .wk header button:hover { color: #fff; }
 .wk-row::-webkit-scrollbar { display: none; }
 html:root .wk-card {
   flex: none; width: 138px; min-height: 0; display: grid; justify-items: start; gap: 4px; padding: 12px; border: 0; border-radius: 14px; scroll-snap-align: start;
-  background: var(--surface, #131315); color: #fff; text-align: left; cursor: pointer; transition: background 0.12s, transform 0.12s;
+  background: var(--surface, #0f0f11); color: #fff; text-align: left; cursor: pointer; transition: background 0.12s, transform 0.12s;
 }
-html:root .wk-card:hover { background: var(--surface-2, #1a1a1d); }
+html:root .wk-card:hover { background: var(--surface-2, #151517); }
 html:root .wk-card:active { transform: scale(0.985); }
 .wk-card .wk-sym { margin-top: 6px; font: 800 14px/1.1 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .wk-card .wk-x { color: var(--sk-up, #3ddc97); font: 800 22px/1.05 var(--font-sans); letter-spacing: -0.02em; }

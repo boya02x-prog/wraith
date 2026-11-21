@@ -11,8 +11,8 @@
   --dx-side: 276px;
   --dx-toc: 248px;
   --dx-gut: max(0px, calc((100vw - 1480px) / 2)); /* centres the whole frame on very wide screens */
-  --dx-card: #131315;
-  --dx-card-2: #1a1a1d;
+  --dx-card: #0f0f11;
+  --dx-card-2: #151517;
   --dx-line: rgba(255, 255, 255, 0.06);
   --dx-t2: rgba(255, 255, 255, 0.76);
   --dx-t3: rgba(255, 255, 255, 0.48);

@@ -1,6 +1,6 @@
 /* ═════════════════════ The token card on hover (components/TokenHoverHost.tsx) ═════════════════════
    Flat, like the other cards: one tonal step above the page, no outline, no glow, just a shadow so it lifts off the list underneath. */
-.th { position: fixed; z-index: 10050; width: 330px; padding: 14px 14px 12px; border-radius: 14px; background: #1c1c20; box-shadow: 0 18px 54px rgba(0, 0, 0, 0.6); color: #fff; font-family: var(--font-sans); transition: opacity 0.12s; animation: th-in 0.14s ease both; }
+.th { position: fixed; z-index: 10050; width: 330px; padding: 14px 14px 12px; border-radius: 14px; background: #161619; box-shadow: 0 18px 54px rgba(0, 0, 0, 0.6); color: #fff; font-family: var(--font-sans); transition: opacity 0.12s; animation: th-in 0.14s ease both; }
 @keyframes th-in { from { transform: translateY(4px) scale(0.985); } to { transform: none; } }
 .th-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .th-name { flex: 1; min-width: 0; display: grid; gap: 2px; }

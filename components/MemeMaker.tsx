@@ -13,7 +13,7 @@ const BACKGROUNDS: { id: string; label: string; draw: (c: CanvasRenderingContext
   { id: "ghost", label: "Ghost", draw: (c, img) => { grad(c, "#1a0f0a", "#0c0c0d"); if (img) c.drawImage(img, SIZE * 0.25, SIZE * 0.18, SIZE * 0.5, SIZE * 0.64); } },
   { id: "pump", label: "Pump", draw: (c) => { grad(c, "#06210f", "#0c0c0d"); line(c, [[0, .85], [.2, .75], [.35, .8], [.55, .5], [.7, .55], [1, .12]], "#22c55e"); } },
   { id: "rug", label: "Rug", draw: (c) => { grad(c, "#250a0a", "#0c0c0d"); line(c, [[0, .2], [.3, .25], [.5, .22], [.62, .8], [.8, .85], [1, .95]], "#ef4444"); } },
-  { id: "plain", label: "Plain", draw: (c) => grad(c, "#1a1a1d", "#0c0c0d") },
+  { id: "plain", label: "Plain", draw: (c) => grad(c, "#151517", "#0c0c0d") },
 ];
 function grad(c: CanvasRenderingContext2D, a: string, b: string) {
   const g = c.createLinearGradient(0, 0, 0, SIZE);

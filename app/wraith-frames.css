@@ -97,13 +97,13 @@
 .fp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 .fp-tile {
   position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; padding: 14px 4px 10px; border: 0; border-radius: 12px;
-  background: var(--surface-2, #1a1a1d); color: #fff; cursor: pointer; text-align: center;
+  background: var(--surface-2, #151517); color: #fff; cursor: pointer; text-align: center;
 }
-.fp-tile:hover { background: var(--surface-3, #232327); }
+.fp-tile:hover { background: var(--surface-3, #1c1c1f); }
 .fp-tile.on { background: rgba(var(--accent-rgb, 255, 123, 61), 0.18); }
 .fp-tile.locked { opacity: 0.45; cursor: not-allowed; }
 .fp-av { width: 46px; height: 46px; margin-bottom: 8px; }
-.fp-av img { width: 100%; height: 100%; object-fit: cover; background: var(--surface-3, #232327); }
+.fp-av img { width: 100%; height: 100%; object-fit: cover; background: var(--surface-3, #1c1c1f); }
 .fp-tile b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 12.5px/1.2 var(--font-sans); }
 .fp-tile small { max-width: 100%; font: 600 10.5px/1.25 var(--font-sans); color: rgba(255, 255, 255, 0.5); }
 .fp-check { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent, #ff7b3d); color: #1a0b03; }
