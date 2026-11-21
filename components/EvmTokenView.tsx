@@ -5,7 +5,7 @@
 // Trading on these chains is handled separately (cross-chain buy from the unified cash balance).
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, Bookmark, Check, Copy, ExternalLink, Flame, Globe, Link2, Search, Send } from "lucide-react";
+import { Activity, Check, Copy, ExternalLink, Flame, Globe, Link2, Search, Send, Star } from "lucide-react";
 import { usePresence } from "@/lib/usePresence";
 import SheetBoundary from "@/components/SheetBoundary";
 import TokenChart from "@/components/TokenChart";
@@ -222,13 +222,13 @@ export default function EvmTokenView({ address, sidebar, mobile = false }: { add
               <a href={`${chain.explorer}/token/${address}`} target="_blank" rel="noopener noreferrer" className="wx-icon-btn" aria-label="Block explorer" title="Block explorer"><ExternalLink size={14} /></a>
               <button
                 type="button"
-                className={`wx-icon-btn${saved ? " active" : ""}`}
+                className={`wx-icon-btn wx-save${saved ? " active" : ""}`}
                 aria-pressed={saved}
-                aria-label={saved ? "Remove bookmark" : "Bookmark"}
+                aria-label={saved ? "Remove from saved" : "Save token"}
                 title={saved ? "Saved" : "Save token"}
                 onClick={() => toggleTokenFavorite({ keyword: snap.symbol, score: 0, posts: 0, source: chain.key, contractAddress: address, tokenImageUrl: snap.imageUrl ?? undefined, mcap: snap.marketCap ?? undefined })}
               >
-                <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+                <Star size={14} fill={saved ? "currentColor" : "none"} />
               </button>
               <button type="button" className="wx-icon-btn" onClick={() => copy("link")} aria-label="Copy page link" title="Copy link">{copied === "link" ? <Check size={14} /> : <Link2 size={14} />}</button>
             </div>

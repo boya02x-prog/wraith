@@ -11,7 +11,7 @@ export const TRADE: DocPage[] = [
       { t: "ul", items: [
         "**Name and network.** The ticker, a small network logo and (for Solana tokens) the launchpad it came from. The full name sits underneath with the **contract address**; tap it to copy.",
         "**Badges.** **Bonding curve** means the token is still on its launch curve, **Graduated** that it moved to a normal trading pool, and **delayed** that the price data is a little behind.",
-        "**Icon buttons.** The token's website, X and Telegram when it has them; an external link (pump.fun for pump.fun tokens, DexScreener for the rest); **Copy link** for this page; the **bell** for [price alerts](/docs/price-alerts); and the **bookmark** to save the token so you can find it again in Search.",
+        "**Icon buttons.** The token's website, X and Telegram when it has them; an external link (pump.fun for pump.fun tokens, DexScreener for the rest); **Copy link** for this page; the **bell** for [price alerts](/docs/price-alerts); and the **star** to save the token (it then sits in the saved bar on a computer, and you can find it again in Search).",
         "**Market cap.** The big number is what the whole supply is worth now. A small green dot means the price feed is live. Next to it, **5m, 1h, 6h and 24h** show how the price moved over those windows.",
         "**Spotted.** If Wraith flagged this token, a yellow strip says when, at what market cap, and what it is now as a multiple. This is the same record as the [Wins](/docs/wins) page.",
         "**Lookalikes.** A chip such as **5 lookalikes** means other tokens share its name or ticker. Open it to see them, and which one links the same X account. Copycats are common, so check this before you buy.",

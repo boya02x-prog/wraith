@@ -9,7 +9,7 @@ import { safetyBand } from "@/lib/scoreBand";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { visibleInterval } from "@/lib/visibleInterval";
 import { createPortal } from "react-dom";
-import { ArrowLeft, Bookmark, Check, Copy, ExternalLink, Globe, Link2, Send } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Globe, Link2, Send, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { MemeTrend } from "@/app/app/page";
 import TokenChart from "@/components/TokenChart";
@@ -715,8 +715,8 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
             {copied === "link" ? <Check size={14} /> : <Link2 size={14} />}
           </button>
           <PriceAlertButton mint={mint} symbol={symbol} />
-          <button type="button" className={`wx-icon-btn${saved ? " active" : ""}`} onClick={toggleSave} aria-pressed={saved} aria-label={saved ? "Remove bookmark" : "Bookmark"} title={saved ? "Saved" : "Save token"}>
-            <Bookmark size={14} fill={saved ? "currentColor" : "none"} />
+          <button type="button" className={`wx-icon-btn wx-save${saved ? " active" : ""}`} onClick={toggleSave} aria-pressed={saved} aria-label={saved ? "Remove from saved" : "Save token"} title={saved ? "Saved" : "Save token"}>
+            <Star size={14} fill={saved ? "currentColor" : "none"} />
           </button>
         </div>
       </header>

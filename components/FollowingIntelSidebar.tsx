@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, Heart, MessageCircle, Repeat2, Rss, Send, Smile, X } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Rss, Send, Smile, Star, X } from "lucide-react";
 import StickerSheet from "@/components/StickerSheet";
 import { Face as PostFace, TokenCard, isFresh, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
 import { useTokenMeta, type TokenMeta } from "@/lib/useTokenMeta";
@@ -311,7 +311,7 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
                     <Repeat2 size={15} /> {c.reposts > 0 && <span>{c.reposts}</span>}
                   </button>
                   <button type="button" className={isSaved ? "on save" : ""} onClick={() => save(c)} aria-label={isSaved ? "Remove saved token" : "Save token"} title={isSaved ? "Saved. Click to remove" : "Save this token"} aria-pressed={isSaved}>
-                    <Bookmark size={14} fill={isSaved ? "currentColor" : "none"} />
+                    <Star size={14} fill={isSaved ? "currentColor" : "none"} />
                   </button>
                   {(m?.mcap || c.mcapAtPost) ? <span className="fp-mc"><b>{mcapLabel(m?.mcap || c.mcapAtPost)}</b> MC</span> : null}
                 </div>

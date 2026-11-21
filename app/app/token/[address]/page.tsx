@@ -6,7 +6,7 @@ import { usePresence } from "@/lib/usePresence";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import BookmarkBtn from "@/components/BookmarkBtn";
-import { Activity, Bookmark, Flame, Radar, Search, Wallet } from "lucide-react";
+import { Activity, Flame, Radar, Search, Star, Wallet } from "lucide-react";
 import { ToastProvider } from "@/components/Toast";
 import type { MemeTrend } from "@/app/app/page";
 import { readTokenNav, cacheTokenNav } from "@/lib/tokenNav";
@@ -50,7 +50,7 @@ type MobileTab = "chart" | "trade" | "market";
 const SIDE_TABS: { key: SideTab; label: string; icon: React.ReactNode }[] = [
   { key: "tokens", label: "Market", icon: <Flame size={13} /> },
   { key: "signals", label: "Signals", icon: <Radar size={13} /> },
-  { key: "saved", label: "Saved", icon: <Bookmark size={13} /> },
+  { key: "saved", label: "Saved", icon: <Star size={13} /> },
 ];
 
 export default function TokenPage() {
@@ -179,7 +179,7 @@ export default function TokenPage() {
               ))}
             </div>
           ) : (
-            <div className="wx-empty small"><span>Bookmark a token to keep it here.</span></div>
+            <div className="wx-empty small"><span>Star a token to keep it here.</span></div>
           ))}
       </div>
     </>

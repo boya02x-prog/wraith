@@ -133,7 +133,7 @@ function ScoreRing({ score, tier, locked }: { score: number; tier: "HOT" | "WATC
 function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; showScore: boolean }) {
   const t = s.token;
   return (
-    <div className="sg-card" data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined} data-tier={s.tier} data-dir={(t.change.h1 ?? 0) >= 0 ? "up" : "down"} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
+    <div className="sg-card" data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined} data-hover-img={t.imageUrl} data-tier={s.tier} data-dir={(t.change.h1 ?? 0) >= 0 ? "up" : "down"} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
       <div className="sg-card-top">
         <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={44} chain={t.chain ?? "solana"} />
         <div className="sg-id">
@@ -169,7 +169,7 @@ function CardBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; sho
 function ListRowBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; showScore: boolean }) {
   const t = s.token;
   return (
-    <div className="wx-trow sg-trow" data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
+    <div className="wx-trow sg-trow" data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined} data-hover-img={t.imageUrl} role="link" tabIndex={0} onClick={onOpen} onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}>
       <span className="wx-trow-id">
         <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={32} chain={t.chain ?? "solana"} />
         <span>
@@ -190,7 +190,7 @@ function ListRowBase({ s, onOpen, showScore }: { s: Signal; onOpen: () => void; 
 function RailRowBase({ s, onOpen }: { s: Signal; onOpen: () => void }) {
   const t = s.token;
   return (
-    <button type="button" className="sg-rail-row" onClick={onOpen} data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined}>
+    <button type="button" className="sg-rail-row" onClick={onOpen} data-hover-mint={!t.chain || t.chain === "solana" ? t.address : undefined} data-hover-img={t.imageUrl}>
       <TokenIcon contractAddress={t.address} imageUrl={t.imageUrl} symbol={t.symbol} size={34} chain={t.chain ?? "solana"} />
       <span className="mid">
         <strong>{t.symbol}</strong>

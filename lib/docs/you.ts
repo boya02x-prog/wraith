@@ -116,7 +116,7 @@ export const YOU: DocPage[] = [
       { t: "table", head: ["Switch", "You are told when"], rows: [
         ["Traders", "Someone you follow trades"],
         ["Callouts", "Someone posts a call"],
-        ["Saved tokens", "Something happens on a token you bookmarked"],
+        ["Saved tokens", "Something happens on a token you starred (saved)"],
         ["Signals", "The scanner makes a call"],
       ] },
       { t: "p", text: "Price alerts always use push. See [Price alerts](/docs/price-alerts)." },

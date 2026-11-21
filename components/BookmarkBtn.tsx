@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Star } from "lucide-react";
 import type { MemeTrend } from "@/app/app/page";
 import { readTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
 
-/** One-click save / unsave straight from any token row. Stays in sync with every other bookmark on the page. */
+/** One-click save / unsave straight from any token row, drawn as a star (the same star as the "Saved" bar, so saving looks the same everywhere). Stays in sync with every other save button on the page. */
 export default function BookmarkBtn({ meme, size = 15 }: { meme: MemeTrend; size?: number }) {
   const addr = meme.contractAddress ?? "";
   const [on, setOn] = useState(false);
@@ -26,7 +26,7 @@ export default function BookmarkBtn({ meme, size = 15 }: { meme: MemeTrend; size
       title={on ? "Saved. Click to remove" : "Save token"}
       onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleTokenFavorite(meme); }}
     >
-      <Bookmark size={size} fill={on ? "currentColor" : "none"} />
+      <Star size={size} fill={on ? "currentColor" : "none"} />
     </button>
   );
 }
