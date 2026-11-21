@@ -32,6 +32,7 @@ import { usePresence } from "@/lib/usePresence";
 import WalletAvatar from "@/components/WalletAvatar";
 import { defaultAvatar } from "@/lib/defaultArt";
 import { fillGaps } from "@/lib/candleFill";
+import { supplyFor } from "@/lib/pumpSupply";
 import { walletName } from "@/lib/walletIdentity";
 
 export interface ChartCandle {
@@ -269,7 +270,7 @@ export default function TokenChart({
     try { if (drawings.length) localStorage.setItem(drawKey, JSON.stringify(drawings)); else localStorage.removeItem(drawKey); } catch { /* storage blocked */ }
   }, [drawings, drawKey]);
 
-  const supplyKey = supply && supply > 0 ? Math.round(supply) : 0;
+  const supplyKey = Math.round((chain ? (supply && supply > 0 ? supply : 0) : supplyFor(mint, supply)) ?? 0);
   const effectiveMetric: Metric = metric === "mcap" && supplyKey ? "mcap" : "price";
   const mult = effectiveMetric === "mcap" ? supplyKey : 1;
   const tfSec = TIMEFRAMES.find((x) => x.key === tf)?.sec ?? 900;

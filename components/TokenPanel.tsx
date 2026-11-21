@@ -5,6 +5,7 @@
 // Rebuilt around two server endpoints (/api/token-price, /api/token-chart) so
 // every number on screen comes from one consistent snapshot.
 
+import { supplyFor, livePriceOk } from "@/lib/pumpSupply";
 import { safetyBand } from "@/lib/scoreBand";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { visibleInterval } from "@/lib/visibleInterval";
@@ -231,7 +232,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
       if (!(baseAmt > 0 && quoteAmt > 0) || !(solUsdRef.current > 0)) return;
       const priceUsd = (quoteAmt / baseAmt) * solUsdRef.current;
       lastLive.current = Date.now();
-      setSnap((cur) => (cur ? { ...cur, priceUsd, marketCap: cur.supply ? priceUsd * cur.supply : cur.marketCap } : cur));
+      setSnap((cur) => (cur && livePriceOk(cur.priceUsd, priceUsd) ? { ...cur, priceUsd, marketCap: cur.supply ? priceUsd * cur.supply : cur.marketCap } : cur));
     };
     const startStream = (v: { base: string; quote: string }, b0: number, q0: number) => {
       if (!wsUrl) return;
@@ -270,7 +271,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           if (d.priceUsd && d.priceUsd > 0) {
             if (d.solUsd) solUsdRef.current = d.solUsd;
             lastLive.current = Date.now();
-            setSnap((cur) => (cur ? { ...cur, priceUsd: d.priceUsd!, marketCap: cur.supply ? d.priceUsd! * cur.supply : cur.marketCap } : cur));
+            setSnap((cur) => (cur && livePriceOk(cur.priceUsd, d.priceUsd!) ? { ...cur, priceUsd: d.priceUsd!, marketCap: cur.supply ? d.priceUsd! * cur.supply : cur.marketCap } : cur));
           }
         }
       } catch { /* retry */ }
@@ -309,7 +310,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
         if (!(vTok > 0) || !(vSol > 0) || !(solUsd > 0)) return;
         const priceUsd = (vSol / vTok) * solUsd;
         lastLive.current = Date.now();
-        setSnap((cur) => (cur ? { ...cur, priceUsd, marketCap: priceUsd * (cur.supply ?? 1_000_000_000) } : cur));
+        setSnap((cur) => (cur && livePriceOk(cur.priceUsd, priceUsd) ? { ...cur, priceUsd, marketCap: priceUsd * (cur.supply ?? 1_000_000_000) } : cur));
       } catch { /* ignore */ }
     };
     // No push socket configured (the default): poll the curve account through our own server, which caches it for a moment so many
@@ -569,11 +570,11 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
         type: t.side === "buy" ? "Buy" : "Sell",
         amountUsd: t.usd,
         tokens: Math.round(t.tokens),
-        mcapAtTrade: snap?.supply ? t.priceUsd * snap.supply : 0,
+        mcapAtTrade: supplyFor(mint, snap?.supply) ? t.priceUsd * (supplyFor(mint, snap?.supply) as number) : 0,
         traderShort: shortAddr(t.wallet, 4, 4),
         wallet: t.wallet,
       })),
-    [trades, snap?.supply],
+    [trades, snap?.supply, mint],
   );
 
   if (!selectedMeme || !mint) {
