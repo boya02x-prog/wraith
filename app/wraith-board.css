@@ -63,8 +63,12 @@ html:root .sg-trow > :nth-child(n+3) { justify-self: end; text-align: right; }
 /* Market screen, three panels: Top signals, Hot intel, then the market. The first two are the same size, each a flat card that scrolls on its own.
    On a screen too narrow for both side by side they stack in one column. */
 html:root .wx-market-layout .mc-rails { display: flex; flex-direction: column; gap: 14px; flex: 0 0 300px; width: 300px; min-height: 0; min-width: 0; }
+/* wide screens: Top signals on the left, the market in the middle, Hot intel on the right */
 @media (min-width: 1500px) {
-  html:root .wx-market-layout .mc-rails { flex-direction: row; flex-basis: auto; width: auto; }
+  html:root .wx-market-layout .mc-rails { display: contents; }
+  html:root .wx-market-layout .mc-rail-signals { order: 0; }
+  html:root .wx-market-layout .wx-market-main { order: 1; }
+  html:root .wx-market-layout .mc-rail-intel { order: 2; }
 }
 html:root .wx-market-layout .mc-rails > .mc-rail { flex: 1 1 0; width: 300px; min-height: 0; background: var(--surface, #0f0f11) !important; border: 0 !important; border-radius: 14px !important; padding: 0 0 12px !important; overflow-y: auto; }
 @media (min-width: 1500px) { html:root .wx-market-layout .mc-rails > .mc-rail { flex: 0 0 290px; width: 290px; } }
