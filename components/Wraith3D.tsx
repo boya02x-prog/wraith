@@ -11,6 +11,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { WebGLRenderer } from "three";
 import type { Pose, WraithScene } from "@/lib/wraith3d";
+import { petKey, type PetLook } from "@/lib/wraithPet";
 
 let can3dMemo: boolean | null = null;
 function can3D(): boolean {
@@ -28,7 +29,7 @@ function can3D(): boolean {
 
 /** The Wins banner's scene: components/GhostScene.tsx draws it with exactly these settings (and warmWraith3D builds it ahead of time with them). */
 export const WINS_SCENE = { pose: "king", podium: 3, confetti: 44, spotlight: true, zoom: 1.15, shiftX: 0.85 } as const;
-const sceneKey = (o: Opts) => `${o.pose}|${o.podium}|${o.confetti}|${o.spotlight}|${o.zoom}|${o.shiftX}`;
+const sceneKey = (o: Opts) => (o.pet ? `pet|${petKey(o.pet)}|${o.zoom}|${o.shiftX}|${o.lift ?? 0}` : `${o.pose}|${o.podium}|${o.confetti}|${o.spotlight}|${o.zoom}|${o.shiftX}`);
 
 /**
  * Fetch the 3D code and the banner still ahead of time (when the app is idle), so the Wins screen opens without waiting for either, and a few
@@ -51,7 +52,7 @@ export function warmWraith3D() {
   } catch { /* optional */ }
 }
 
-type Opts = { pose: Pose; podium: 0 | 3; confetti: number; spotlight: boolean; zoom: number; shiftX: number };
+type Opts = { pose: Pose; podium: 0 | 3; confetti: number; spotlight: boolean; zoom: number; shiftX: number; lift?: number; pet?: PetLook };
 type Shared = { canvas: HTMLCanvasElement; renderer: WebGLRenderer; sc: WraithScene; lost: boolean; dpr?: number };
 // A phone is where the 3D was laggy: a phone-sized screen or a touch screen gets a lower resolution ceiling and 30 frames a second (a steady 30
 // looks smoother than a 60 that keeps dropping), and every device lowers its resolution by itself if it cannot keep up (see the loop below).
@@ -89,6 +90,9 @@ function build(key: string, o: Opts, settleMs: number): Promise<Shared | null> {
     try { sc.update(0, 0.016, { x: 0, y: 0 }); renderer.render(sc.scene, sc.camera); } catch { /* the first real frame does it */ }
     const s: Shared = { canvas, renderer, sc, lost: false };
     canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); s.lost = true; kept.delete(key); });
+    // old pet scenes that are not on screen are let go: when a pet's look changes (a new mood after a trade) or you move to another profile, the phone never holds a
+    // graphics context per mood. (One that is still in the page is in use, say two different pets on one screen, and stays.)
+    if (o.pet) for (const [k, v] of [...kept]) if (k.startsWith("pet|") && k !== key && !v.canvas.isConnected) { kept.delete(k); try { v.sc.dispose(); v.renderer.dispose(); v.renderer.forceContextLoss(); } catch { /* already gone */ } }
     kept.set(key, s);
     return s;
   })().finally(() => { building.delete(key); });
@@ -160,7 +164,7 @@ function attach(sh: Shared, host: HTMLElement, interactive: boolean, onLive: () 
 }
 
 export default function Wraith3D({
-  pose = "king", podium = 3, confetti = 40, spotlight = true, zoom = 1, shiftX = 0, poster, alt = "", className, interactive = true,
+  pose = "king", podium = 3, confetti = 40, spotlight = true, zoom = 1, shiftX = 0, lift, pet, poster, alt = "", className, interactive = true,
 }: {
   pose?: Pose;
   podium?: 0 | 3;
@@ -169,14 +173,18 @@ export default function Wraith3D({
   /** camera zoom and sideways shift: must match what the still poster was rendered with */
   zoom?: number;
   shiftX?: number;
-  /** the still picture of this scene, e.g. "/mascot/wraith-king.webp" */
+  /** camera height (scene units): a pet with a tall hat wants the camera a little higher */
+  lift?: number;
+  /** someone's own pet (lib/wraithPet.ts): pose, podium, confetti and spotlight are ignored for it */
+  pet?: PetLook;
+  /** the still picture of this scene, e.g. "/mascot/wraith-king.webp" (a pet's fallback for devices that cannot draw 3D) */
   poster: string;
   alt?: string;
   className?: string;
   interactive?: boolean;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
-  const key = sceneKey({ pose, podium, confetti, spotlight, zoom, shiftX });
+  const key = sceneKey({ pose, podium, confetti, spotlight, zoom, shiftX, lift, pet });
   // the scene was already built (warmWraith3D, or an earlier visit): it is drawn before the first paint, so it starts out live and needs no fade-in
   const [warm] = useState(() => { const h = kept.get(key); return !!h && !h.lost; });
   const [live, setLive] = useState(warm);
@@ -192,16 +200,16 @@ export default function Wraith3D({
     if (hit && !hit.lost) stop = attach(hit, host, interactive, () => setLive(true));
     else {
       // (the wait before a first build used to be 650 / 380 ms because the screen slid in; tab switches no longer slide, so a short settle is enough)
-      void build(key, { pose, podium, confetti, spotlight, zoom, shiftX }, isPhone() ? 300 : 150).then((sh) => {
+      void build(key, { pose, podium, confetti, spotlight, zoom, shiftX, lift, pet }, isPhone() ? 300 : 150).then((sh) => {
         const h = wrap.current;
         if (alive && sh && h) stop = attach(sh, h, interactive, () => setLive(true));
       });
     }
     return () => { alive = false; stop(); };
-  }, [key, pose, podium, confetti, spotlight, zoom, shiftX, interactive]);
+  }, [key, pose, podium, confetti, spotlight, zoom, shiftX, lift, pet, interactive]);
 
   return (
-    <div ref={wrap} className={`w3d${live ? " is-live" : ""}${still ? " is-still" : ""}${warm ? " is-warm" : ""}${className ? ` ${className}` : ""}`} role="img" aria-label={alt || undefined} aria-hidden={alt ? undefined : true}>
+    <div ref={wrap} className={`w3d${live ? " is-live" : ""}${still ? " is-still" : ""}${warm ? " is-warm" : ""}${pet ? " is-pet" : ""}${className ? ` ${className}` : ""}`} role="img" aria-label={alt || undefined} aria-hidden={alt ? undefined : true}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="w3d-poster" src={poster} alt="" draggable={false} />
     </div>

@@ -9,6 +9,8 @@ import { ToastProvider } from "@/components/Toast";
 
 import Header from "@/components/HeaderSlot";
 import DiscoverNav from "@/components/DiscoverNav";
+import YourWraith, { useWide } from "@/components/YourWraith";
+import TopCallsStrip from "@/components/TopCallsStrip";
 // Each section's code arrives separately. While it does, a plain placeholder stands in (before, the screen stayed blank until the code was in,
 // which on the Wins tab felt like the tap did nothing). AppShell also fetches these in the background when the app is idle.
 const ViewSkel = () => <div className="wx-view-skel" aria-hidden="true"><i /><i /><i /></div>;
@@ -62,6 +64,7 @@ export default function Home() {
   const clientRender = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [view, setView] = useState<View>(() => (clientRender ? savedView() : "market"));
   const [selected, setSelected] = useState<MemeTrend | null>(null);
+  const wide = useWide(); // the left panel (and the pet that sits at its top) shows from 1100px; below that the pet sits at the top of the list
 
   useEffect(() => {
     try {
@@ -126,7 +129,10 @@ export default function Home() {
           <div className="wx-market-layout">
             <MarketCallsRail onSelectMeme={handleSelectMeme} onOpenScanner={() => changeView("scanner")} />
             <div className="wx-market-main">
-              <TokenBoard onSelectMeme={handleSelectMeme} />
+              <TokenBoard
+                onSelectMeme={handleSelectMeme}
+                top={<>{!wide && <YourWraith variant="card" />}<TopCallsStrip onSelectMeme={handleSelectMeme} onSeeAll={() => changeView("wins")} /></>}
+              />
             </div>
           </div>
         )}

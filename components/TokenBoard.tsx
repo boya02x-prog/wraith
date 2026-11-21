@@ -255,7 +255,7 @@ function Pager({ page, pages, total, size, onPage }: { page: number; pages: numb
   );
 }
 
-export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: MemeTrend) => void }) {
+export default function TokenBoard({ onSelectMeme, top }: { onSelectMeme: (meme: MemeTrend) => void; /** something drawn above the list, inside the part that scrolls (the pet card on a phone) */ top?: React.ReactNode }) {
   const [category, setCategory] = useState<MarketCategory>("trending");
   const [view, setView] = useState<View>("grid");
   const [query, setQuery] = useState("");
@@ -406,6 +406,7 @@ export default function TokenBoard({ onSelectMeme }: { onSelectMeme: (meme: Meme
       </div>
 
       <div className="wx-board-body" onMouseEnter={holdRows} onMouseLeave={releaseRows}>
+        {top}
         {loading && !tokens.length ? (
           <div className={view === "grid" ? "wx-grid" : "wx-table"}>
             {Array.from({ length: view === "grid" ? 12 : 14 }).map((_, i) => (

@@ -4,7 +4,7 @@ import { defaultAvatar, defaultCover } from "@/lib/defaultArt";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Header from "@/components/HeaderSlot";
 import TraderFollowButton from "@/components/TraderFollowButton";
 import FollowListModal from "@/components/FollowListModal";
@@ -16,6 +16,8 @@ import FrameArt from "@/components/FrameArt";
 import { frameClass } from "@/components/Frame";
 import { Link2 } from "lucide-react";
 import ShareStudio from "@/components/ShareStudio";
+import { WraithPetCard } from "@/components/YourWraith";
+import type { PetStats } from "@/lib/wraithPet";
 import { traderShareData } from "@/lib/traderShare";
 import { swrRead, swrWrite } from "@/lib/swrCache";
 import TierGlyph from "@/components/TierGlyph";
@@ -134,6 +136,17 @@ export default function PublicTraderPage() {
       .slice(0, 5);
     return { winRate, best, topCalls, closedCount: closed.length };
   }, [data]);
+
+  // this trader's Wraith: its numbers come from the public trades (their wallet and their place on the board are not part of it)
+  const pet = useMemo<PetStats | null>(() => {
+    if (!data) return null;
+    const closed = data.closedTrades.filter((t) => typeof t.pnlPct === "number");
+    const week = Date.now() - 7 * 86_400_000;
+    const pnlSol = closed.filter((t) => (t.closedAt ?? t.ts ?? 0) >= week).reduce((s, t) => s + (t.amountSol ?? 0) * ((t.pnlPct ?? 0) / 100), 0);
+    const bestPct = closed.reduce((m, t) => Math.max(m, t.pnlPct ?? 0), 0);
+    return { closed: closed.length, winRate: stats?.winRate ?? null, pnlSol, bestPct, topPct: null, rank: null, of: 0, cashUsd: null };
+  }, [data, stats]);
+  const petMoney = useCallback((sol: number) => money(sol), [money]);
 
   const joinedLabel = useMemo(() => {
     if (!data) return null;
@@ -344,6 +357,9 @@ export default function PublicTraderPage() {
             </div>
           </div>
         </div>
+
+        {/* ── their Wraith: a 3D pet whose look and mood come from how they trade ── */}
+        <WraithPetCard seed={trader.userId} stats={pet} title={`${trader.displayName}'s Wraith`} variant="profile" fmtMoney={petMoney} />
 
         {/* ── Balance, chart and holdings (only when the trader chose to show them) ── */}
         <PortfolioBlock userId={trader.userId} fmt={cashFmt} />

@@ -5,6 +5,8 @@
 // Ghosts do not stand: it floats a hand's width above a hexagon podium (the hexagon is the radar shape from the ranking cards), with a glow and a shadow under it.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import type { PetLook } from "@/lib/wraithPet";
+import { buildPet, type PetParts } from "@/lib/wraithPet3d";
 
 export type Pose = "king" | "wave" | "sleep" | "oops";
 export interface SceneOpts {
@@ -27,6 +29,8 @@ export interface SceneOpts {
   yaw?: number;
   /** moves the camera up (the ghost sits lower in the picture) or down, in scene units */
   lift?: number;
+  /** a person's own pet (lib/wraithPet.ts): its colour, body, face, hat and the weather around it replace the standard face; leave the pose as "wave" */
+  pet?: PetLook;
 }
 export interface WraithScene {
   scene: THREE.Scene;
@@ -70,7 +74,7 @@ const radialTexture = (stops: [number, string][]) => canvasTexture(128, (g, s) =
 });
 
 /** The body: dome, round belly, a hem of five soft lobes. Colour is painted per vertex; the dark hood face is cut in the shader (smooth edge, nothing sticks out). */
-function bodyGeometry(): THREE.BufferGeometry {
+function bodyGeometry(lobes = 5): THREE.BufferGeometry {
   const pts: THREE.Vector2[] = [];
   const a = BODY_R;
   for (let i = 0; i <= 28; i++) { const th = (i / 28) * (Math.PI / 2); pts.push(new THREE.Vector2(a * Math.sin(th), CY + DOME_B * Math.cos(th))); }
@@ -88,7 +92,7 @@ function bodyGeometry(): THREE.BufferGeometry {
     let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const ang = Math.atan2(x, z); // 0 = straight at the viewer
     const t = THREE.MathUtils.smoothstep(-y, 0.45, 0.92);
-    const lobe = 0.5 + 0.5 * Math.cos(ang * 5);
+    const lobe = 0.5 + 0.5 * Math.cos(ang * lobes);
     y -= t * t * 0.17 * lobe;
     const infl = 1 + t * 0.03 * lobe; x *= infl; z *= infl;
     pos.setXYZ(i, x, y, z);
@@ -184,12 +188,14 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   bodyMat.envMap = envTex; bodyMat.envMapIntensity = 0.2;
   armMat.envMap = envTex; armMat.envMapIntensity = 0.0;
   // another colour of ghost (the default covers use a few): rotate the hue of everything that is orange; the gold, the eyes and the face stay
-  const hue = opts.hue ?? 0;
+  // (a pet also has its own paleness / darkness: a sad one loses its colour)
+  const hue = opts.pet ? opts.pet.hue : opts.hue ?? 0;
+  const sat = opts.pet?.sat ?? 1, lum = opts.pet?.lum ?? 1;
   const shift = <C extends THREE.Color>(c: C): C => {
-    if (!hue) return c;
+    if (!hue && sat === 1 && lum === 1) return c;
     const hsl = { h: 0, s: 0, l: 0 };
     c.getHSL(hsl);
-    c.setHSL((((hsl.h + hue) % 1) + 1) % 1, hsl.s, hsl.l);
+    c.setHSL((((hsl.h + hue) % 1) + 1) % 1, Math.min(1, hsl.s * sat), Math.min(1, hsl.l * lum));
     return c;
   };
   shift(armMat.color); shift(bodyMat.emissive); shift(bodyMat.sheenColor); shift(rim.color);
@@ -199,8 +205,8 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
 
   // everything about the ghost lives in one group so it can bob and turn as one
   const ghost = new THREE.Group();
-  const bodyGeo = own(bodyGeometry());
-  if (hue) {
+  const bodyGeo = own(bodyGeometry(opts.pet?.lobes ?? 5));
+  if (hue || sat !== 1 || lum !== 1) {
     const a = bodyGeo.getAttribute("color") as THREE.BufferAttribute;
     const c = new THREE.Color();
     for (let i = 0; i < a.count; i++) { c.setRGB(a.getX(i), a.getY(i), a.getZ(i)); shift(c); a.setXYZ(i, c.r, c.g, c.b); }
@@ -214,7 +220,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const eyes: THREE.Group[] = [];
   const closed = opts.pose === "sleep";
   const wide = opts.pose === "oops";
-  for (const sx of [-1, 1]) {
+  for (const sx of opts.pet ? [] : [-1, 1]) { // (a pet draws its own face below, once its arms exist)
     const x = sx * 0.29, y = FACE_Y + 0.1, z = surfaceZ(x, y) + 0.012;
     const e = new THREE.Group();
     e.position.set(x, y, z); e.rotation.y = Math.atan2(x, z);
@@ -237,7 +243,7 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   }
   // mouth
   let mouthG: THREE.Group | null = null; // the emotes make the smile bigger
-  {
+  if (!opts.pet) {
     const y = FACE_Y - 0.17, z = surfaceZ(0, y) + 0.012;
     const m = new THREE.Group(); m.position.set(0, y, z); mouthG = m;
     if (opts.pose === "oops") {
@@ -265,8 +271,20 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
   const bothUp = opts.pose === "king" || opts.pose === "oops";
   const rightUp = bothUp || opts.pose === "wave";
   const UP = opts.pose === "oops" ? 2.5 : 2.2, DOWN = 0.5;
-  const leftBase = bothUp ? -UP : -DOWN, rightBase = rightUp ? UP : DOWN;
+  let leftBase = bothUp ? -UP : -DOWN, rightBase = rightUp ? UP : DOWN;
+  // a pet: its own face, hat, what it holds and the weather around it, and its arms follow its mood (lib/wraithPet3d.ts)
+  let petParts: PetParts | null = null;
+  if (opts.pet) {
+    try {
+      petParts = buildPet({ scene, ghost, armR, own, glow, goldMat, coinFace, haloTex, surfaceZ, FACE_Y, CY, DOME_B, canvasTexture, radialTexture, starShape }, opts.pet);
+      eyes.push(...petParts.eyes);
+      mouthG = petParts.mouth;
+      leftBase = petParts.armBase.l; rightBase = petParts.armBase.r;
+    } catch (err) { console.warn("[wraith pet] could not build the pet", err); }
+  }
   armL.rotation.z = leftBase; armR.rotation.z = rightBase;
+  const energy = opts.pet?.energy ?? 1, droop = opts.pet?.droop ?? 0;
+  const bx = opts.pet ? opts.pet.bodyX * opts.pet.size : 1, by = opts.pet ? opts.pet.bodyY * opts.pet.size : 1;
   if (opts.pose === "king") {
     // a gold O (OMEN) coin in the right hand, a gold star in the left: the winner's pose, the same on both sides
     const coin = new THREE.Mesh(own(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 48)), [goldMat, coinFace, goldMat]);
@@ -518,21 +536,26 @@ export function createWraithScene(renderer: THREE.WebGLRenderer, opts: SceneOpts
       }
       boop = Math.max(0, boop - dt * 4.5); // every tap answers at once with a little squash, even when it has to wait its turn
       off.sq *= 1 - 0.06 * boop * boop;
-      ghost.position.y = base + Math.sin(t * 1.8) * 0.06 + off.y; // floats, never touches
+      // (a lively pet bobs more and faster, a sad one sags and leans forward: energy 1 and droop 0 are the standard ghost)
+      ghost.position.y = base - droop * 0.08 + Math.sin(t * 1.8 * energy) * 0.06 * Math.min(1.4, energy) + off.y; // floats, never touches
       ghost.rotation.y = (opts.yaw ?? 0) + cur.x * 0.5 + Math.sin(t * 0.6) * 0.1 + off.ry;
-      ghost.rotation.x = -cur.y * 0.14 + off.rx;
+      ghost.rotation.x = -cur.y * 0.14 + droop * 0.14 + off.rx;
       ghost.rotation.z = Math.sin(t * 1.2) * 0.02 + off.rz;
-      const squash = (1 + Math.sin(t * 1.8 + 1.2) * 0.012) * off.sq; ghost.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
+      const squash = (1 + Math.sin(t * 1.8 * energy + 1.2) * 0.012) * off.sq * (1 - droop * 0.05); ghost.scale.set(bx / Math.sqrt(squash), by * squash, bx / Math.sqrt(squash));
       // both arms move together: the same swing, a half-beat apart, mirrored left and right (an arm never goes past straight up)
       const wave = Math.sin(t * 6) * 0.25;
-      armR.rotation.z = Math.min(3.0, rightBase + (opts.pose === "wave" ? wave : Math.sin(t * 2.2) * 0.06) + off.aR);
+      armR.rotation.z = Math.min(3.0, rightBase + (opts.pose === "wave" && !opts.pet ? wave : Math.sin(t * 2.2 * energy) * 0.06) + off.aR);
       armL.rotation.z = Math.max(-3.0, leftBase - (bothUp ? Math.sin(t * 2.2 + 1.4) * 0.06 : Math.sin(t * 2 + 1) * 0.05) - off.aL);
       // blink (the emotes squint the eyes happy, or wink, on top of it)
       let bl = 1;
       if (!closed && t > blinkAt && blinkT < 0) blinkT = t;
       if (blinkT >= 0) { const k = (t - blinkT) / 0.14; bl = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; if (k >= 1) { blinkT = -1; blinkAt = t + 2.4 + Math.random() * 2.4; } }
-      if (eyes.length === 2) { eyes[0].scale.y = Math.max(0.08, bl * off.eL); eyes[1].scale.y = Math.max(0.08, bl * off.eR); }
+      if (eyes.length === 2) { // (a pet's closed, star, X and spiral eyes do not blink)
+        if (!eyes[0].userData.noBlink) eyes[0].scale.y = Math.max(0.08, bl * off.eL);
+        if (!eyes[1].userData.noBlink) eyes[1].scale.y = Math.max(0.08, bl * off.eR);
+      }
       if (mouthG) mouthG.scale.set(off.mouth, off.mouth, 1);
+      petParts?.update(t);
       if (beam) (beam.material as THREE.ShaderMaterial).uniforms.uOpacity.value = 0.4 + Math.sin(t * 0.9) * 0.03;
       placeFlakes(t);
       stepBurst(dt);

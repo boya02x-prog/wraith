@@ -1,0 +1,47 @@
+/* ═════════ Everyone's own Wraith (components/YourWraith.tsx): the 3D pet and its card ═════════
+   Flat like the rest: a tonal card, no outline, no glow. The pet is drawn with a transparent background over a tonal tile. */
+.yw { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--surface, #131315); }
+.yw-pet { position: relative; flex: none; width: 124px; height: 150px; border-radius: 12px; background: var(--surface-2, #1a1a1d); overflow: hidden; }
+.yw-pet .w3d { position: absolute; inset: 0; }
+/* a pet is its own picture: the standard ghost poster only shows on a device that cannot draw 3D (then tinted toward the pet's colour) */
+.w3d.is-pet:not(.is-still) .w3d-poster { display: none; }
+.w3d.is-pet .w3d-canvas { transition-duration: 0.25s; }
+.yw-pet .w3d.is-still .w3d-poster { filter: hue-rotate(var(--pet-hue, 0deg)); }
+.yw-info { min-width: 0; flex: 1; display: grid; gap: 4px; }
+.yw-info small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 700 12.5px/1 var(--font-sans); }
+.yw-info b { font: 800 20px/1.15 var(--font-sans); letter-spacing: -0.02em; color: #fff; }
+.yw-info p { margin: 0; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 600 13px/1.4 var(--font-sans); }
+.yw-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.yw-chips span { padding: 4px 9px; border-radius: 8px; background: rgba(255, 255, 255, 0.07); color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); font: 700 12px/1.2 var(--font-sans); white-space: nowrap; }
+.yw-chips span.earned { background: rgba(255, 201, 74, 0.14); color: var(--sk-gold, #ffc94a); }
+
+/* in the left panel of the Market screen */
+.yw-rail { margin: 12px 12px 4px; flex: none; gap: 12px; }
+.yw-rail .yw-pet { width: 104px; height: 128px; }
+.yw-rail .yw-info b { font-size: 17px; }
+.yw-rail .yw-info p { font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* at the top of the list on a phone or a tablet */
+.yw-card { margin: 0 0 14px; }
+@media (max-width: 480px) { .yw-card .yw-pet { width: 112px; height: 136px; } .yw-card .yw-info b { font-size: 18px; } }
+/* on a trader's profile */
+.yw-profile { margin: 14px 0 0; }
+.yw-profile .yw-pet { width: 150px; height: 180px; }
+@media (max-width: 480px) { .yw-profile .yw-pet { width: 120px; height: 146px; } }
+
+/* ═════════ "Top calls this week" (components/TopCallsStrip.tsx): the row of best calls at the top of the Market list ═════════ */
+.wk { margin: 0 0 14px; }
+.wk header { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; color: var(--sk-gold, #ffc94a); }
+.wk header b { color: #fff; font: 800 16px/1 var(--font-sans); letter-spacing: -0.01em; }
+html:root .wk header button { margin-left: auto; min-height: 0; padding: 6px 4px; border: 0; background: none; color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 700 13px var(--font-sans); cursor: pointer; }
+html:root .wk header button:hover { color: #fff; }
+.wk-row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding-bottom: 2px; }
+.wk-row::-webkit-scrollbar { display: none; }
+html:root .wk-card {
+  flex: none; width: 138px; min-height: 0; display: grid; justify-items: start; gap: 4px; padding: 12px; border: 0; border-radius: 14px; scroll-snap-align: start;
+  background: var(--surface, #131315); color: #fff; text-align: left; cursor: pointer; transition: background 0.12s, transform 0.12s;
+}
+html:root .wk-card:hover { background: var(--surface-2, #1a1a1d); }
+html:root .wk-card:active { transform: scale(0.985); }
+.wk-card .wk-sym { margin-top: 6px; font: 800 14px/1.1 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.wk-card .wk-x { color: var(--sk-up, #3ddc97); font: 800 22px/1.05 var(--font-sans); letter-spacing: -0.02em; }
+.wk-card small { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 600 12px/1.2 var(--font-sans); white-space: nowrap; }

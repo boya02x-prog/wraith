@@ -48,6 +48,7 @@ import { decryptHotWalletKey } from "@/lib/hotWalletCrypto";
 import { readLast, writeLast } from "@/lib/lastGood";
 import { useCashSources } from "@/lib/useCashSources";
 import ShareStudio from "@/components/ShareStudio";
+import YourWraith from "@/components/YourWraith";
 import PositionShare, { type PositionCard } from "@/components/PositionShare";
 import {
   DisplayCurrency,
@@ -1418,6 +1419,9 @@ export default function ProfilePage() {
             )}
           </div>
         )}
+
+        {/* your Wraith: its look is yours, its mood follows how you are trading (components/YourWraith.tsx) */}
+        <YourWraith variant="profile" />
 
         <div className="profile-body-layout">
           <div className="profile-body-main">
