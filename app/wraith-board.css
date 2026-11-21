@@ -31,7 +31,10 @@ html:root .fi-actions button.save.on, html:root .fp-feed .fp-actions button.save
 /* Market category tabs (Trending / New / Gainers / Top Volume): a slim row on a computer, the filter row tucked close under it */
 @media (min-width: 900px) {
   html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { padding: 7px 14px !important; min-height: 0 !important; font-size: 13.5px !important; line-height: 1.2; }
-  html:root .wraith-dashboard .wx-board-bar { padding-top: 6px !important; padding-bottom: 6px !important; gap: 8px 12px !important; }
+  html:root .wraith-dashboard .wx-board-bar { padding-top: 0 !important; padding-bottom: 4px !important; gap: 8px 12px !important; }
+  html:root .wraith-dashboard .wx-board-bar .wx-seg.lg button { padding-top: 9px !important; padding-bottom: 9px !important; }
+  html:root .wx-market-layout { margin-top: 10px; }
+  html:root .wx-market-main .wx-board-body { padding-top: 12px !important; }
 }
 
 /* trend lines: a smooth curve with a soft fill, a light that glides along it every few seconds, and a head that breathes */
