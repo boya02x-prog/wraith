@@ -9,15 +9,16 @@ import type { MemeTrend } from "@/app/app/page";
 import { TokenIcon } from "@/components/TokenIcon";
 import { timesShort, usdShort } from "@/lib/tokenFmt";
 import type { SignalCall } from "@/lib/signalCalls";
+import { swrPeek, swrWrite } from "@/lib/swrCache";
 
 export default function TopCallsStrip({ onSelectMeme, onSeeAll }: { onSelectMeme: (meme: MemeTrend) => void; onSeeAll: () => void }) {
-  const [calls, setCalls] = useState<SignalCall[] | null>(null);
+  const [calls, setCalls] = useState<SignalCall[] | null>(() => swrPeek<SignalCall[]>("top-calls") ?? null);
   useEffect(() => {
     let alive = true;
     const load = () =>
       fetch("/api/signal-calls")
         .then((r) => (r.ok ? (r.json() as Promise<{ calls?: SignalCall[] }>) : null))
-        .then((j) => { if (alive && Array.isArray(j?.calls)) setCalls(j.calls); })
+        .then((j) => { if (alive && Array.isArray(j?.calls)) { swrWrite("top-calls", j.calls); setCalls(j.calls); } })
         .catch(() => undefined);
     void load();
     const t = window.setInterval(() => { if (!document.hidden) void load(); }, 60_000);

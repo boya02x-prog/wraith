@@ -123,6 +123,8 @@ export default function MobileTabBar() {
     return () => { window.removeEventListener("wraith:view", onView); window.removeEventListener("wraith:view-changed", onView); };
   }, []);
   useEffect(() => { if (path === "/app") setView(homeView()); }, [path]);
+  // the tapped-tab highlight only lasts until the screen changes (it used to stay on Traders after Start trading took you to Market)
+  useEffect(() => { setTap(null); }, [path]);
 
   // The round button on the right is the search button; while the search is open it is the X (same place, one smooth morph).
   // The header (components/Header.tsx) owns the search and tells us its state.

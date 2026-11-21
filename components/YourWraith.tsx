@@ -9,6 +9,7 @@ import Wraith3D from "@/components/Wraith3D";
 import { useCash } from "@/lib/cash";
 import { genomeOf, lookOf, moodOf, petKey, type PetLook, type PetStats } from "@/lib/wraithPet";
 import { loadHeaderProfile, readHeaderProfile } from "@/lib/profileCache";
+import { swrPeek, swrWrite } from "@/lib/swrCache";
 
 const WIDE = "(min-width: 1100px)";
 function subWide(cb: () => void) { const mq = window.matchMedia(WIDE); mq.addEventListener("change", cb); return () => mq.removeEventListener("change", cb); }
@@ -72,7 +73,7 @@ function cashNow(): number | null {
 export default function YourWraith({ variant }: { variant: "rail" | "card" | "profile" }) {
   const { money } = useCash();
   const [seed, setSeed] = useState<string | null>(null);
-  const [rank, setRank] = useState<Rank | null>(null);
+  const [rank, setRank] = useState<Rank | null>(() => swrPeek<Rank>("pet:rank") ?? null);
   const [hide, setHide] = useState(false);
   const [cash, setCash] = useState<number | null>(null);
 
@@ -92,7 +93,7 @@ export default function YourWraith({ variant }: { variant: "rail" | "card" | "pr
     const load = () =>
       fetch("/api/traders/rank?period=d7", { cache: "no-store" })
         .then((r) => (r.ok ? (r.json() as Promise<Rank>) : Promise.reject()))
-        .then((d) => { if (alive) { setRank(d); setHide(false); } })
+        .then((d) => { if (alive) { swrWrite("pet:rank", d); setRank(d); setHide(false); } })
         .catch(() => { if (alive) setHide(true); }); // signed out, or it could not be worked out: no pet
     void load();
     const t = window.setInterval(() => { if (!document.hidden) void load(); }, 60_000);

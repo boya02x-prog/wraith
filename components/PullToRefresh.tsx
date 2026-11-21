@@ -81,20 +81,21 @@ export default function PullToRefresh() {
 
   if (!enabled || (pull <= 0 && !busy)) return null;
   const ready = pull >= TRIGGER / 2 + 10;
+  // Instagram style: no button, just a thin ring that draws itself as you pull and spins while it loads, lower down, under the top bar
+  const C = 2 * Math.PI * 9;
+  const frac = Math.min(1, pull / (TRIGGER / 2 + 10));
   return (
     <div
       aria-hidden="true"
       style={{
-        position: "fixed", top: "calc(var(--sai-top) + 8px)", left: "50%", zIndex: 5000, pointerEvents: "none",
-        transform: `translate(-50%, ${Math.min(pull, 70) - 40}px)`, opacity: Math.min(1, pull / 40),
-        width: 36, height: 36, borderRadius: "50%", display: "grid", placeItems: "center",
-        background: "var(--surface-2, #151517)", border: "1px solid var(--border)", boxShadow: "0 6px 18px rgba(0,0,0,.5)",
-        transition: busy ? "none" : "opacity .1s",
+        position: "fixed", top: "calc(var(--sai-top) + 64px)", left: "50%", zIndex: 60, pointerEvents: "none",
+        transform: `translate(-50%, ${Math.min(pull, 60) * 0.5}px)`, opacity: busy ? 1 : Math.min(1, pull / 30),
+        width: 28, height: 28, transition: busy ? "none" : "opacity .1s",
       }}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ready || busy ? "var(--accent, #ff7b3d)" : "var(--text-muted)"} strokeWidth="2.4" strokeLinecap="round" style={{ transform: busy ? undefined : `rotate(${pull * 3}deg)`, animation: busy ? "wx-ptr-spin .7s linear infinite" : undefined }}>
-        <path d="M21 12a9 9 0 1 1-3-6.7" />
-        <path d="M21 3v6h-6" />
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ animation: busy ? "wx-ptr-spin .75s linear infinite" : undefined, transform: busy ? undefined : `rotate(${pull * 4}deg)` }}>
+        <circle cx="14" cy="14" r="9" stroke="rgba(255,255,255,.14)" strokeWidth="2.4" />
+        <circle cx="14" cy="14" r="9" stroke={frac >= 1 || busy ? "var(--accent, #ff7b3d)" : "rgba(255,255,255,.85)"} strokeWidth="2.4" strokeLinecap="round" strokeDasharray={`${busy ? C * 0.3 : C * frac * 0.85} ${C}`} transform="rotate(-90 14 14)" />
       </svg>
       <style>{"@keyframes wx-ptr-spin{to{transform:rotate(360deg)}}"}</style>
     </div>

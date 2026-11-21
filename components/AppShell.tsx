@@ -13,6 +13,7 @@ import ReferralPrompt from "@/components/ReferralPrompt";
 import PhotoZoomHost from "@/components/PhotoZoomHost";
 import TokenHoverHost from "@/components/TokenHoverHost";
 import SavedStrip from "@/components/SavedStrip";
+import OfflineBar from "@/components/OfflineBar";
 
 type SelectFn = (meme: MemeTrend) => void;
 type ShellCtx = { setSelect: (fn: SelectFn | null) => void };
@@ -84,6 +85,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <PhotoZoomHost />
       <TokenHoverHost />
       <SavedStrip />
+      <OfflineBar />
       {/* the one element that slides / fades when the screen changes (see RouteFade and the .wx-route rules): it stays mounted while pages swap inside it */}
       <div className="wx-route">{children}</div>
     </Ctx.Provider>

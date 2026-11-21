@@ -9,6 +9,7 @@ import { Share2 } from "lucide-react";
 import { useCash } from "@/lib/cash";
 import { defaultAvatar } from "@/lib/defaultArt";
 import { readHeaderProfile } from "@/lib/profileCache";
+import { swrPeek, swrWrite } from "@/lib/swrCache";
 
 export type RankPeriod = "d1" | "d7" | "d30" | "all";
 type Rank = { rank: number | null; of: number; pnlSol: number; closed: number; winRate: number | null; bestPct: number; topPct: number | null; publicTrading: boolean };
@@ -16,7 +17,7 @@ const NAME: Record<RankPeriod, string> = { d1: "24 hours", d7: "7 days", d30: "3
 
 export default function YourRank({ period }: { period: RankPeriod }) {
   const { money } = useCash();
-  const [res, setRes] = useState<{ period: RankPeriod; d: Rank } | null>(null);
+  const [res, setRes] = useState<{ period: RankPeriod; d: Rank } | null>(() => { const d = swrPeek<Rank>(`rank:${period}`); return d ? { period, d } : null; }); // (coming back to the screen shows the last answer at once)
   const [hide, setHide] = useState(false);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export default function YourRank({ period }: { period: RankPeriod }) {
     const load = () =>
       fetch(`/api/traders/rank?period=${period}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((d: Rank) => { if (alive) { setRes({ period, d }); setHide(false); } })
+        .then((d: Rank) => { if (alive) { swrWrite(`rank:${period}`, d); setRes({ period, d }); setHide(false); } })
         .catch(() => { if (alive) setHide(true); }); // signed out, or the number could not be worked out: no row
     void load();
     window.addEventListener("wraith:refresh", load);

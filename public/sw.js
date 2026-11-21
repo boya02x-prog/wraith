@@ -1,5 +1,9 @@
-/* Wraith service worker: push notifications + a branded offline page (instead of the browser's dino screen). */
-const OFFLINE_CACHE = "wraith-offline-v1";
+/* Wraith service worker: push notifications + keeping the app usable when the connection drops.
+   Screens you opened are kept on the device: if the network fails (or is gone) the last copy of that screen opens instead of an error, and the app code
+   (/_next/static, immutable files) is kept too, so that copy can start. The branded offline page is the last resort. API calls are never touched. */
+const OFFLINE_CACHE = "wraith-offline-v2";
+const PAGES = "wraith-pages-v1";
+const STATIC = "wraith-static-v1";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (e) => {
@@ -12,11 +16,26 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// Only page navigations are handled: network first, and if the network is gone show the offline page. API calls are never touched.
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+  if (url.pathname.startsWith("/_next/static/")) { // app code: never changes under the same name, so the copy on the device is always right
+    event.respondWith(caches.open(STATIC).then(async (c) => { const hit = await c.match(req); if (hit) return hit; const res = await fetch(req); if (res.ok) c.put(req, res.clone()); return res; }));
+    return;
+  }
   if (req.mode !== "navigate") return;
-  event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL).then((r) => r || Response.error())));
+  event.respondWith((async () => {
+    try {
+      const res = await fetch(req);
+      if (res.ok && url.pathname.startsWith("/app")) { const c = await caches.open(PAGES); c.put(url.pathname, res.clone()); }
+      return res;
+    } catch {
+      const c = await caches.open(PAGES);
+      return (await c.match(url.pathname)) || (await c.match("/app")) || (await caches.match(OFFLINE_URL)) || Response.error();
+    }
+  })());
 });
 
 self.addEventListener("push", (event) => {
