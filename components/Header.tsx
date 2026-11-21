@@ -1259,11 +1259,8 @@ function CoinSearch({
                     }}
                   >
                     <div className="wx-search-trader-avatar">
-                      {trader.avatarDataUrl ? (
-                        <img src={trader.avatarDataUrl} alt="" />
-                      ) : (
-                        trader.displayName.slice(0, 1).toUpperCase()
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={trader.avatarDataUrl || defaultAvatar(trader.userId)} alt="" />
                     </div>
                     <div className="wx-search-trader-info">
                       <div className="wx-search-trader-name">
@@ -1342,9 +1339,7 @@ function CoinSearch({
                         height: 38,
                         flexShrink: 0,
                         borderRadius: "50%",
-                        background: trader.avatarDataUrl
-                          ? `url("${trader.avatarDataUrl}") center/cover`
-                          : "linear-gradient(135deg,#f05a24,#7b2f1a)",
+                        background: `url("${trader.avatarDataUrl || defaultAvatar(trader.userId)}") center/cover`,
                         border: "1px solid var(--border)",
                       }}
                     />

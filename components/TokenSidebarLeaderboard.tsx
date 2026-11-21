@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { RefreshCw, Trophy } from "lucide-react";
 import TraderFollowButton from "@/components/TraderFollowButton";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 type Trader = {
   userId: string;
@@ -48,7 +49,8 @@ export default function TokenSidebarLeaderboard() {
           <span style={{ width: 18, color: "var(--text-dim)", textAlign: "center", fontSize: 10 }}>{String(index + 1).padStart(2, "0")}</span>
           <Link href={`/app/u/${encodeURIComponent(trader.userId)}`} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8, color: "inherit", textDecoration: "none" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {trader.avatarDataUrl ? <img src={trader.avatarDataUrl} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} /> : <span style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: "50%", background: "var(--surface-raised)", color: "var(--orange-hot)", fontWeight: 800 }}>{trader.displayName.slice(0, 1).toUpperCase()}</span>}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={trader.avatarDataUrl || defaultAvatar(trader.userId)} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
             <span style={{ minWidth: 0 }}><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{trader.displayName}</strong><small style={{ color: "var(--text-muted)", fontSize: 9 }}>{trader.closedTradeCount} closes · {trader.openPositionCount} open</small></span>
           </Link>
           <span style={{ width: 63, color: trader.profitSol >= 0 ? "var(--win)" : "var(--loss)", textAlign: "right", fontSize: 10, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{trader.profitSol >= 0 ? "+" : ""}{trader.profitSol.toFixed(2)} SOL</span>

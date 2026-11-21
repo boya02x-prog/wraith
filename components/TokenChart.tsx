@@ -30,6 +30,7 @@ import { peekCandles } from "@/lib/candleCache";
 import { readTokenNav } from "@/lib/tokenNav";
 import { usePresence } from "@/lib/usePresence";
 import WalletAvatar from "@/components/WalletAvatar";
+import { defaultAvatar } from "@/lib/defaultArt";
 import { fillGaps } from "@/lib/candleFill";
 import { walletName } from "@/lib/walletIdentity";
 
@@ -57,7 +58,7 @@ type Style = "candles" | "line";
 const ACCENT = "#ff7b3d";
 const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
 const DRAW_COLORS = ["#4f9dff", "#22f5a8", "#ff4d7d", "#f0b90b", "#ff7b3d", "#b36bff", "#ffffff"];
-type PinItem = { kind: "dumper" | "proven" | "intel"; id: string; ts: number; name: string; href: string; line: string; wallet?: string; avatar?: string; text?: string; sol?: number; mcap?: number };
+type PinItem = { kind: "dumper" | "proven" | "intel"; id: string; ts: number; name: string; href: string; line: string; wallet?: string; avatar?: string; uid?: string; text?: string; sol?: number; mcap?: number };
 
 // Wraith palette: neon mint up, hot coral down (the chart, the legend, the pills and the buy / sell dots all read these)
 const UP = "#22f5a8";
@@ -900,7 +901,7 @@ export default function TokenChart({
       for (const c of ((co as { callouts?: Callout[] } | null)?.callouts ?? [])) {
         const ts = typeof c.createdAt === "number" ? c.createdAt : Date.parse(String(c.createdAt));
         if (!(ts > 0)) continue;
-        out.push({ kind: "intel", id: `i:${c.id}`, ts, name: c.displayName, avatar: c.avatarDataUrl, href: `/app/u/${encodeURIComponent(c.username || c.userId)}`, line: "Intel from a Wraith trader", text: String(c.text ?? "").slice(0, 220), mcap: c.mcapAtPost ?? 0 });
+        out.push({ kind: "intel", id: `i:${c.id}`, ts, name: c.displayName, avatar: c.avatarDataUrl, uid: c.userId, href: `/app/u/${encodeURIComponent(c.username || c.userId)}`, line: "Intel from a Wraith trader", text: String(c.text ?? "").slice(0, 220), mcap: c.mcapAtPost ?? 0 });
       }
       setPinItems(out);
     };
@@ -1477,9 +1478,9 @@ export default function TokenChart({
                   <button type="button" className="wx-pin-dot" aria-expanded={open}
                     aria-label={p.kind === "intel" ? `Intel from ${first.name}` : `${p.items.length} ${p.kind === "dumper" ? "repeat-dumper" : "proven"} wallet${p.items.length > 1 ? "s" : ""} bought here`}
                     onClick={(e) => { e.stopPropagation(); setPinOpen(p.key); }}>
-                    {p.kind === "intel" && first.avatar
+                    {p.kind === "intel" && (first.avatar || first.uid)
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={first.avatar} alt="" />
+                      ? <img src={first.avatar || defaultAvatar(first.uid ?? "")} alt="" />
                       : first.wallet ? <WalletAvatar address={first.wallet} size={22} /> : <span>{first.name.slice(0, 1).toUpperCase()}</span>}
                     {p.items.length > 1 && <i>{p.items.length}</i>}
                   </button>

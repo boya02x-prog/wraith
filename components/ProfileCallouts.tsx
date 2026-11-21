@@ -83,7 +83,7 @@ export default function ProfileCallouts({ userId }: { userId: string }) {
               </div>
             )}
             <div className="fp-row">
-              <Face src={c.avatarDataUrl} name={c.displayName} />
+              <Face src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
               <div className="fp-body">
                 <div className="fp-head">
                   <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="fp-name">{c.displayName}</Link>

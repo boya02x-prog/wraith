@@ -17,6 +17,7 @@ import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import { useWraithTier } from "@/hooks/useWraithTier";
 import TierGlyph from "@/components/TierGlyph";
 import { TIERS } from "@/lib/tiers";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 interface Callout {
   id: string;
@@ -136,7 +137,8 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
                 onClick={() => c.mint && open(c.mint, m?.symbol ?? c.mint.slice(0, 4).toUpperCase(), m?.imageUrl, m?.mcap ?? c.mcapAtPost ?? undefined)}
               >
                 <span className="mc-call-top">
-                  {c.avatarDataUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={c.avatarDataUrl} alt="" referrerPolicy="no-referrer" /> : <i>{c.displayName.slice(0, 1).toUpperCase()}</i>}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.avatarDataUrl || defaultAvatar(c.userId)} alt="" referrerPolicy="no-referrer" />
                   <b>{c.displayName}</b>
                   <small>{ago(c.createdAt)}</small>
                   {mc(c.mcapAtPost) && <em>{mc(c.mcapAtPost)}</em>}

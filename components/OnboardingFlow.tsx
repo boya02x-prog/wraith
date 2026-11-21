@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { suggestUsername } from "@/lib/usernameUtils";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 type Trader = { userId: string; username: string | null; displayName: string; avatarDataUrl: string; profitSol: number; closedTradeCount: number };
 type Step = 0 | 1 | 2 | 3;
@@ -126,7 +127,8 @@ export default function OnboardingFlow({
                 {visible.map((t, i) => (
                   <button type="button" key={t.userId} className={`ob-row${picked.has(t.userId) ? " on" : ""}`} onClick={() => toggle(t.userId)} style={{ animationDelay: `${i * 45}ms` }}>
                     <span className="ob-rank">{i + 1}</span>
-                    {t.avatarDataUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={t.avatarDataUrl} alt="" /> : <span className="ob-av">{t.displayName[0]?.toUpperCase()}</span>}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={t.avatarDataUrl || defaultAvatar(t.userId)} alt="" />
                     <span className="ob-who"><b>{t.displayName}</b><small>{t.username ? `@${t.username}` : `${t.closedTradeCount} trades`}</small></span>
                     <span className="ob-check">{picked.has(t.userId) ? <Check size={16} /> : null}</span>
                   </button>

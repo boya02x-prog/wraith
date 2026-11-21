@@ -8,6 +8,7 @@ import { ArrowDownRight, ArrowUpRight, ExternalLink, ShieldAlert, ShieldCheck, U
 import { TokenCallouts } from "@/components/TokenCallouts";
 import SignalsTab from "@/components/SignalsTab";
 import WalletAvatar from "@/components/WalletAvatar";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 const TABS = ["Holders", "Swaps", "Signals", "Analysis", "Traders Intel"] as const;
 type Tab = (typeof TABS)[number];
@@ -80,7 +81,8 @@ function safeExternalUrl(value: string): string | null {
 function WraithWallet({ u, wallet }: { u: WUser; wallet: string }) {
   return (
     <Link href={`/app/u/${encodeURIComponent(u.username ?? u.userId)}`} className="wchip" title={`${u.displayName} · ${u.tier} · ${wallet}`} onClick={(e) => e.stopPropagation()}>
-      {u.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={u.avatar} alt="" /> : <i>{u.displayName[0]?.toUpperCase()}</i>}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={u.avatar || defaultAvatar(u.userId)} alt="" />
       <span>{u.displayName}</span>
       {u.tier !== "GHOST" && <em>{u.tier}</em>}
     </Link>
@@ -397,7 +399,8 @@ export function TokenDetailTabs({ trades = [], mint, intelLinks = [], intelSumma
               <div className="dt-traders">
                 {traders.map((t, i) => (
                   <Link key={t.userId} href={`/app/u/${encodeURIComponent(t.username ?? t.userId)}`} className="tr-row" style={{ animationDelay: `${Math.min(i, 10) * 28}ms` }}>
-                    {t.avatar ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="tr-av" src={t.avatar} alt="" /> : <span className="tr-av">{t.displayName[0]?.toUpperCase()}</span>}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="tr-av" src={t.avatar || defaultAvatar(t.userId)} alt="" />
                     <span className="tr-who">
                       <b>{t.displayName}{t.lastSide === "buy" ? <i className="up">Bought</i> : <i className="dn">Sold</i>}</b>
                       <small>{t.holding && t.holding.entryMcap > 0 ? `Avg entry: ${usd(t.holding.entryMcap)} MC` : `${t.username ? `@${t.username} · ` : ""}${t.count} trade${t.count > 1 ? "s" : ""}`} · {ago(t.lastAt)} ago</small>

@@ -5,6 +5,7 @@ import { visibleInterval } from "@/lib/visibleInterval";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowUpRight, Radio } from "lucide-react";
 import type { MemeTrend } from "@/app/app/page";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 type Callout = {
   traderId: string;
@@ -75,7 +76,8 @@ export default function TraderFypFeed({ onSelectMeme }: { onSelectMeme: (meme: M
           const pnl = item.type === "open" ? item.currentPnlPct : item.pnlPct;
           return <button key={`${item.traderId}-${item.mint}-${item.type}-${item.ts ?? index}`} type="button" onClick={() => onSelectMeme({ keyword: item.symbol || "TOKEN", score: pnl ?? 0, posts: 1, source: "following", contractAddress: item.mint, tokenImageUrl: item.imageUrl, mcap: mcapNow })} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 8px", border: "1px solid var(--border)", borderRadius: 10, marginBottom: 6, background: "var(--surface)", color: "var(--text)", textAlign: "left", cursor: "pointer" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {item.avatarDataUrl ? <img src={item.avatarDataUrl} alt="" style={{ width: 26, height: 26, flex: "0 0 26px", borderRadius: "50%", objectFit: "cover" }} /> : <span style={{ width: 26, height: 26, flex: "0 0 26px", display: "grid", placeItems: "center", borderRadius: "50%", background: "var(--surface-raised)", color: "var(--orange-hot)", fontSize: 10, fontWeight: 800 }}>{item.traderName.slice(0, 1).toUpperCase()}</span>}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={item.avatarDataUrl || defaultAvatar(item.traderId)} alt="" style={{ width: 26, height: 26, flex: "0 0 26px", borderRadius: "50%", objectFit: "cover" }} />
             <span style={{ minWidth: 0, flex: 1 }}>
               <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{item.traderName} <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{item.type === "open" ? "opened" : "closed"} {item.symbol || "token"}</span></strong>
               <small style={{ display: "block", marginTop: 4, color: "var(--text-muted)", fontSize: 10 }}>Entry {marketCap(item.entryMcap)} · {item.type === "open" ? "Now" : "Exit"} {marketCap(mcapNow)}{typeof item.amountSol === "number" ? ` · ${item.amountSol.toFixed(3)} SOL` : ""} · {elapsed(item.ts)}</small>

@@ -7,6 +7,7 @@ import StickerSheet from "@/components/StickerSheet";
 import { Face as PostFace, TokenCard, isFresh, mcapLabel, timeAgo as ago } from "@/components/CalloutParts";
 import { useTokenMeta, type TokenMeta } from "@/lib/useTokenMeta";
 import { swrPeek, swrWrite } from "@/lib/swrCache";
+import { defaultAvatar } from "@/lib/defaultArt";
 import { CALLOUT_POSTED_EVENT, useLiveRefresh } from "@/lib/useLiveRefresh";
 import { readTokenFavorites, toggleTokenFavorite, TOKEN_FAVORITES_EVENT } from "@/lib/tokenFavorites";
 
@@ -56,13 +57,16 @@ function timeAgo(ts: number) {
   return `${Math.floor(diff / 86400)}d`;
 }
 
-function Face({ src, name, small }: { src?: string; name: string; small?: boolean }) {
+function Face({ src, name, small, seed }: { src?: string; name: string; small?: boolean; seed?: string }) {
   const [broken, setBroken] = useState(false);
   const cls = small ? "fi-avatar sm" : "fi-avatar";
   if (src && !broken) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt="" className={cls} referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
   }
+  // no photo: the same default picture as everywhere else (a letter only when there is no account id)
+  // eslint-disable-next-line @next/next/no-img-element
+  if (seed) return <img src={defaultAvatar(seed)} alt="" className={cls} />;
   return <span className={`${cls} fallback`}>{name.slice(0, 1).toUpperCase()}</span>;
 }
 
@@ -134,7 +138,7 @@ export function Thread({ callout, meta, onCount }: { callout: CalloutItem; meta?
       ) : (
         comments.map((c) => (
           <div key={c.id} className="fi-comment">
-            <Face src={c.avatarDataUrl} name={c.displayName} small />
+            <Face src={c.avatarDataUrl} name={c.displayName} seed={c.userId} small />
             <div>
               <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="fi-name">{c.displayName}</Link>
               <span className="fi-age"> · {timeAgo(c.createdAt)}</span>
@@ -285,7 +289,7 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
                   </div>
                 )}
                 <div className="fp-row">
-                  <PostFace src={c.avatarDataUrl} name={c.displayName} />
+                  <PostFace src={c.avatarDataUrl} name={c.displayName} seed={c.userId} />
                   <div className="fp-body">
                     <div className="fp-head">
                       <Link href={`/app/u/${encodeURIComponent(c.username ?? c.userId)}`} className="fp-name">{c.displayName}</Link>

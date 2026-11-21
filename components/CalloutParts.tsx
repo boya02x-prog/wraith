@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { TokenIcon } from "@/components/TokenIcon";
 import type { TokenMeta } from "@/lib/useTokenMeta";
+import { defaultAvatar } from "@/lib/defaultArt";
 
 export function timeAgo(ts: number) {
   const diff = Math.max(0, (Date.now() - ts) / 1000);
@@ -34,13 +35,16 @@ function pctLabel(v: number) {
   return `${v >= 0 ? "+" : "-"}${body}%`;
 }
 
-export function Face({ src, name, size = 40 }: { src?: string; name: string; size?: number }) {
+/** `seed` is the account id: with no photo (or a broken one) the same default picture the profile and the lists show is drawn, not a letter. */
+export function Face({ src, name, size = 40, seed }: { src?: string; name: string; size?: number; seed?: string }) {
   const [broken, setBroken] = useState(false);
   const style = { width: size, height: size, flexBasis: size };
   if (src && !broken) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt="" className="fp-face" style={style} referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
   }
+  // eslint-disable-next-line @next/next/no-img-element
+  if (seed) return <img src={defaultAvatar(seed)} alt="" className="fp-face" style={style} />;
   return <span className="fp-face fallback" style={style}>{name.slice(0, 1).toUpperCase()}</span>;
 }
 
