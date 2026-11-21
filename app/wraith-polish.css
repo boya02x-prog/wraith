@@ -571,7 +571,7 @@ html.wraith-blur-balances :is(
 .wx-warn li b { color: var(--text); font-weight: 600; }
 
 /* Market rail: one panel that scrolls as a whole (the pet card, the feed and the signals each take the room they need, no little scroll boxes inside) */
-.wx-market-layout .mc-rail { display: block; overflow-y: auto; overflow-x: hidden; padding-bottom: 16px; scrollbar-width: thin; }
+.wx-market-layout .mc-rail { display: block; overflow-y: auto; overflow-x: hidden; padding-bottom: 16px; }
 .wx-market-layout .mc-rail .mc-sec { flex: none; min-height: 0; overflow: visible; margin-top: 0; padding-top: 0; padding-bottom: 8px; }
 .wx-market-layout .mc-rail .mc-sec + .mc-sec { margin-top: 6px; padding-top: 0; }
 .wx-market-layout .mc-rail .mc-sec > header { position: static; padding-top: 14px; }
@@ -1063,7 +1063,6 @@ a.hold-row:hover{background:rgba(255,255,255,.05)}
 
 /* Scrollbars on a computer: slim and dark everywhere (the browser's own white bar with arrows stood out against the flat cards) */
 @media (hover: hover) {
-  * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.16) transparent; }
   *::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
@@ -1071,3 +1070,6 @@ a.hold-row:hover{background:rgba(255,255,255,.05)}
   *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
   *::-webkit-scrollbar-corner { background: transparent; }
 }
+
+/* (Firefox has no ::-webkit-scrollbar: it gets the standard slim bar; Chrome keeps the styled one above, which also drops the arrow buttons) */
+@supports not selector(::-webkit-scrollbar) { @media (hover: hover) { * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.16) transparent; } } }
