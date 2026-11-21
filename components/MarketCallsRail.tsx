@@ -117,7 +117,7 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
       <section className="mc-sec">
         <header><Flame size={14} /><strong>Top signals now</strong></header>
         {!canSignals ? (
-          <div style={{ margin: "6px 14px 10px", padding: "16px 14px", borderRadius: 12, background: "var(--surface-2, #151517)", textAlign: "center", display: "grid", gap: 8, justifyItems: "center" }}>
+          <div style={{ margin: "6px 14px 10px", padding: "16px 14px", borderRadius: 12, background: "var(--surface, #0f0f11)", textAlign: "center", display: "grid", gap: 8, justifyItems: "center" }}>
             <TierGlyph tier="WRAITH" size={40} />
             <strong style={{ fontSize: 13 }}>Live signals are a WRAITH feature</strong>
             <small style={{ color: "var(--text-dim, #8d8d99)", lineHeight: 1.5 }}>Hold {TIERS.WRAITH.minTokens.toLocaleString("en-US")} OMEN to unlock the scored live feed. The scanner stays open to everyone.</small>

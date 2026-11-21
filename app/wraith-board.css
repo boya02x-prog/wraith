@@ -70,24 +70,24 @@ html:root .wx-market-layout .mc-rails { display: flex; flex-direction: column; g
   html:root .wx-market-layout .wx-market-main { order: 1; }
   html:root .wx-market-layout .mc-rail-intel { order: 2; }
 }
-html:root .wx-market-layout .mc-rails > .mc-rail { flex: 1 1 0; width: 300px; min-height: 0; background: var(--surface, #0f0f11) !important; border: 0 !important; border-radius: 14px !important; padding: 0 0 12px !important; overflow-y: auto; }
+html:root .wx-market-layout .mc-rails > .mc-rail { flex: 1 1 0; width: 300px; min-height: 0; background: transparent !important; border: 0 !important; border-radius: 0 !important; padding: 0 0 12px !important; overflow-y: auto; }
 @media (min-width: 1500px) { html:root .wx-market-layout .mc-rails > .mc-rail { flex: 0 0 290px; width: 290px; } }
 @media (max-width: 1099px) { html:root .wx-market-layout .mc-rails { display: none !important; } }
 html:root .wx-market-layout .mc-rail .mc-sec { background: transparent; border-radius: 0; padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: visible; }
-html:root .wx-market-layout .mc-rail .mc-sec > header { position: sticky; top: 0; z-index: 1; background: var(--surface, #0f0f11); padding: 14px 14px 10px; gap: 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); }
+html:root .wx-market-layout .mc-rail .mc-sec > header { position: static; background: transparent; padding: 10px 4px 12px; gap: 8px; color: var(--sk-text-2, rgba(255, 255, 255, 0.7)); }
 html:root .wx-market-layout .mc-rail .mc-sec > header strong { text-transform: none; letter-spacing: 0; font: 700 14px var(--font-sans); color: #fff; }
 html:root .wx-market-layout .mc-rail .mc-sec > header svg { width: 16px; height: 16px; }
-html:root .wx-market-layout .mc-rail .mc-call { width: calc(100% - 20px); margin: 0 10px 8px; padding: 12px; border-radius: 12px; background: var(--surface-2, #151517); gap: 8px; }
-html:root .wx-market-layout .mc-rail .mc-call:hover:not(:disabled) { background: var(--surface-3, #1c1c1f); }
+html:root .wx-market-layout .mc-rail .mc-call { width: 100%; margin: 0 0 8px; padding: 12px; border-radius: 12px; background: var(--surface, #0f0f11); gap: 8px; }
+html:root .wx-market-layout .mc-rail .mc-call:hover:not(:disabled) { background: var(--surface-2, #151517); }
 html:root .wx-market-layout .mc-rail .mc-call-top img, html:root .wx-market-layout .mc-rail .mc-call-top i { width: 28px; height: 28px; flex-basis: 28px; }
 html:root .wx-market-layout .mc-rail .mc-call-top b { font: 800 14px var(--font-sans); color: #fff; }
 html:root .wx-market-layout .mc-rail .mc-call-top em { background: transparent; padding: 0; font: 700 12.5px var(--font-sans); color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); }
 html:root .wx-market-layout .mc-rail .mc-call-top small { font: 600 12.5px var(--font-sans); }
 html:root .wx-market-layout .mc-rail .mc-call-text { font-size: 13.5px; color: rgba(255, 255, 255, 0.9); }
 html:root .wx-market-layout .mc-rail .mc-call-token { padding: 9px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); align-self: stretch; font-size: 13px; color: #fff; }
-html:root .wx-market-layout .mc-rail .mc-row { width: calc(100% - 20px); margin: 0 10px 6px; padding: 10px 12px; background: var(--surface-2, #151517); border-radius: 12px; }
-html:root .wx-market-layout .mc-rail .mc-row:hover { background: var(--surface-3, #1c1c1f); }
+html:root .wx-market-layout .mc-rail .mc-row { width: 100%; margin: 0 0 6px; padding: 10px 12px; background: var(--surface, #0f0f11); border-radius: 12px; }
+html:root .wx-market-layout .mc-rail .mc-row:hover { background: var(--surface-2, #151517); }
 html:root .wx-market-layout .mc-rail .mc-row .mid strong { font: 800 14px var(--font-sans); color: #fff; }
-html:root .wx-market-layout .mc-rail .mc-empty { padding: 4px 14px 8px; font-size: 13px; color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); }
-html:root .wx-market-layout .mc-rail .mc-more { display: block; width: calc(100% - 20px); margin: 8px 10px 0; padding: 11px; border: 0; border-radius: 12px; background: var(--surface-2, #151517); color: var(--accent-text, #ffad7b); font: 700 13px var(--font-sans); cursor: pointer; }
-html:root .wx-market-layout .mc-rail .mc-more:hover { background: var(--surface-3, #1c1c1f); }
+html:root .wx-market-layout .mc-rail .mc-empty { padding: 4px 4px 10px; font-size: 13px; color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); }
+html:root .wx-market-layout .mc-rail .mc-more { display: block; width: 100%; margin: 8px 0 0; padding: 11px; border: 0; border-radius: 12px; background: var(--surface, #0f0f11); color: var(--accent-text, #ffad7b); font: 700 13px var(--font-sans); cursor: pointer; }
+html:root .wx-market-layout .mc-rail .mc-more:hover { background: var(--surface-2, #151517); }
