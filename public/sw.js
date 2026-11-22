@@ -1,13 +1,14 @@
 /* Wraith service worker: push notifications + keeping the app usable when the connection drops.
    Screens you opened are kept on the device: if the network fails (or is gone) the last copy of that screen opens instead of an error, and the app code
    (/_next/static, immutable files) is kept too, so that copy can start. The branded offline page is the last resort. API calls are never touched. */
-const OFFLINE_CACHE = "wraith-offline-v2";
+const OFFLINE_CACHE = "wraith-offline-v3";
+const IMAGES = "wraith-images-v1";
 const PAGES = "wraith-pages-v1";
 const STATIC = "wraith-static-v1";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(OFFLINE_CACHE).then((c) => c.addAll([OFFLINE_URL, "/icon-192.png"])).catch(() => undefined));
+  e.waitUntil(caches.open(OFFLINE_CACHE).then((c) => c.addAll([OFFLINE_URL, "/icon-192.png", "/logo.svg"])).catch(() => undefined));
   self.skipWaiting();
 });
 self.addEventListener("activate", (e) => {
@@ -23,6 +24,16 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith("/_next/static/")) { // app code: never changes under the same name, so the copy on the device is always right
     event.respondWith(caches.open(STATIC).then(async (c) => { const hit = await c.match(req); if (hit) return hit; const res = await fetch(req); if (res.ok) c.put(req, res.clone()); return res; }));
+    return;
+  }
+  // pictures of the app itself (the logo, the mascot, icons) and the resized copies next/image makes of them: shown from the device first, refreshed in the background,
+  // so with no connection they are still there instead of a broken-image box
+  if (req.destination === "image" || url.pathname.startsWith("/_next/image") || /^\/(logo|icon|mascot|apple-touch)/.test(url.pathname)) {
+    event.respondWith(caches.open(IMAGES).then(async (c) => {
+      const hit = await c.match(req);
+      const net = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => undefined);
+      return hit || (await net) || Response.error();
+    }));
     return;
   }
   if (req.mode !== "navigate") return;
