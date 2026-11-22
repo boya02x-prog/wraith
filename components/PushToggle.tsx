@@ -18,6 +18,23 @@ export default function PushToggle({ prefs }: { prefs: Prefs }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [perm, setPerm] = useState("");
+  // "on" only says this phone asked for alerts. What the SERVER can do with it is asked separately, so a broken setup says why instead of staying silent.
+  const [health, setHealth] = useState("");
+  const [testing, setTesting] = useState(false);
+  const sendTest = async () => {
+    setTesting(true); setHealth("");
+    try {
+      const r = await fetch("/api/push/test", { method: "POST" });
+      const d = (await r.json().catch(() => ({}))) as { error?: string; sent?: number; configured?: { app: boolean; browser: boolean }; registered?: { app: number; browser: number }; results?: { ok: boolean; dead?: boolean; error?: string }[] };
+      if (!r.ok) { setHealth(d.error || "The test could not be sent."); return; }
+      if (d.sent) { setHealth("Test sent. It should be on your phone in a few seconds."); return; }
+      const why = d.results?.find((x) => x.error)?.error;
+      if (d.results?.some((x) => x.dead)) setHealth("Google says this phone is no longer registered. Turn notifications off and on again.");
+      else if (d.registered && !d.registered.app && !d.registered.browser) setHealth("The server has no phone registered for you. Turn notifications off and on again.");
+      else if (d.configured && !d.configured.app && d.registered?.app) setHealth("The server can't send to the Wraith app yet: its Firebase key is missing or invalid.");
+      else setHealth(`The send failed${why ? ` (${why})` : ""}.`);
+    } catch { setHealth("No connection."); } finally { setTesting(false); }
+  };
   const fcmRef = useRef(false); // native Android push is linked
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
@@ -158,6 +175,7 @@ export default function PushToggle({ prefs }: { prefs: Prefs }) {
         <>
           <span><BellRing size={15} /> Phone notifications are on</span>
           <span>
+            <button type="button" disabled={busy || testing} onClick={() => void sendTest()}>{testing ? "…" : "Send test"}</button>
             <button type="button" disabled={busy} onClick={() => void disable()}>Turn off</button>
           </span>
         </>
@@ -168,6 +186,7 @@ export default function PushToggle({ prefs }: { prefs: Prefs }) {
         </>
       )}
       {msg && <small>{msg}</small>}
+      {health && <small style={{ flexBasis: "100%" }}>{health}</small>}
     </div>
   );
 }
