@@ -91,3 +91,7 @@ html:root .wx-market-layout .mc-rail .mc-row .mid strong { font: 800 14px var(--
 html:root .wx-market-layout .mc-rail .mc-empty { padding: 4px 4px 10px; font-size: 13px; color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); }
 html:root .wx-market-layout .mc-rail .mc-more { display: block; width: 100%; margin: 8px 0 0; padding: 11px; border: 0; border-radius: 12px; background: var(--surface, #0f0f11); color: var(--accent-text, #ffad7b); font: 700 13px var(--font-sans); cursor: pointer; }
 html:root .wx-market-layout .mc-rail .mc-more:hover { background: var(--surface-2, #151517); }
+
+/* Scanner filter chips (All / Top picks / Fresh / Volume / Safer): room above and below, centred, never touching or cut by the line */
+html:root .sg-filters { align-items: center !important; padding-top: 8px !important; padding-bottom: 10px !important; border-bottom: 0 !important; }
+html:root .sg-filters button { line-height: 1.2; min-height: 32px; box-sizing: border-box; }
