@@ -5,6 +5,8 @@ import { hedgedRpc } from "@/lib/rpcHedge";
 
 export const dynamic = "force-dynamic";
 
+// one answer is shared by everyone looking at the same token: the CDN keeps it a couple of seconds, so a crowd costs one function run, not one each
+const SHARED = "public, max-age=0, s-maxage=2, stale-while-revalidate=3";
 const WSOL = "So11111111111111111111111111111111111111112";
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
   if (req.nextUrl.searchParams.get("curve") === "1") {
     if (!re.test(mint)) return NextResponse.json({ error: "bad" }, { status: 400 });
     const cached = curveOut.get(mint);
-    if (cached && Date.now() - cached.at < 700) return NextResponse.json({ curve: cached.data, at: cached.at }, { headers: { "Cache-Control": "no-store" } });
+    if (cached && Date.now() - cached.at < 2000) return NextResponse.json({ curve: cached.data, at: cached.at }, { headers: { "Cache-Control": SHARED } });
     try {
       const pda = PublicKey.findProgramAddressSync([Buffer.from("bonding-curve"), new PublicKey(mint).toBytes()], PUMP_PROGRAM)[0].toBase58();
       const acc = await rpc("getAccountInfo", [pda, { encoding: "base64" }]);
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
       if (typeof data !== "string") return NextResponse.json({ error: "no-curve" }, { status: 404 });
       trim(curveOut);
       curveOut.set(mint, { at: Date.now(), data });
-      return NextResponse.json({ curve: data, at: Date.now() }, { headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ curve: data, at: Date.now() }, { headers: { "Cache-Control": SHARED } });
     } catch {
       return NextResponse.json({ error: "rpc" }, { status: 502 });
     }
@@ -66,7 +68,7 @@ export async function GET(req: NextRequest) {
   if (!re.test(mint) || !re.test(pool)) return NextResponse.json({ error: "bad" }, { status: 400 });
 
   const hit = out.get(pool);
-  if (hit && Date.now() - hit.at < 700) return NextResponse.json(hit.data);
+  if (hit && Date.now() - hit.at < 2000) return NextResponse.json(hit.data, { headers: { "Cache-Control": SHARED } });
 
   try {
     let v = vaults.get(pool);
@@ -96,7 +98,7 @@ export async function GET(req: NextRequest) {
     const data = { priceSol, priceUsd: priceSol * solUsd, solUsd, vaults: v, base: baseAmt, quote: quoteAmt, at: Date.now() };
     trim(out);
     out.set(pool, { at: Date.now(), data });
-    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json(data, { headers: { "Cache-Control": SHARED } });
   } catch {
     return NextResponse.json({ error: "rpc" }, { status: 502 });
   }

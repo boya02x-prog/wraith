@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (!mints.length) return NextResponse.json({ prices: {} });
   const key = mints.join(",");
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.ts < CACHE_MS) return edge(NextResponse.json({ prices: hit.data }), 3, 6);
+  if (hit && Date.now() - hit.ts < CACHE_MS) return edge(NextResponse.json({ prices: hit.data }), 8, 12);
   try {
     const [solUsd, raw] = await Promise.all([
       getSolUsd(),
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     }
     cache.set(key, { ts: Date.now(), data });
     if (cache.size > 200) cache.clear();
-    return edge(NextResponse.json({ prices: data }), 3, 6);
+    return edge(NextResponse.json({ prices: data }), 8, 12);
   } catch {
     return NextResponse.json({ prices: {} }, { status: 502 });
   }

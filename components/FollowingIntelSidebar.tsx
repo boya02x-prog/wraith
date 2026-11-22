@@ -208,7 +208,7 @@ export default function FollowingIntelSidebar({ embedded = false }: { embedded?:
   }, []);
 
   useEffect(() => { void load(); }, [load]);
-  useLiveRefresh(() => void load(), 8000);
+  useLiveRefresh(() => void load(), 25000);
 
   useEffect(() => {
     const sync = () => setSaved(new Set(readTokenFavorites().map((f) => f.contractAddress ?? "")));

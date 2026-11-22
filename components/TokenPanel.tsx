@@ -275,7 +275,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
           }
         }
       } catch { /* retry */ }
-      if (alive) timer = setTimeout(run, document.hidden ? 5000 : ws ? 4000 : 1200);
+      if (alive) timer = setTimeout(run, document.hidden ? 20000 : ws ? 6000 : 3000);
     };
     void run();
     return () => { alive = false; clearTimeout(timer); try { ws?.close(); } catch { /* */ } };
@@ -331,7 +331,7 @@ export default function TokenPanel({ selectedMeme }: { selectedMeme: MemeTrend |
             }
           } catch { /* retry */ }
         }
-        if (!stopped) pollTimer = setTimeout(poll, document.hidden ? 5000 : 1500);
+        if (!stopped) pollTimer = setTimeout(poll, document.hidden ? 20000 : 3000);
       };
       void poll();
       return () => { stopped = true; if (pollTimer) clearTimeout(pollTimer); };

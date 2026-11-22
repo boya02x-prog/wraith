@@ -85,7 +85,7 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
     }
   }, []);
   useEffect(() => { void loadCallouts(); }, [loadCallouts]);
-  useLiveRefresh(() => void loadCallouts(), 8000);
+  useLiveRefresh(() => void loadCallouts(), 25000);
 
   useEffect(() => {
     // The callouts API quietly returns everyone's posts when signed out, so ask the session directly.

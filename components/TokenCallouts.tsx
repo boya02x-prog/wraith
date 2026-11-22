@@ -132,7 +132,7 @@ export function TokenCallouts({ mint, currentMcap }: { mint: string; currentMcap
     setCallouts([]);
     void load();
   }, [load]);
-  useLiveRefresh(() => void load(), 8000);
+  useLiveRefresh(() => void load(), 25000);
 
   const loadCanPost = useCallback(async () => {
     if (!mint || !authenticated) return;
