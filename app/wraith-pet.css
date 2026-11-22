@@ -73,3 +73,31 @@ html:root .wk-card:active { transform: scale(0.985); }
 .pv-facts div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2, #151517); }
 .pv-facts dt { color: var(--sk-text-3, rgba(255, 255, 255, 0.46)); font: 700 11.5px/1 var(--font-sans); }
 .pv-facts dd { margin: 5px 0 0; color: #fff; font: 800 16px/1.1 var(--font-sans); }
+
+/* Top calls: pick the period (this week is live; older weeks and all time are the kept record) */
+.wk-ranges { display: flex; gap: 6px; margin: 0 0 10px; overflow-x: auto; scrollbar-width: none; }
+.wk-ranges::-webkit-scrollbar { display: none; }
+.wk-ranges button { flex: none; min-height: 0; padding: 7px 12px; border: 0; border-radius: 10px; background: var(--surface, #0f0f11); color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); font: 700 13px var(--font-sans); cursor: pointer; }
+.wk-ranges button.on { background: rgba(255, 123, 61, 0.16); color: var(--accent-text, #ffad7b); }
+.wk-none { margin: 4px 2px 10px; color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); font: 600 13px var(--font-sans); }
+
+/* a nicer stage: a soft light of the pet's own colour behind it, a lit floor under it, and a few specks in the air */
+.yw-pet, .pv-stage { background:
+  radial-gradient(circle at 50% 44%, hsl(var(--pet-hue, 200deg) 52% 30% / 0.95) 0, hsl(var(--pet-hue, 200deg) 44% 20% / 0.7) 34%, transparent 66%),
+  radial-gradient(ellipse 60% 16% at 50% 90%, hsl(var(--pet-hue, 200deg) 40% 24% / 0.9), transparent 100%),
+  radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px),
+  radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0 1.2px, transparent 2.4px),
+  radial-gradient(circle at 70% 14%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
+  radial-gradient(circle at 14% 70%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
+  hsl(var(--pet-hue, 200deg) 30% 10%); }
+.yw-pet::before, .pv-stage::before { display: none; }
+.yw-pet::after, .pv-stage::after { background: rgba(0, 0, 0, 0.42); filter: blur(3px); }
+
+/* before it is claimed: an egg, and the claim button */
+.yw-pet-egg { background: hsl(220deg 18% 12%); display: grid; place-items: center; cursor: default; }
+.yw-pet-egg::before, .yw-pet-egg::after { display: none; }
+.yw-egg-shape { width: 54%; aspect-ratio: 0.78; border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%; background: hsl(220deg 14% 24%); box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.18); }
+.yw-claim { margin-top: 8px; min-height: 0; padding: 10px 14px; border: 0; border-radius: 11px; background: var(--accent, #ff7b3d); color: #1d0d05; font: 800 14px var(--font-sans); cursor: pointer; justify-self: start; }
+.yw-claim:disabled { opacity: 0.6; cursor: default; }
+.yw-err { color: var(--sk-down, #ff6b62) !important; }
+.yw-info p.yw-next { color: var(--sk-text-3, rgba(255, 255, 255, 0.5)); font-size: 12.5px; }

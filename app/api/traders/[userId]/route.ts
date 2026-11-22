@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongoClient";
 import { getPrivySession } from "@/lib/privyAuth";
+import { streakOf } from "@/lib/tradeStreak";
 
 type Trade = {
   id?: string;
@@ -56,6 +57,7 @@ export async function GET(
             coverDataUrl: 1,
             frame: 1,
             publicTrading: 1,
+            petClaimedAt: 1,
             updatedAt: 1,
           },
         },
@@ -81,6 +83,7 @@ export async function GET(
             coverDataUrl: 1,
             frame: 1,
             publicTrading: 1,
+            petClaimedAt: 1,
             updatedAt: 1,
           },
         },
@@ -148,6 +151,8 @@ export async function GET(
     const viewer = await getPrivySession().catch(() => null);
     return NextResponse.json({
       private: !isPublic,
+      petClaimed: typeof profile.petClaimedAt === "number",
+      streak: isPublic ? streakOf(closedTrades).current : 0,
       isSelf: !!viewer?.user?.id && viewer.user.id === profile.userId,
       trader: {
         userId: profile.userId,

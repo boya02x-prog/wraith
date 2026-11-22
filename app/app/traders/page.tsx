@@ -27,6 +27,7 @@ type Trader = {
   xHandle: string;
   avatarDataUrl: string;
   frame?: string;
+  petClaimed?: boolean;
   hasCover?: boolean;
   closedTradeCount: number;
   openPositionCount: number;
@@ -230,7 +231,7 @@ export default function TradersPage() {
                       <strong className={tone}>{money(pnl, true)}</strong>
                       <Spark curve={s?.curve ?? []} />
                     </div>
-                    <PetStill seed={trader.userId} size={62} stats={{ closed: trader.closedTradeCount, winRate: s?.winRate ?? null, pnlSol: s?.pnlSol.d7 ?? 0, bestPct: s?.bestPct ?? 0, topPct: null, rank: index < 10 ? index + 1 : null, of: 0, cashUsd: null }} />
+                    {trader.petClaimed ? <PetStill seed={trader.userId} size={62} stats={{ closed: trader.closedTradeCount, winRate: s?.winRate ?? null, pnlSol: s?.pnlSol.d7 ?? 0, bestPct: s?.bestPct ?? 0, topPct: null, rank: index < 10 ? index + 1 : null, of: 0, cashUsd: null }} /> : null}
                     <Radar values={s?.radar.map((p) => p.value) ?? [0, 0, 0, 0, 0, 0]} size={92} />
                   </div>
 

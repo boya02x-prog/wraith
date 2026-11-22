@@ -11,34 +11,44 @@ import { timesShort, usdShort } from "@/lib/tokenFmt";
 import type { SignalCall } from "@/lib/signalCalls";
 import { swrPeek, swrWrite } from "@/lib/swrCache";
 
+type Range = "week" | "last" | "month" | "all";
+const RANGES: { k: Range; label: string }[] = [{ k: "week", label: "This week" }, { k: "last", label: "Last week" }, { k: "month", label: "30 days" }, { k: "all", label: "All time" }];
+
 export default function TopCallsStrip({ onSelectMeme, onSeeAll }: { onSelectMeme: (meme: MemeTrend) => void; onSeeAll: () => void }) {
-  const [calls, setCalls] = useState<SignalCall[] | null>(() => swrPeek<SignalCall[]>("top-calls") ?? null);
+  const [range, setRange] = useState<Range>("week");
+  const [calls, setCalls] = useState<SignalCall[] | null>(() => swrPeek<SignalCall[]>("top-calls:week") ?? null);
   useEffect(() => {
     let alive = true;
+    setCalls(swrPeek<SignalCall[]>(`top-calls:${range}`) ?? null);
     const load = () =>
-      fetch("/api/signal-calls")
+      fetch(`/api/signal-calls?range=${range}`)
         .then((r) => (r.ok ? (r.json() as Promise<{ calls?: SignalCall[] }>) : null))
-        .then((j) => { if (alive && Array.isArray(j?.calls)) { swrWrite("top-calls", j.calls); setCalls(j.calls); } })
+        .then((j) => { if (alive && Array.isArray(j?.calls)) { swrWrite(`top-calls:${range}`, j.calls); setCalls(j.calls); } })
         .catch(() => undefined);
     void load();
-    const t = window.setInterval(() => { if (!document.hidden) void load(); }, 60_000);
-    return () => { alive = false; window.clearInterval(t); };
-  }, []);
+    // only the live week changes; older weeks are a finished record
+    const t = range === "week" ? window.setInterval(() => { if (!document.hidden) void load(); }, 60_000) : 0;
+    return () => { alive = false; if (t) window.clearInterval(t); };
+  }, [range]);
   const top = useMemo(
     () => (calls ?? [])
       .filter((c) => !c.shadow && c.spottedMcap > 0 && c.peakMcap / c.spottedMcap >= 1.5 && (!c.chain || c.chain === "solana"))
       .sort((a, b) => b.peakMcap / b.spottedMcap - a.peakMcap / a.spottedMcap)
-      .slice(0, 8),
-    [calls],
+      .slice(0, range === "week" ? 8 : 12),
+    [calls, range],
   );
-  if (!top.length) return null;
+  if (!top.length && range === "week") return null;
   return (
-    <section className="wk" aria-label="Top calls this week">
+    <section className="wk" aria-label="Top calls">
       <header>
         <Flame size={16} aria-hidden="true" />
-        <b>Top calls this week</b>
+        <b>Top calls</b>
         <button type="button" onClick={onSeeAll}>See all</button>
       </header>
+      <div className="wk-ranges" role="tablist" aria-label="Period">
+        {RANGES.map((r) => <button key={r.k} type="button" role="tab" aria-selected={range === r.k} className={range === r.k ? "on" : ""} onClick={() => setRange(r.k)}>{r.label}</button>)}
+      </div>
+      {!top.length && <p className="wk-none">{calls === null ? "Loading…" : "No calls up 1.5x in this period."}</p>}
       <div className="wk-row">
         {top.map((c) => (
           <button

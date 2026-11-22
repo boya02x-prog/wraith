@@ -100,7 +100,7 @@ export default function MarketCallsRail({ onSelectMeme, onOpenScanner }: { onSel
         const res = await fetch("/api/signals", { cache: "no-store" });
         if (!res.ok) return;
         const data: { signals?: SigLite[] } = await res.json();
-        if (alive && Array.isArray(data.signals)) { const top = data.signals.slice(0, 6); setSignals(top); swrWrite("rail:signals", top); }
+        if (alive && Array.isArray(data.signals)) { const top = data.signals.filter((x) => !x.token.chain || x.token.chain === "solana").slice(0, 6); setSignals(top); swrWrite("rail:signals", top); }
       } catch { /* optional */ }
     };
     void load();

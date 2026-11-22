@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 import Wraith3D from "@/components/Wraith3D";
 import { useCash } from "@/lib/cash";
+import { nextUnlock } from "@/lib/tradeStreak";
 import { genomeOf, lookOf, moodOf, petKey, type PetLook, type PetStats } from "@/lib/wraithPet";
 import { loadHeaderProfile, readHeaderProfile } from "@/lib/profileCache";
 import { swrPeek, swrWrite } from "@/lib/swrCache";
@@ -60,7 +61,7 @@ function PetViewer({ look, hue, title, name, line, chips, facts, onClose }: { lo
   );
 }
 
-export function WraithPetCard({ seed, stats, title, variant, fmtMoney }: { seed: string; stats: PetStats | null; title: string; variant: "rail" | "card" | "profile"; fmtMoney?: (sol: number) => string }) {
+export function WraithPetCard({ seed, stats, title, variant, fmtMoney, streak }: { seed: string; stats: PetStats | null; title: string; variant: "rail" | "card" | "profile"; fmtMoney?: (sol: number) => string; /** current streak in days, shown as a fact */ streak?: number }) {
   const read = useMemo(() => {
     const g = genomeOf(seed, stats);
     const m = moodOf(stats, fmtMoney, variant === "profile" ? "they" : "you");
@@ -81,6 +82,8 @@ export function WraithPetCard({ seed, stats, title, variant, fmtMoney }: { seed:
   if (stats?.winRate != null) facts.push({ k: "Win rate", v: `${Math.round(stats.winRate)}%` });
   if (stats?.rank != null && stats.of) facts.push({ k: "Rank", v: `#${stats.rank} of ${stats.of}` });
   if (stats?.bestPct) facts.push({ k: "Best call", v: `+${Math.round(stats.bestPct)}%` });
+  if (streak) facts.push({ k: "Streak", v: `${streak} ${streak === 1 ? "day" : "days"}` });
+  const nu = title === "Your Wraith" ? nextUnlock(stats?.streak ?? 0) : null;
   return (
     <section className={`yw yw-${variant}`} aria-label={title}>
       {big && <PetViewer look={look} hue={look.hue} title={title} name={read.m.title} line={read.m.line} chips={[...earnedChips, ...read.g.earned.slice(earnedChips.length).map((t) => ({ t, earned: true }))]} facts={facts} onClose={() => setBig(false)} />}
@@ -92,13 +95,14 @@ export function WraithPetCard({ seed, stats, title, variant, fmtMoney }: { seed:
         <small>{title}</small>
         <b>{read.m.title}</b>
         <p>{read.m.line}</p>
+        {nu && <p className="yw-next">Trade {nu.left} more {nu.left === 1 ? "day" : "days"} in a row to unlock {nu.label.toLowerCase()}.</p>}
         {chips.length > 0 && <div className="yw-chips">{chips.map((c) => <span key={c.t} className={c.earned ? "earned" : undefined}>{c.t}</span>)}</div>}
       </div>
     </section>
   );
 }
 
-type Rank = { rank: number | null; of: number; pnlSol: number; closed: number; winRate: number | null; bestPct: number; topPct: number | null };
+type Rank = { rank: number | null; of: number; pnlSol: number; closed: number; winRate: number | null; bestPct: number; topPct: number | null; petClaimed?: boolean; streak?: number; bestStreak?: number };
 
 /** the cash the header already works out and remembers (see EmbeddedWalletBalanceChip): read here, never asked from the chains again */
 function cashNow(): number | null {
@@ -150,10 +154,35 @@ export default function YourWraith({ variant }: { variant: "rail" | "card" | "pr
     return () => { window.clearTimeout(first); window.clearInterval(t); };
   }, []);
 
-  const stats = useMemo<PetStats | null>(() => (rank ? { closed: rank.closed, winRate: rank.winRate, pnlSol: rank.pnlSol, bestPct: rank.bestPct, topPct: rank.topPct, rank: rank.rank, of: rank.of, cashUsd: cash } : null), [rank, cash]);
+  const stats = useMemo<PetStats | null>(() => (rank ? { closed: rank.closed, winRate: rank.winRate, pnlSol: rank.pnlSol, bestPct: rank.bestPct, topPct: rank.topPct, rank: rank.rank, of: rank.of, cashUsd: cash, streak: rank.bestStreak ?? 0 } : null), [rank, cash]);
   // (before the SOL price has loaded the money formatter has no figure to give: say it in SOL instead of printing a dash)
   const fmt = useMemo(() => (sol: number) => { const s = money(sol); return /\d/.test(s) ? s : `${sol.toFixed(2)} SOL`; }, [money]);
+  const [claiming, setClaiming] = useState(false);
+  const [claimErr, setClaimErr] = useState("");
   if (hide || !seed || !rank) return null;
-  return <WraithPetCard seed={seed} stats={stats} title="Your Wraith" variant={variant} fmtMoney={fmt} />;
+  // it is earned, then claimed: nothing hatches until you have made a trade and tapped Claim
+  if (!rank.petClaimed) {
+    const ready = rank.closed > 0;
+    const claim = () => {
+      setClaiming(true); setClaimErr("");
+      fetch("/api/user/pet", { method: "POST" })
+        .then(async (r) => { if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error || "Could not claim it."); const d = { ...rank, petClaimed: true }; swrWrite("pet:rank", d); setRank(d); })
+        .catch((e: unknown) => setClaimErr(e instanceof Error ? e.message : "Could not claim it."))
+        .finally(() => setClaiming(false));
+    };
+    return (
+      <section className={`yw yw-${variant} yw-egg`} aria-label="Your Wraith">
+        <div className="yw-pet yw-pet-egg" aria-hidden="true"><span className="yw-egg-shape" /></div>
+        <div className="yw-info">
+          <small>Your Wraith</small>
+          <b>{ready ? "It is ready" : "Still an egg"}</b>
+          <p>{ready ? "You made your first trade. Claim your Wraith." : "Make your first trade to claim your own Wraith."}</p>
+          {ready && <button type="button" className="yw-claim" onClick={claim} disabled={claiming}>{claiming ? "Claiming…" : "Claim your Wraith"}</button>}
+          {claimErr && <p className="yw-err">{claimErr}</p>}
+        </div>
+      </section>
+    );
+  }
+  return <WraithPetCard seed={seed} stats={stats} title="Your Wraith" variant={variant} fmtMoney={fmt} streak={rank.streak ?? 0} />;
 }
 

@@ -266,7 +266,8 @@ export default function SignalScanner({
   // Weak setups (score under 50: the "Weak" and "Risky" bands) and tokens the collapse model rates high-risk are hidden by default.
   const [showWeak, setShowWeak] = useState(false);
   const [railTab, setRailTab] = useState<RailTab>("top");
-  const [chainFilter, setChainFilter] = useState<string>("all");
+  // Wraith is a Solana app: other chains are not scanned here (their tokens were mostly noise and their pages are a thin view)
+  const chainFilter = "solana";
   // Patterns stays open for the visit, so opening a wallet or token from it and pressing Back returns here, not to the list.
   // (This component only ever renders in the browser, so reading storage in the first render is safe.)
   const [deep, setDeepState] = useState(() => { try { return sessionStorage.getItem("wraith_scanner_deep") === "1"; } catch { return false; } });
@@ -279,7 +280,7 @@ export default function SignalScanner({
     setViewState(v);
     try { localStorage.setItem("wraith_board_view", v); } catch { /* ignore */ }
   };
-  const byChain = useMemo(() => (chainFilter === "all" ? signals : signals.filter((s) => (s.token.chain ?? "solana") === chainFilter)), [signals, chainFilter]);
+  const byChain = useMemo(() => signals.filter((s) => (s.token.chain ?? "solana") === chainFilter), [signals]);
   const chainCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of signals) m.set(s.token.chain ?? "solana", (m.get(s.token.chain ?? "solana") ?? 0) + 1);
@@ -370,14 +371,6 @@ export default function SignalScanner({
           <div className={`sg-deep ${view}`}><PatternsPanel signals={signals} onOpen={open} /></div>
         ) : (
           <>
-            <div className="sg-filters sg-chains" role="tablist" aria-label="Chain">
-              <button type="button" role="tab" aria-selected={chainFilter === "all"} className={chainFilter === "all" ? "on" : ""} onClick={() => setChainFilter("all")}>All chains</button>
-              {["solana", ...Object.keys(CHAINS)].filter((k) => chainCounts.has(k)).map((k) => (
-                <button key={k} type="button" role="tab" aria-selected={chainFilter === k} className={chainFilter === k ? "on" : ""} onClick={() => setChainFilter(k)}>
-                  <ChainLogo chain={k} size={14} />{chainName(k)} <small style={{ opacity: 0.6 }}>{chainCounts.get(k)}</small>
-                </button>
-              ))}
-            </div>
             <div className="sg-filters" role="tablist" aria-label="Signal filters">
               {FILTERS.map((f) => (
                 <button key={f.key} type="button" role="tab" aria-selected={filter === f.key} className={filter === f.key ? "on" : ""} onClick={() => setFilter(f.key)}>

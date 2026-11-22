@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongoClient";
 import { getPrivySession } from "@/lib/privyAuth";
 import { computeTraderStats } from "@/lib/traderStats";
+import { streakOf } from "@/lib/tradeStreak";
 
 export const dynamic = "force-dynamic";
 
@@ -45,11 +46,13 @@ export async function GET(req: NextRequest) {
     const [b, mine, profile] = await Promise.all([
       board(),
       db.collection("trades").findOne({ userId: id }, { projection: { _id: 0, trades: 1 } }),
-      db.collection("profiles").findOne({ userId: id }, { projection: { _id: 0, publicTrading: 1 } }),
+      db.collection("profiles").findOne({ userId: id }, { projection: { _id: 0, publicTrading: 1, petClaimedAt: 1 } }),
     ]);
     const closed = (Array.isArray(mine?.trades) ? (mine!.trades as StoredTrade[]) : []).filter((t) => typeof t.pnlPct === "number" && typeof t.amountSol === "number");
     const publicTrading = profile?.publicTrading === true;
-    if (!closed.length) return NextResponse.json({ rank: null, of: b.users, pnlSol: 0, closed: 0, winRate: null, bestPct: 0, topPct: null, publicTrading }, { headers: { "Cache-Control": "private, max-age=60" } });
+    const petClaimed = typeof profile?.petClaimedAt === "number";
+    const sk = streakOf(closed);
+    if (!closed.length) return NextResponse.json({ rank: null, of: b.users, pnlSol: 0, closed: 0, winRate: null, bestPct: 0, topPct: null, publicTrading, petClaimed, streak: 0, bestStreak: 0 }, { headers: { "Cache-Control": "private, max-age=60" } });
     const s = computeTraderStats(closed);
     const gain = s.pnlSol[period];
     const list = b.gains[period];
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
     const of = Math.max(b.users, ahead + 1);
     const rank = ahead + 1;
     return NextResponse.json(
-      { rank, of, pnlSol: gain, closed: s.closed, winRate: s.winRate, bestPct: s.bestPct, topPct: of >= 5 ? Math.max(1, Math.round((rank / of) * 100)) : null, publicTrading },
+      { rank, of, pnlSol: gain, closed: s.closed, winRate: s.winRate, bestPct: s.bestPct, topPct: of >= 5 ? Math.max(1, Math.round((rank / of) * 100)) : null, publicTrading, petClaimed, streak: sk.current, bestStreak: sk.best },
       { headers: { "Cache-Control": "private, max-age=60" } },
     );
   } catch (e) {

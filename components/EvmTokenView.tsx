@@ -5,7 +5,8 @@
 // Trading on these chains is handled separately (cross-chain buy from the unified cash balance).
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, Check, Copy, ExternalLink, Flame, Globe, Link2, Search, Send, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Activity, ArrowLeft, Check, Copy, ExternalLink, Flame, Globe, Link2, Search, Send, Star } from "lucide-react";
 import { usePresence } from "@/lib/usePresence";
 import SheetBoundary from "@/components/SheetBoundary";
 import TokenChart from "@/components/TokenChart";
@@ -48,6 +49,13 @@ function ChainBadge({ chain }: { chain: ChainInfo }) {
 }
 
 export default function EvmTokenView({ address, sidebar, mobile = false }: { address: string; sidebar?: ReactNode; mobile?: boolean }) {
+  const router = useRouter();
+  // history.back() does nothing when this page was the first one opened (a shared link, a new tab): fall back to the app home
+  const goBack = () => {
+    const before = window.location.href;
+    if (window.history.length > 1) router.back();
+    window.setTimeout(() => { if (window.location.href === before) router.push("/app"); }, 400);
+  };
   const [chainParam, setChainParam] = useState<string | null | undefined>(undefined);
   // phone layout (the same as a Solana token): the bottom bar (Market / Search / Buy / Sell) and the Buy / Sell sheet
   const [mTab, setMTab] = useState<"chart" | "market">("chart");
@@ -199,6 +207,7 @@ export default function EvmTokenView({ address, sidebar, mobile = false }: { add
   const panel = (
         <div className="wx-panel">
           <header className="wx-token-head">
+            <button type="button" className="wx-back-btn" aria-label="Back" onClick={goBack}><ArrowLeft size={18} /></button>
             <div className="wx-token-id">
               <TokenIcon contractAddress={address} imageUrl={snap.imageUrl ?? undefined} symbol={snap.symbol} size={48} />
               <div style={{ minWidth: 0 }}>

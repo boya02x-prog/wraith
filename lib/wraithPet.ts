@@ -20,6 +20,8 @@ export type PetStats = {
   of: number;
   /** money in the wallet, in dollars; null when it is not known yet */
   cashUsd: number | null;
+  /** days in a row with a closed trade (lib/tradeStreak.ts): a streak unlocks a hat (3), something to hold (7) and a mark on the belly (14) */
+  streak?: number;
 };
 
 export type Mood = "sleepy" | "hungry" | "chill" | "happy" | "euphoric" | "worried" | "rekt";
@@ -94,11 +96,15 @@ export function genomeOf(seed: string, st: PetStats | null): PetGenome {
   const brows = pick(r, ["none", "none", "soft", "thick"] as const);
   const cheeks = pick(r, ["none", "blush", "blush", "freckles", "whiskers"] as const);
   let hat: HatStyle = pickWeighted<HatStyle>(r, [["none", 5], ["beanie", 2], ["cap", 2], ["bow", 2], ["bunny", 1.4], ["cat", 1.4], ["sprout", 1.4], ["antenna", 1.2], ["party", 1.2], ["horns", 1]]);
-  const prop = pickWeighted<PropStyle>(r, [["none", 4], ["coin", 2], ["star", 1.5], ["gem", 1.5], ["flag", 1.2]]);
-  const emblem = pickWeighted<EmblemStyle>(r, [["none", 3], ["star", 1.5], ["bolt", 1.5], ["diamond", 1.2], ["ring", 1.2]]);
+  let prop = pickWeighted<PropStyle>(r, [["none", 4], ["coin", 2], ["star", 1.5], ["gem", 1.5], ["flag", 1.2]]);
+  let emblem = pickWeighted<EmblemStyle>(r, [["none", 3], ["star", 1.5], ["bolt", 1.5], ["diamond", 1.2], ["ring", 1.2]]);
 
-  // what the trades unlock, and how big it has grown
+  // what the trades unlock, and how big it has grown. The look it was born with (hat, what it holds, the mark) only shows once a trading streak has unlocked it.
   const earned: string[] = [];
+  const streak = st?.streak ?? 0;
+  if (streak < 3) hat = "none"; else earned.push("3-day streak");
+  if (streak < 7) prop = "none"; else earned.push("7-day streak");
+  if (streak < 14) emblem = "none"; else earned.push("14-day streak");
   const closed = st?.closed ?? 0;
   if (st && ((st.rank !== null && st.rank <= 10) || (st.topPct !== null && st.topPct <= 5))) { hat = "crown"; earned.push("Crowned"); }
   else if (st && st.bestPct >= 900) { hat = "wizard"; earned.push("Moonshot wizard"); }

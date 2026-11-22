@@ -328,11 +328,13 @@ export async function refreshCalls(force = false) {
   return refreshing;
 }
 
-export async function listCalls(limit = 120, mint?: string): Promise<SignalCall[]> {
+/** `range`: "week" = the last 7 days (the live record, default), "last" = the 7 days before that, "month" = 30 days, "all" = everything kept. Calls are never deleted, so older weeks stay readable. */
+export type CallRange = "week" | "last" | "month" | "all";
+export async function listCalls(limit = 120, mint?: string, range: CallRange = "week"): Promise<SignalCall[]> {
   const c = await col();
   const filter = mint
     ? { address: EVM_ADDR_RE.test(mint) ? mint.toLowerCase() : mint, shadow: { $ne: true }, engine: 2, badData: { $ne: true } }
-    : { spottedAt: { $gt: Date.now() - WINDOW_MS }, shadow: { $ne: true }, engine: 2, badData: { $ne: true } };
+    : { ...(range === "all" ? {} : { spottedAt: range === "last" ? { $gt: Date.now() - 2 * WINDOW_MS, $lte: Date.now() - WINDOW_MS } : { $gt: Date.now() - (range === "month" ? 30 * 24 * 3_600_000 : WINDOW_MS) } }), shadow: { $ne: true }, engine: 2, badData: { $ne: true } };
   const docs = await c.find(filter, { projection: { _id: 0, features: 0, buyers: 0 } }).sort({ spottedAt: -1 }).limit(limit).toArray();
   return docs as SignalCall[];
 }

@@ -52,6 +52,8 @@ type PublicTrade = {
 type TraderDetails = {
   isSelf?: boolean;
   private?: boolean;
+  petClaimed?: boolean;
+  streak?: number;
   trader: {
     userId: string;
     username: string | null;
@@ -145,7 +147,7 @@ export default function PublicTraderPage() {
     const week = Date.now() - 7 * 86_400_000;
     const pnlSol = closed.filter((t) => (t.closedAt ?? t.ts ?? 0) >= week).reduce((s, t) => s + (t.amountSol ?? 0) * ((t.pnlPct ?? 0) / 100), 0);
     const bestPct = closed.reduce((m, t) => Math.max(m, t.pnlPct ?? 0), 0);
-    return { closed: closed.length, winRate: stats?.winRate ?? null, pnlSol, bestPct, topPct: null, rank: null, of: 0, cashUsd: null };
+    return { closed: closed.length, winRate: stats?.winRate ?? null, pnlSol, bestPct, topPct: null, rank: null, of: 0, cashUsd: null, streak: data.streak ?? 0 };
   }, [data, stats]);
   const petMoney = useCallback((sol: number) => money(sol), [money]);
 
@@ -365,7 +367,7 @@ export default function PublicTraderPage() {
           </div>
         ) : (<>
         {/* ── their Wraith: a 3D pet whose look and mood come from how they trade ── */}
-        <WraithPetCard seed={trader.userId} stats={pet} title={`${trader.displayName}'s Wraith`} variant="profile" fmtMoney={petMoney} />
+        {data.petClaimed && <WraithPetCard seed={trader.userId} stats={pet} title={`${trader.displayName}'s Wraith`} variant="profile" fmtMoney={petMoney} streak={data.streak ?? 0} />}
 
         {/* ── Balance, chart and holdings (only when the trader chose to show them) ── */}
         <PortfolioBlock userId={trader.userId} fmt={cashFmt} />
